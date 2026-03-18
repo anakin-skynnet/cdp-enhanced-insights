@@ -162,6 +162,12 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
         Behavioral
       </div>
+
+      <div class="px-3 py-1.5 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Reference</div>
+      <div class="nav-item" data-page="about" onclick="navigateTo('about')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+        About this Solution
+      </div>
     </nav>
 
     <!-- Data source indicator -->
@@ -349,7 +355,7 @@
         support: 'Support Analytics', callcenter: 'Call Center', roi: 'Campaign ROI',
         audiences: 'Audiences', personalization: 'Personalization', creative: 'Ad Creative',
         clv: 'Customer Lifetime Value', attribution: 'Channel Attribution', behavioral: 'Behavioral Segments',
-        freshness: 'Data Freshness',
+        freshness: 'Data Freshness', about: 'About this Solution',
       };
       document.getElementById('page-title').textContent = titles[page] || page;
       renderPage(page);
@@ -402,6 +408,7 @@
         attribution: loadAttribution,
         behavioral: loadBehavioral,
         freshness: loadFreshness,
+        about: loadAbout,
       };
       container.innerHTML = `<div class="space-y-6">${skeletonKpis()}<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">${card('', skeleton('h-64'))}${card('', skeleton('h-64'))}</div></div>`;
       if (loaders[page]) {
@@ -1129,6 +1136,462 @@
         dot.className = 'w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse-dot';
         label.textContent = `${stale} stale table${stale > 1 ? 's' : ''}`;
       }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: About this Solution
+    // ═══════════════════════════════════════════════════════════
+    async function loadAbout() {
+      const c = document.getElementById('page-container');
+      const sectionStyle = 'rounded-lg border border-border bg-card p-6 space-y-4';
+      const h2 = (t, icon) => `<h2 class="text-lg font-semibold flex items-center gap-2">${icon} ${t}</h2>`;
+      const pill = (t, color) => `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-${color}-500/15 text-${color}-400">${t}</span>`;
+      const tblHead = cols => `<thead><tr>${cols.map(c => `<th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground border-b border-border">${c}</th>`).join('')}</tr></thead>`;
+      const tblRow = cells => `<tr class="border-b border-border/50">${cells.map(c => `<td class="px-3 py-2 text-sm">${c}</td>`).join('')}</tr>`;
+
+      c.innerHTML = `
+      <div class="space-y-8 max-w-5xl">
+
+        <!-- Hero -->
+        <div class="${sectionStyle} bg-gradient-to-br from-primary/5 via-card to-chart-2/5 border-primary/20">
+          <div class="flex items-start gap-4">
+            <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            </div>
+            <div>
+              <h1 class="text-2xl font-bold">PagoNxt Getnet — Enhanced Customer Intelligence Platform</h1>
+              <p class="text-muted-foreground mt-1 leading-relaxed max-w-3xl">
+                A production-grade <strong class="text-foreground">Customer 360</strong> solution built entirely on the
+                <strong class="text-foreground">Databricks Lakehouse Platform</strong>. It unifies fragmented merchant data from
+                transactional systems, CRM, support, and call center sources into a single golden record, then layers
+                AI/ML models, real-time anomaly detection, and conversational AI agents on top — enabling Getnet teams
+                to drive higher campaign ROI, reduce churn, and maximize customer lifetime value through data-driven
+                next best actions.
+              </p>
+              <div class="flex flex-wrap gap-2 mt-3">
+                ${pill('Azure Databricks', 'blue')}
+                ${pill('Unity Catalog', 'purple')}
+                ${pill('Lakeflow Pipelines', 'green')}
+                ${pill('Serverless SQL', 'cyan')}
+                ${pill('Model Serving', 'orange')}
+                ${pill('AI/BI Genie', 'pink')}
+                ${pill('Databricks Apps', 'yellow')}
+                ${pill('Foundation Models', 'red')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Architecture Diagram (ASCII) -->
+        <div class="${sectionStyle}">
+          ${h2('Solution Architecture', '<svg class="w-5 h-5 text-chart-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>')}
+          <p class="text-sm text-muted-foreground">End-to-end data flow from source ingestion to AI-powered insights and activation.</p>
+          <div class="bg-muted/50 rounded-lg p-4 font-mono text-xs leading-relaxed overflow-x-auto">
+<pre class="text-muted-foreground">
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                              DATA SOURCES (External Systems)                                    │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │  Salesforce   │  │   Zendesk    │  │   Genesys    │  │ Transaction  │  │  Campaign &   │     │
+│  │  CRM (Accts,  │  │  Support     │  │  Call Center │  │  Processing  │  │  Marketing    │     │
+│  │  Contacts)    │  │  Tickets     │  │  Interactions│  │  System      │  │  Platform     │     │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘     │
+└─────────┼──────────────────┼──────────────────┼──────────────────┼──────────────────┼───────────┘
+          │                  │                  │                  │                  │
+          ▼                  ▼                  ▼                  ▼                  ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  BRONZE LAYER (Raw Ingestion via Lakeflow Spark Declarative Pipelines)                          │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │ bronze_sf_   │  │ bronze_      │  │ bronze_      │  │ bronze_      │  │ bronze_      │     │
+│  │ accounts     │  │ zendesk_     │  │ genesys_     │  │ transactions │  │ campaigns    │     │
+│  │ bronze_sf_   │  │ tickets      │  │ interactions │  │              │  │              │     │
+│  │ contacts     │  │              │  │              │  │              │  │              │     │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘     │
+└────────────────────────────────────────────┬────────────────────────────────────────────────────┘
+                                             │ Schema enforcement, dedup, type casting
+                                             ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  SILVER LAYER (Cleansed & Conformed)                                                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │ silver_      │  │ silver_      │  │ silver_      │  │ silver_      │  │ silver_      │     │
+│  │ accounts     │  │ contacts     │  │ tickets      │  │ transactions │  │ interactions │     │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘     │
+└────────────────────────────────────────────┬────────────────────────────────────────────────────┘
+                                             │ Identity resolution, feature engineering
+                                             ▼
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│  GOLD LAYER (Business-Ready — 20+ Tables)                                                       │
+│  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐  ┌──────────────────┐  │
+│  │ gold_customer_360  │  │ gold_segments      │  │ gold_health_score  │  │ gold_engagement  │  │
+│  │  (Golden Record)   │  │  (RFM Segments)    │  │  (0-100 Score)     │  │  _metrics        │  │
+│  ├────────────────────┤  ├────────────────────┤  ├────────────────────┤  ├──────────────────┤  │
+│  │ gold_next_best_    │  │ gold_customer_ltv  │  │ gold_behavioral_   │  │ gold_channel_    │  │
+│  │ actions (NBA)      │  │  (CLV Models)      │  │ segments (K-Means) │  │ attribution      │  │
+│  ├────────────────────┤  ├────────────────────┤  ├────────────────────┤  ├──────────────────┤  │
+│  │ gold_support_      │  │ gold_call_center_  │  │ gold_propensity_   │  │ gold_personal-   │  │
+│  │ analytics          │  │ analytics/sentiment│  │ scores             │  │ ization_signals  │  │
+│  ├────────────────────┤  ├────────────────────┤  ├────────────────────┤  ├──────────────────┤  │
+│  │ gold_campaign_roi  │  │ gold_audience_     │  │ gold_ad_creative_  │  │ gold_anomaly_    │  │
+│  │                    │  │ exports            │  │ library            │  │ alerts           │  │
+│  └────────────────────┘  └────────────────────┘  └────────────────────┘  └──────────────────┘  │
+└────────────────────────────────────────────┬────────────────────────────────────────────────────┘
+                                             │
+                    ┌────────────────────────┬┴──────────────────────┐
+                    ▼                        ▼                       ▼
+        ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+        │  AI/BI Genie     │    │  CDP Supervisor   │    │  Databricks App  │
+        │  Space           │    │  Agent (LangGraph)│    │  (FastAPI + UI)  │
+        │  Natural Language │    │  + 3 Specialists  │    │  13 Pages +      │
+        │  SQL Analytics   │    │  + 24 UC Functions │    │  AI Chat Panel   │
+        └──────────────────┘    └──────────────────┘    └──────────────────┘
+</pre>
+          </div>
+        </div>
+
+        <!-- Data Sources -->
+        <div class="${sectionStyle}">
+          ${h2('Data Sources & Ingestion', '<svg class="w-5 h-5 text-chart-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"></path></svg>')}
+          <p class="text-sm text-muted-foreground">Five primary data domains are ingested via Lakeflow Spark Declarative Pipelines into Bronze streaming tables with schema enforcement and auto-loader.</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm"><${tblHead(['Source System', 'Bronze Table', 'Connector', 'Data Domain', 'Key Attributes'])}
+              <tbody>
+                ${tblRow(['<strong>Salesforce CRM</strong>', '<code class="text-xs">bronze_salesforce_accounts</code><br><code class="text-xs">bronze_salesforce_contacts</code>', pill('Lakeflow Connect', 'green'), 'Merchant Profiles &amp; Contacts', 'Account name, industry, MCC code, owner, address, email, phone'])}
+                ${tblRow(['<strong>Payment Processing</strong>', '<code class="text-xs">bronze_transactions</code>', pill('Auto Loader', 'blue'), 'Transaction Data', 'Merchant ID, amount, currency, timestamp, payment method, terminal'])}
+                ${tblRow(['<strong>Zendesk</strong>', '<code class="text-xs">bronze_zendesk_tickets</code>', pill('Lakeflow Connect', 'green'), 'Support Tickets', 'Ticket ID, subject, status, CSAT, first response time, resolution time'])}
+                ${tblRow(['<strong>Genesys Cloud</strong>', '<code class="text-xs">bronze_genesys_interactions</code>', pill('REST API / Fivetran', 'purple'), 'Call Center Interactions', 'Call ID, duration, queue, agent, disposition, wait time, recording URL'])}
+                ${tblRow(['<strong>Marketing Platform</strong>', '<code class="text-xs">bronze_campaigns</code>', pill('REST API', 'orange'), 'Campaign Events', 'Campaign ID, channel, touchpoint, conversion, merchant ID, timestamp'])}
+              </tbody>
+            </table>
+          </div>
+          <div class="bg-muted/30 rounded-md p-3 text-xs text-muted-foreground">
+            <strong class="text-foreground">Integration options:</strong> Lakeflow Connect provides managed connectors for Salesforce and Zendesk.
+            For Genesys and custom sources, Airbyte/Fivetran connectors or REST API ingestion via Azure Event Hub + Auto Loader can be used.
+            Hightouch is recommended for Reverse ETL and marketing activation.
+          </div>
+        </div>
+
+        <!-- Medallion Architecture -->
+        <div class="${sectionStyle}">
+          ${h2('Medallion Architecture & Transformations', '<svg class="w-5 h-5 text-chart-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>')}
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                <span class="font-semibold text-amber-400">Bronze — Raw Ingestion</span>
+              </div>
+              <p class="text-xs text-muted-foreground">Streaming tables ingest raw data from all sources via Lakeflow Spark Declarative Pipelines with Photon acceleration. Schema enforcement, deduplication, and data quality expectations are applied at ingestion time.</p>
+              <div class="text-xs font-mono text-muted-foreground">Pipeline: <span class="text-amber-400">CDP Bronze Ingestion</span></div>
+              <div class="text-xs text-muted-foreground">5 streaming tables &bull; Serverless &bull; Photon enabled</div>
+            </div>
+            <div class="rounded-lg border border-slate-400/30 bg-slate-400/5 p-4 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-slate-400"></div>
+                <span class="font-semibold text-slate-300">Silver — Cleansed & Conformed</span>
+              </div>
+              <p class="text-xs text-muted-foreground">Materialized views that cleanse, conform, and join data across sources. Type casting, null handling, business key alignment, and cross-source joins create a unified data model.</p>
+              <div class="text-xs font-mono text-muted-foreground">Pipeline: <span class="text-slate-300">CDP Silver Transformations</span></div>
+              <div class="text-xs text-muted-foreground">5 materialized views &bull; Serverless &bull; Photon enabled</div>
+            </div>
+            <div class="rounded-lg border border-yellow-400/30 bg-yellow-400/5 p-4 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                <span class="font-semibold text-yellow-300">Gold — Business-Ready</span>
+              </div>
+              <p class="text-xs text-muted-foreground">20+ materialized views and tables that serve as the single source of truth. The golden record, engagement metrics, health scores, segments, CLV, NBA, anomaly alerts, and all analytics tables live here.</p>
+              <div class="text-xs font-mono text-muted-foreground">Pipeline: <span class="text-yellow-300">CDP Gold Golden Record</span></div>
+              <div class="text-xs text-muted-foreground">20+ tables &bull; Serverless &bull; Unity Catalog governed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gold Tables Catalog -->
+        <div class="${sectionStyle}">
+          ${h2('Gold Layer — Table Catalog', '<svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>')}
+          <p class="text-sm text-muted-foreground">All gold tables are governed by Unity Catalog under <code class="text-xs font-mono bg-muted px-1 rounded">main.cdp</code> and serve both the analytics layer and AI agents.</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">${tblHead(['Table', 'Purpose', 'Key Fields', 'Updated By'])}
+              <tbody>
+                ${tblRow(['<code class="text-xs">gold_customer_360</code>', 'Master golden record from identity resolution — the single source of truth for every merchant', 'golden_id, merchant_name, industry, mcc_code, region, country', pill('Identity Resolution Job', 'blue')])}
+                ${tblRow(['<code class="text-xs">gold_engagement_metrics</code>', 'Transaction volume, count, frequency, and recency per merchant', 'txn_volume, txn_count, avg_txn_amount, days_since_last_txn', pill('Gold Pipeline', 'yellow')])}
+                ${tblRow(['<code class="text-xs">gold_segments</code>', 'RFM-based merchant segmentation (9 segments from champions to hibernating)', 'rfm_segment, recency_score, frequency_score, monetary_score', pill('Segmentation Job', 'green')])}
+                ${tblRow(['<code class="text-xs">gold_health_score</code>', 'Composite 0-100 health score with tiers (excellent to critical)', 'health_score, health_tier, recency_pts, frequency_pts, monetary_pts', pill('Gold Pipeline', 'yellow')])}
+                ${tblRow(['<code class="text-xs">gold_next_best_actions</code>', 'AI-recommended action, channel, urgency, and priority for each merchant', 'primary_action, primary_channel, urgency, priority_score, revenue_impact', pill('Gold Pipeline', 'yellow')])}
+                ${tblRow(['<code class="text-xs">gold_identity_graph</code>', 'Entity resolution graph linking source IDs to golden IDs', 'source_system, source_id, golden_id, match_confidence', pill('Identity Resolution Job', 'blue')])}
+                ${tblRow(['<code class="text-xs">gold_customer_ltv</code>', 'Predicted 12-month CLV using BG/NBD + Gamma-Gamma probabilistic models', 'predicted_clv, clv_tier, expected_purchases, monetary_value', pill('CLV Training Job', 'purple')])}
+                ${tblRow(['<code class="text-xs">gold_behavioral_segments</code>', 'K-Means clustering based on behavioral features (time-of-day, channel mix, etc.)', 'cluster_id, cluster_label, dominant_features, merchant_count', pill('Behavioral Job', 'cyan')])}
+                ${tblRow(['<code class="text-xs">gold_channel_attribution</code>', 'Markov Chain + heuristic multi-touch attribution across marketing channels', 'channel, markov_attribution, first_touch, last_touch, linear', pill('Attribution Job', 'pink')])}
+                ${tblRow(['<code class="text-xs">gold_support_analytics</code>', 'Support quality metrics from Zendesk per merchant', 'total_tickets, csat_score, avg_first_response_min, sla_resolution_pct', pill('Gold Pipeline', 'yellow')])}
+                ${tblRow(['<code class="text-xs">gold_call_center_analytics</code>', 'Agent and queue performance from Genesys call center data', 'agent_name, calls_handled, avg_handle_time, resolution_rate', pill('Gold Pipeline', 'yellow')])}
+                ${tblRow(['<code class="text-xs">gold_call_center_sentiment</code>', 'AI sentiment analysis on call transcripts using Foundation Model API', 'sentiment, topic, confidence, summary', pill('Call Center NLP Job', 'red')])}
+                ${tblRow(['<code class="text-xs">gold_propensity_scores</code>', 'XGBoost churn/upsell/activation propensity scores per merchant', 'churn_propensity, upsell_propensity, activation_propensity', pill('Propensity Job', 'orange')])}
+                ${tblRow(['<code class="text-xs">gold_personalization_signals</code>', 'Real-time personalization features for hyper-targeted outreach', 'preferred_channel, best_contact_time, content_affinity', pill('Gold Pipeline', 'yellow')])}
+                ${tblRow(['<code class="text-xs">gold_campaign_roi</code>', 'Campaign effectiveness with conversion rates and revenue lift', 'campaign_name, channel, conversion_rate, revenue_lift, post_30d_volume', pill('Campaign ROI Job', 'green')])}
+                ${tblRow(['<code class="text-xs">gold_audience_exports</code>', 'Pre-built audience segments ready for activation via Hightouch/Reverse ETL', 'audience_type, merchant_count, hashed_email', pill('Gold Pipeline', 'yellow')])}
+                ${tblRow(['<code class="text-xs">gold_ad_creative_library</code>', 'AI-generated marketing content (email, SMS, push, ad copy) per segment', 'segment, email_subject, sms_text, push_title, tone, cta', pill('Ad Creative Job', 'red')])}
+                ${tblRow(['<code class="text-xs">gold_anomaly_alerts</code>', 'Real-time anomaly detection for volume drops, inactivity, ticket spikes, health collapses', 'anomaly_type, deviation_pct, estimated_revenue_impact, urgency', pill('Gold Pipeline', 'yellow')])}
+                ${tblRow(['<code class="text-xs">nba_action_log</code>', 'Tracks actions executed on merchants for closed-loop attribution', 'action_type, channel, executed_at, outcome', pill('App / Agent', 'blue')])}
+                ${tblRow(['<code class="text-xs">agent_feedback_log</code>', 'User feedback (thumbs up/down) on AI agent responses for quality monitoring', 'rating, query, response_preview, mode', pill('App', 'green')])}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- AI/ML Models -->
+        <div class="${sectionStyle}">
+          ${h2('AI/ML Models & Notebooks', '<svg class="w-5 h-5 text-chart-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>')}
+          <p class="text-sm text-muted-foreground">11 scheduled Databricks Jobs train, score, and refresh ML models on a daily/weekly cadence.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 2AM', 'blue')} Identity Resolution</div>
+              <p class="text-xs text-muted-foreground">Probabilistic and deterministic entity matching across Salesforce, transactions, and support data. Produces the <code class="text-[10px] bg-muted px-1 rounded">gold_customer_360</code> golden record and identity graph.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 3AM', 'green')} RFM Segmentation</div>
+              <p class="text-xs text-muted-foreground">Recency-Frequency-Monetary analysis classifying merchants into 9 segments (champions, loyal, at_risk, etc.) with customizable thresholds.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 4AM', 'orange')} Churn Prediction (XGBoost)</div>
+              <p class="text-xs text-muted-foreground">Gradient-boosted decision tree model trained on behavioral features to predict 30-day merchant churn probability. Registered in Unity Catalog Model Registry.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 5AM', 'purple')} Customer Lifetime Value</div>
+              <p class="text-xs text-muted-foreground">BG/NBD + Gamma-Gamma probabilistic models (Databricks Solution Accelerator) predicting 12-month CLV and expected purchase frequency.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 6AM', 'pink')} Multi-Touch Attribution</div>
+              <p class="text-xs text-muted-foreground">Markov Chain transition probability model + heuristic models (first-touch, last-touch, linear) for marketing channel attribution (Databricks Solution Accelerator).</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 6AM', 'cyan')} Propensity Scoring</div>
+              <p class="text-xs text-muted-foreground">Three XGBoost models scoring every merchant for churn, upsell, and activation propensity to power hyper-personalization and next-best-action engines.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 3AM', 'red')} Call Center NLP</div>
+              <p class="text-xs text-muted-foreground">Speech-to-text transcription + AI sentiment analysis and topic classification using the Databricks Foundation Model API (<code class="text-[10px] bg-muted px-1 rounded">ai_analyze_sentiment()</code>).</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Monthly', 'blue')} Behavioral Clustering</div>
+              <p class="text-xs text-muted-foreground">K-Means clustering on behavioral features (transaction timing, channel preference, spend patterns) to discover natural merchant segments beyond RFM.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Bi-weekly', 'red')} AI Ad Creative</div>
+              <p class="text-xs text-muted-foreground">Foundation Model API generates personalized marketing content (email subjects, SMS, push, ad copy) per segment with tone and CTA optimization.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 7AM', 'green')} Campaign ROI</div>
+              <p class="text-xs text-muted-foreground">Analyzes campaign conversion rates, revenue lift, reactivation rates, and 30-day post-campaign volume to measure marketing effectiveness.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Agents -->
+        <div class="${sectionStyle}">
+          ${h2('AI Agents — Multi-Agent Orchestration', '<svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>')}
+          <p class="text-sm text-muted-foreground">A CDP Supervisor Agent (built with LangGraph + MLflow ResponsesAgent) orchestrates three specialists. All agents are deployed on Databricks Model Serving and use 24 Unity Catalog functions as tools.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="md:col-span-2 rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2">
+              <div class="font-semibold flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center"><svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg></div>
+                CDP Supervisor Agent (Primary Entry Point)
+              </div>
+              <p class="text-xs text-muted-foreground">Routes natural-language queries to the right specialist domain. Combines cross-domain insights (e.g., "at-risk merchants with high CLV and negative call sentiment"). Has access to all 24 UC functions + Genie Space for ad-hoc SQL.</p>
+              <div class="text-xs font-mono text-muted-foreground">Model: <span class="text-primary">Meta Llama 3.3 70B Instruct</span> &bull; Endpoint: <span class="text-primary">main-cdp-cdp_supervisor_agent</span></div>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm">Churn Prevention Specialist</div>
+              <p class="text-xs text-muted-foreground">Identifies at-risk merchants, explains churn drivers, and recommends retention strategies using health scores, propensity models, and segment data.</p>
+              <div class="text-xs text-muted-foreground">Tools: get_churn_kpis, get_at_risk_merchants, lookup_merchant, get_segment_summary</div>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm">Segment Campaign Specialist</div>
+              <p class="text-xs text-muted-foreground">Designs targeted campaigns by segment, recommends channel mix, and provides audience lists for activation. Uses segment distribution, merchant lists, and campaign ROI data.</p>
+              <div class="text-xs text-muted-foreground">Tools: get_segment_summary, get_segment_merchants, lookup_merchant, get_churn_kpis</div>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm">Next Best Action Specialist</div>
+              <p class="text-xs text-muted-foreground">Prioritizes the optimal action, channel, and timing for each merchant based on health score, propensity, segment, and historical action effectiveness.</p>
+              <div class="text-xs text-muted-foreground">Tools: get_next_best_actions, get_nba_summary, get_health_scores, get_action_history, get_action_log_summary</div>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm">AI/BI Genie Space (Natural Language SQL)</div>
+              <p class="text-xs text-muted-foreground">Enables any user to ask questions in natural language across all 20+ gold tables. The Genie Space is configured with SQL instructions and sample prompts that understand the Getnet data model.</p>
+              <div class="text-xs text-muted-foreground">Tables: 20+ gold tables &bull; Pre-configured SQL context &bull; 10 sample prompts</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- UC Functions -->
+        <div class="${sectionStyle}">
+          ${h2('Unity Catalog Functions (Agent Tools)', '<svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>')}
+          <p class="text-sm text-muted-foreground">24 SQL/Python functions registered in <code class="text-xs font-mono bg-muted px-1 rounded">main.cdp</code> serve as governed, reusable tools for AI agents. Each function queries gold tables and returns structured results.</p>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            ${['lookup_merchant', 'get_at_risk_merchants', 'get_segment_summary', 'get_segment_merchants', 'get_next_best_actions', 'get_nba_summary', 'get_health_scores', 'get_action_history', 'get_action_log_summary', 'get_churn_kpis', 'get_clv_rankings', 'get_clv_summary', 'get_channel_attribution', 'get_behavioral_segments', 'get_support_analytics', 'get_support_kpis', 'get_call_center_agents', 'get_call_center_sentiment', 'get_personalization_signals', 'get_ad_creative', 'get_campaign_roi', 'get_audience', 'get_anomaly_alerts', 'get_merchant_timeline'].map(fn =>
+              '<div class="rounded-md bg-muted/50 px-2.5 py-1.5 font-mono text-[11px] text-muted-foreground hover:text-foreground transition-colors">' + fn + '</div>'
+            ).join('')}
+          </div>
+        </div>
+
+        <!-- Databricks Resources -->
+        <div class="${sectionStyle}">
+          ${h2('Databricks Resources (Asset Bundles)', '<svg class="w-5 h-5 text-chart-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>')}
+          <p class="text-sm text-muted-foreground">All infrastructure is defined as code using Databricks Asset Bundles (DABs) for repeatable multi-environment deployment.</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">${tblHead(['Resource Type', 'Name', 'Purpose'])}
+              <tbody>
+                ${tblRow([pill('Pipeline', 'green'), '<strong>CDP Bronze Ingestion</strong>', 'Lakeflow SDP pipeline ingesting raw data from all 5 source systems into Bronze streaming tables'])}
+                ${tblRow([pill('Pipeline', 'green'), '<strong>CDP Silver Transformations</strong>', 'Lakeflow SDP pipeline producing cleansed, conformed Silver materialized views'])}
+                ${tblRow([pill('Pipeline', 'green'), '<strong>CDP Gold Golden Record</strong>', 'Lakeflow SDP pipeline producing 20+ Gold tables including the golden record and all analytics'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Identity Resolution</strong>', 'Daily job running probabilistic entity matching to produce the golden_id master record'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Churn Model Training</strong>', 'Daily XGBoost churn prediction model training with MLflow experiment tracking'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Segmentation Refresh</strong>', 'Daily RFM segmentation refresh classifying merchants into 9 behavioral segments'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Customer Lifetime Value</strong>', 'Daily BG/NBD + Gamma-Gamma CLV model training (Solution Accelerator)'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Multi-Touch Attribution</strong>', 'Daily Markov Chain + heuristic channel attribution (Solution Accelerator)'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Behavioral Segmentation</strong>', 'Monthly K-Means clustering on behavioral features'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Call Center NLP</strong>', 'Daily speech-to-text + sentiment analysis using Foundation Model API'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Propensity Scoring</strong>', 'Daily churn/upsell/activation propensity model scoring'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Ad Creative Generation</strong>', 'Bi-weekly AI content generation per segment using Foundation Model API'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Campaign ROI Analysis</strong>', 'Daily campaign effectiveness and revenue lift analysis'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Deploy AI Agents</strong>', 'On-demand deployment of CDP Supervisor + 3 specialist agents to Model Serving'])}
+                ${tblRow([pill('Dashboard', 'purple'), '<strong>Customer 360 Overview</strong>', 'AI/BI Lakeview dashboard with merchant health, segments, and volume trends'])}
+                ${tblRow([pill('Dashboard', 'purple'), '<strong>Churn Risk Analysis</strong>', 'AI/BI Lakeview dashboard with churn predictions and at-risk merchant drill-down'])}
+                ${tblRow([pill('Dashboard', 'purple'), '<strong>Merchant Segmentation</strong>', 'AI/BI Lakeview dashboard with RFM segment distribution and migration flows'])}
+                ${tblRow([pill('Dashboard', 'purple'), '<strong>Next Best Actions</strong>', 'AI/BI Lakeview dashboard with action queue and priority scoring'])}
+                ${tblRow([pill('Dashboard', 'purple'), '<strong>Support Analytics</strong>', 'AI/BI Lakeview dashboard with CSAT, resolution times, and SLA metrics'])}
+                ${tblRow([pill('Dashboard', 'purple'), '<strong>Call Center Analytics</strong>', 'AI/BI Lakeview dashboard with agent performance and sentiment trends'])}
+                ${tblRow([pill('Genie Space', 'pink'), '<strong>Merchant 360 Analytics</strong>', 'Natural language SQL interface across all 20+ gold tables with contextual SQL instructions'])}
+                ${tblRow([pill('App', 'yellow'), '<strong>CDP Customer 360 App</strong>', 'FastAPI + Tailwind CSS full-stack application with 13 analytics pages + AI chat panel'])}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- How it creates the 360 profile -->
+        <div class="${sectionStyle}">
+          ${h2('Building the 360 Profile — How It All Connects', '<svg class="w-5 h-5 text-chart-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>')}
+          <div class="space-y-4 text-sm text-muted-foreground leading-relaxed">
+            <div class="flex gap-3">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 font-bold text-xs">1</div>
+              <div><strong class="text-foreground">Ingest from everywhere.</strong> Raw data streams in from Salesforce (CRM), payment processors (transactions), Zendesk (support), Genesys (call center), and marketing platforms — each into its own Bronze streaming table via Lakeflow Spark Declarative Pipelines with Photon acceleration and schema enforcement.</div>
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full bg-slate-400/20 flex items-center justify-center text-slate-300 font-bold text-xs">2</div>
+              <div><strong class="text-foreground">Cleanse and conform.</strong> Silver materialized views standardize schemas, handle nulls, cast types, and join across sources. Business keys are aligned so that a Salesforce account, a transaction merchant, and a Zendesk requester can all be linked.</div>
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full bg-yellow-400/20 flex items-center justify-center text-yellow-300 font-bold text-xs">3</div>
+              <div><strong class="text-foreground">Resolve identities.</strong> The Identity Resolution job uses probabilistic and deterministic matching (fuzzy name, email, phone, MCC code) to collapse fragmented records into a single <code class="text-[11px] bg-muted px-1 rounded">golden_id</code> per merchant — the foundation of the 360 view.</div>
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 font-bold text-xs">4</div>
+              <div><strong class="text-foreground">Enrich with intelligence.</strong> 10 scheduled ML jobs layer on RFM segments, health scores, CLV predictions, churn propensity, behavioral clusters, channel attribution, call sentiment, and personalization signals — all linked back to the golden_id.</div>
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-xs">5</div>
+              <div><strong class="text-foreground">Detect and act.</strong> Real-time anomaly detection surfaces volume drops, inactivity, ticket spikes, and health collapses. The Next Best Action engine combines all signals to recommend the optimal action, channel, and urgency for every merchant.</div>
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">6</div>
+              <div><strong class="text-foreground">Serve insights everywhere.</strong> The gold layer feeds AI/BI Lakeview Dashboards, a Genie Space for natural-language SQL, a multi-agent AI system (Supervisor + 3 specialists) deployed on Model Serving, and this full-stack Databricks App — giving every team from marketing to operations a complete, actionable 360 view of every merchant.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Business Value -->
+        <div class="${sectionStyle}">
+          ${h2('Business Value & Use Cases', '<svg class="w-5 h-5 text-chart-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>')}
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="text-2xl">📉</div>
+              <div class="font-semibold text-sm">Reduce Merchant Churn</div>
+              <p class="text-xs text-muted-foreground">XGBoost churn prediction + health scoring identifies at-risk merchants before they leave. Proactive NBA engine triggers retention campaigns 30 days before predicted churn.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="text-2xl">💰</div>
+              <div class="font-semibold text-sm">Maximize Campaign ROI</div>
+              <p class="text-xs text-muted-foreground">Multi-touch attribution reveals which channels drive conversion. AI-generated creative optimizes messaging per segment. Closed-loop tracking measures real revenue lift.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="text-2xl">🎯</div>
+              <div class="font-semibold text-sm">Hyper-Personalization</div>
+              <p class="text-xs text-muted-foreground">Propensity models + personalization signals enable right-message, right-channel, right-time outreach. Each merchant gets content tailored to their behavior and preferences.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="text-2xl">🔍</div>
+              <div class="font-semibold text-sm">Unified Merchant View</div>
+              <p class="text-xs text-muted-foreground">Identity resolution collapses fragmented records into a single golden profile enriched with 360-degree data: transactions, support, calls, campaigns, and ML scores.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="text-2xl">🤖</div>
+              <div class="font-semibold text-sm">Conversational Intelligence</div>
+              <p class="text-xs text-muted-foreground">Natural language access to all CDP data via AI agents and Genie Spaces. Ask complex cross-domain questions without writing SQL — the Supervisor routes to the right specialist.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="text-2xl">⚡</div>
+              <div class="font-semibold text-sm">Real-Time Anomaly Detection</div>
+              <p class="text-xs text-muted-foreground">Automated alerts for volume drops, inactivity, ticket spikes, and health collapses. Revenue-at-risk quantification helps prioritize the most impactful interventions.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Technology Stack -->
+        <div class="${sectionStyle}">
+          ${h2('Technology Stack', '<svg class="w-5 h-5 text-chart-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"></path></svg>')}
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div class="rounded-lg border border-border p-3 space-y-1">
+              <div class="font-semibold text-muted-foreground uppercase text-[10px]">Compute</div>
+              <div>Serverless SQL Warehouse</div>
+              <div>Photon-accelerated Spark</div>
+              <div>Databricks Apps Runtime</div>
+            </div>
+            <div class="rounded-lg border border-border p-3 space-y-1">
+              <div class="font-semibold text-muted-foreground uppercase text-[10px]">Data Engineering</div>
+              <div>Lakeflow SDP (DLT)</div>
+              <div>Auto Loader</div>
+              <div>Lakeflow Connect</div>
+            </div>
+            <div class="rounded-lg border border-border p-3 space-y-1">
+              <div class="font-semibold text-muted-foreground uppercase text-[10px]">AI / ML</div>
+              <div>XGBoost, K-Means, BG/NBD</div>
+              <div>Foundation Model API</div>
+              <div>MLflow 3, LangGraph</div>
+            </div>
+            <div class="rounded-lg border border-border p-3 space-y-1">
+              <div class="font-semibold text-muted-foreground uppercase text-[10px]">Governance</div>
+              <div>Unity Catalog</div>
+              <div>UC Functions (Tools)</div>
+              <div>Asset Bundles (DABs)</div>
+            </div>
+            <div class="rounded-lg border border-border p-3 space-y-1">
+              <div class="font-semibold text-muted-foreground uppercase text-[10px]">Serving</div>
+              <div>Model Serving (Agents)</div>
+              <div>AI/BI Genie Spaces</div>
+              <div>Lakeview Dashboards</div>
+            </div>
+            <div class="rounded-lg border border-border p-3 space-y-1">
+              <div class="font-semibold text-muted-foreground uppercase text-[10px]">Application</div>
+              <div>FastAPI (Python)</div>
+              <div>Tailwind CSS</div>
+              <div>Chart.js</div>
+            </div>
+            <div class="rounded-lg border border-border p-3 space-y-1">
+              <div class="font-semibold text-muted-foreground uppercase text-[10px]">Integration</div>
+              <div>Salesforce, Zendesk</div>
+              <div>Genesys Cloud</div>
+              <div>Hightouch (Reverse ETL)</div>
+            </div>
+            <div class="rounded-lg border border-border p-3 space-y-1">
+              <div class="font-semibold text-muted-foreground uppercase text-[10px]">LLM</div>
+              <div>Meta Llama 3.3 70B</div>
+              <div>ai_query(), ai_analyze_sentiment()</div>
+              <div>ResponsesAgent Interface</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-xs text-muted-foreground pb-4">
+          Built with the Databricks Lakehouse Platform &bull; PagoNxt Getnet Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, and AI/BI
+        </div>
+      </div>`;
     }
 
     initApp();
