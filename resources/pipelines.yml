@@ -41,7 +41,7 @@ resources:
           group_name: "users"
 
     cdp_gold_identity:
-      name: "[${bundle.target}] 03 CDP Gold Golden Record"
+      name: "[${bundle.target}] 04 CDP Gold Analytics"
       catalog: ${var.catalog}
       target: ${var.schema}
       libraries:

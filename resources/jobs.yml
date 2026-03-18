@@ -1,5 +1,5 @@
 # PagoNxt Getnet CDP - Jobs for Data Generation, ML, Identity Resolution, and AI Agents
-# Execution order: 00 (data gen), then pipelines 01-03, then jobs 04-14
+# Execution order: 00 (data gen), pipelines 01-02, job 03 (identity resolution), pipeline 04 (gold), then jobs 05-15
 # All jobs use serverless compute for faster startup and no cluster management.
 
 resources:
@@ -20,7 +20,7 @@ resources:
           group_name: "users"
 
     identity_resolution:
-      name: "[${bundle.target}] 04 CDP Identity Resolution"
+      name: "[${bundle.target}] 03 CDP Identity Resolution"
       description: "Customer Entity Resolution - produces gold_customer_360 golden record"
       tasks:
         - task_key: identity_resolution
