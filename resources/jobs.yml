@@ -45,13 +45,11 @@ resources:
 
     segmentation_refresh:
       name: "[${bundle.target}] 05 CDP Segmentation Refresh"
-      description: "Refresh merchant segments (RFM, clustering) via SQL warehouse"
+      description: "Triggers the Gold Analytics pipeline to refresh all materialized views including segments"
       tasks:
-        - task_key: segmentation
-          sql_task:
-            file:
-              path: ../src/cdp_etl/setup/refresh_segmentation.sql
-            warehouse_id: ${var.warehouse_id}
+        - task_key: refresh_gold_pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.cdp_gold_identity.id}
       schedule:
         quartz_cron_expression: "0 0 3 * * ?"
         timezone_id: "America/Buenos_Aires"
