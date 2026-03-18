@@ -1,0 +1,32 @@
+# PagoNxt Getnet CDP - SQL Alerts for pipeline monitoring
+# Alerts on pipeline failures (requires warehouse_id to be set)
+
+resources:
+  alerts:
+    pipeline_failures:
+      display_name: "[${bundle.target}] CDP Pipeline Failure Alert"
+      query_text: |
+        SELECT COALESCE(COUNT(*), 0) AS failure_count
+        FROM system.operational_data.pipeline_runs
+        WHERE status = 'FAILED'
+          AND start_time > CURRENT_TIMESTAMP() - INTERVAL 24 HOURS
+      warehouse_id: ${var.warehouse_id}
+      evaluation:
+        comparison_operator: "GREATER_THAN"
+        source:
+          name: "failure_count"
+          display: "failure_count"
+        threshold:
+          value:
+            double_value: 0
+        notification:
+          notify_on_ok: false
+          subscriptions:
+            - user_email: "${workspace.current_user.userName}"
+      schedule:
+        pause_status: "UNPAUSED"
+        quartz_cron_schedule: "0 0 */6 * * ?"
+        timezone_id: "America/Buenos_Aires"
+      permissions:
+        - level: CAN_RUN
+          group_name: "users"

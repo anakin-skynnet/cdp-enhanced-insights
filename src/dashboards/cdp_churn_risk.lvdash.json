@@ -1,0 +1,342 @@
+{
+  "datasets": [
+    {
+      "name": "churn_summary",
+      "displayName": "Churn Risk Summary",
+      "queryLines": [
+        "SELECT ",
+        "  COUNT(DISTINCT CASE WHEN s.segment IN ('at_risk', 'cant_lose') THEN c.golden_id END) AS at_risk_merchants, ",
+        "  COUNT(DISTINCT CASE WHEN s.segment = 'hibernating' THEN c.golden_id END) AS hibernating_merchants, ",
+        "  COUNT(DISTINCT CASE WHEN e.days_since_last_txn > 90 THEN c.golden_id END) AS churned_90d, ",
+        "  COUNT(DISTINCT c.golden_id) AS total_merchants, ",
+        "  ROUND(COUNT(DISTINCT CASE WHEN e.days_since_last_txn > 90 THEN c.golden_id END) * 100.0 / ",
+        "    NULLIF(COUNT(DISTINCT c.golden_id), 0), 1) AS churn_rate_pct ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id"
+      ]
+    },
+    {
+      "name": "churn_by_segment",
+      "displayName": "Churn Risk by Segment",
+      "queryLines": [
+        "SELECT ",
+        "  COALESCE(s.segment, 'unassigned') AS segment, ",
+        "  COUNT(DISTINCT c.golden_id) AS merchant_count, ",
+        "  COALESCE(SUM(e.txn_volume), 0) AS volume_at_risk, ",
+        "  COALESCE(ROUND(AVG(e.days_since_last_txn), 0), 0) AS avg_days_inactive ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "GROUP BY COALESCE(s.segment, 'unassigned') ",
+        "ORDER BY merchant_count DESC"
+      ]
+    },
+    {
+      "name": "churn_recency_dist",
+      "displayName": "Recency Distribution",
+      "queryLines": [
+        "SELECT ",
+        "  CASE ",
+        "    WHEN e.days_since_last_txn <= 7 THEN '0-7 days' ",
+        "    WHEN e.days_since_last_txn <= 30 THEN '8-30 days' ",
+        "    WHEN e.days_since_last_txn <= 60 THEN '31-60 days' ",
+        "    WHEN e.days_since_last_txn <= 90 THEN '61-90 days' ",
+        "    WHEN e.days_since_last_txn <= 180 THEN '91-180 days' ",
+        "    ELSE '180+ days' ",
+        "  END AS recency_bucket, ",
+        "  CASE ",
+        "    WHEN e.days_since_last_txn <= 7 THEN 1 ",
+        "    WHEN e.days_since_last_txn <= 30 THEN 2 ",
+        "    WHEN e.days_since_last_txn <= 60 THEN 3 ",
+        "    WHEN e.days_since_last_txn <= 90 THEN 4 ",
+        "    WHEN e.days_since_last_txn <= 180 THEN 5 ",
+        "    ELSE 6 ",
+        "  END AS bucket_order, ",
+        "  COUNT(DISTINCT c.golden_id) AS merchant_count ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "GROUP BY 1, 2 ",
+        "ORDER BY bucket_order"
+      ]
+    },
+    {
+      "name": "churn_at_risk_detail",
+      "displayName": "At-Risk Merchant Details",
+      "queryLines": [
+        "SELECT ",
+        "  c.golden_id, ",
+        "  COALESCE(c.first_name, '') AS merchant_name, ",
+        "  c.email, ",
+        "  COALESCE(s.segment, 'unassigned') AS segment, ",
+        "  COALESCE(e.txn_volume, 0) AS txn_volume, ",
+        "  COALESCE(e.txn_count, 0) AS txn_count, ",
+        "  COALESCE(e.ticket_count, 0) AS ticket_count, ",
+        "  COALESCE(e.days_since_last_txn, -1) AS days_since_last_txn ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "WHERE s.segment IN ('at_risk', 'cant_lose', 'hibernating') ",
+        "ORDER BY e.txn_volume DESC NULLS LAST ",
+        "LIMIT 100"
+      ]
+    },
+    {
+      "name": "churn_volume_at_risk",
+      "displayName": "Volume at Risk by Segment",
+      "queryLines": [
+        "SELECT ",
+        "  COALESCE(s.segment, 'unassigned') AS segment, ",
+        "  COALESCE(SUM(e.txn_volume), 0) AS volume_at_risk ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "WHERE s.segment IN ('at_risk', 'cant_lose', 'hibernating') ",
+        "GROUP BY COALESCE(s.segment, 'unassigned') ",
+        "ORDER BY volume_at_risk DESC"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "churn-risk",
+      "displayName": "Churn Risk Analysis",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": ["## PagoNxt Getnet - Churn Risk Analysis"]
+            }
+          },
+          "position": {"x": 0, "y": 0, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "multilineTextboxSpec": {
+              "lines": ["Identify at-risk merchants, churn trends, and revenue at risk"]
+            }
+          },
+          "position": {"x": 0, "y": 1, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "kpi-at-risk",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "churn_summary",
+                "fields": [{"name": "at_risk_merchants", "expression": "`at_risk_merchants`"}],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {"fieldName": "at_risk_merchants", "displayName": "At-Risk Merchants"}
+              },
+              "frame": {"showTitle": true, "title": "At-Risk Merchants"}
+            }
+          },
+          "position": {"x": 0, "y": 2, "width": 2, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi-hibernating",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "churn_summary",
+                "fields": [{"name": "hibernating_merchants", "expression": "`hibernating_merchants`"}],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {"fieldName": "hibernating_merchants", "displayName": "Hibernating"}
+              },
+              "frame": {"showTitle": true, "title": "Hibernating Merchants"}
+            }
+          },
+          "position": {"x": 2, "y": 2, "width": 2, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi-churn-rate",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "churn_summary",
+                "fields": [{"name": "churn_rate_pct", "expression": "`churn_rate_pct`"}],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {"fieldName": "churn_rate_pct", "displayName": "Churn Rate (%)"}
+              },
+              "frame": {"showTitle": true, "title": "Churn Rate (90d, %)"}
+            }
+          },
+          "position": {"x": 4, "y": 2, "width": 2, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "section-analysis",
+            "multilineTextboxSpec": {
+              "lines": ["### Churn Analysis"]
+            }
+          },
+          "position": {"x": 0, "y": 5, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "chart-recency-bar",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "churn_recency_dist",
+                "fields": [
+                  {"name": "recency_bucket", "expression": "`recency_bucket`"},
+                  {"name": "merchant_count", "expression": "`merchant_count`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "recency_bucket", "scale": {"type": "categorical"}, "displayName": "Days Since Last Transaction"},
+                "y": {"fieldName": "merchant_count", "scale": {"type": "quantitative"}, "displayName": "Merchants"}
+              },
+              "frame": {"showTitle": true, "title": "Merchant Recency Distribution"}
+            }
+          },
+          "position": {"x": 0, "y": 6, "width": 3, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "chart-volume-at-risk",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "churn_volume_at_risk",
+                "fields": [
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "volume_at_risk", "expression": "`volume_at_risk`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "segment", "scale": {"type": "categorical"}, "displayName": "Risk Segment"},
+                "y": {"fieldName": "volume_at_risk", "scale": {"type": "quantitative"}, "displayName": "Revenue at Risk"}
+              },
+              "frame": {"showTitle": true, "title": "Payment Volume at Risk"}
+            }
+          },
+          "position": {"x": 3, "y": 6, "width": 3, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "section-segment-risk",
+            "multilineTextboxSpec": {
+              "lines": ["### Risk by Segment"]
+            }
+          },
+          "position": {"x": 0, "y": 12, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "table-segment-risk",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "churn_by_segment",
+                "fields": [
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "merchant_count", "expression": "`merchant_count`"},
+                  {"name": "volume_at_risk", "expression": "`volume_at_risk`"},
+                  {"name": "avg_days_inactive", "expression": "`avg_days_inactive`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "segment", "displayName": "Segment"},
+                  {"fieldName": "merchant_count", "displayName": "Merchants"},
+                  {"fieldName": "volume_at_risk", "displayName": "Payment Volume"},
+                  {"fieldName": "avg_days_inactive", "displayName": "Avg Days Inactive"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "All Segments - Churn Risk Overview"}
+            }
+          },
+          "position": {"x": 0, "y": 13, "width": 6, "height": 5}
+        },
+        {
+          "widget": {
+            "name": "section-at-risk-detail",
+            "multilineTextboxSpec": {
+              "lines": ["### At-Risk Merchant Details"]
+            }
+          },
+          "position": {"x": 0, "y": 18, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "table-at-risk-detail",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "churn_at_risk_detail",
+                "fields": [
+                  {"name": "merchant_name", "expression": "`merchant_name`"},
+                  {"name": "email", "expression": "`email`"},
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "txn_volume", "expression": "`txn_volume`"},
+                  {"name": "txn_count", "expression": "`txn_count`"},
+                  {"name": "ticket_count", "expression": "`ticket_count`"},
+                  {"name": "days_since_last_txn", "expression": "`days_since_last_txn`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "merchant_name", "displayName": "Merchant"},
+                  {"fieldName": "email", "displayName": "Email"},
+                  {"fieldName": "segment", "displayName": "Risk Segment"},
+                  {"fieldName": "txn_volume", "displayName": "Payment Volume"},
+                  {"fieldName": "txn_count", "displayName": "Transactions"},
+                  {"fieldName": "ticket_count", "displayName": "Tickets"},
+                  {"fieldName": "days_since_last_txn", "displayName": "Days Inactive"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "Top 100 At-Risk Merchants (by volume)"}
+            }
+          },
+          "position": {"x": 0, "y": 19, "width": 6, "height": 7}
+        }
+      ]
+    }
+  ]
+}

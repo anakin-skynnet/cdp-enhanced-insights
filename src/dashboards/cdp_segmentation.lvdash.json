@@ -1,0 +1,337 @@
+{
+  "datasets": [
+    {
+      "name": "seg_overview",
+      "displayName": "Segment Overview",
+      "queryLines": [
+        "SELECT ",
+        "  COALESCE(s.segment, 'unassigned') AS segment, ",
+        "  COUNT(DISTINCT c.golden_id) AS merchant_count, ",
+        "  COALESCE(SUM(e.txn_volume), 0) AS total_volume, ",
+        "  COALESCE(ROUND(AVG(e.txn_volume), 2), 0) AS avg_volume, ",
+        "  COALESCE(ROUND(AVG(e.txn_count), 1), 0) AS avg_txn_count, ",
+        "  COALESCE(ROUND(AVG(e.days_since_last_txn), 0), 0) AS avg_recency, ",
+        "  COALESCE(ROUND(AVG(e.ticket_count), 1), 0) AS avg_tickets ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "GROUP BY COALESCE(s.segment, 'unassigned') ",
+        "ORDER BY total_volume DESC"
+      ]
+    },
+    {
+      "name": "seg_rfm_scores",
+      "displayName": "RFM Score Distribution",
+      "queryLines": [
+        "SELECT ",
+        "  COALESCE(s.segment, 'unassigned') AS segment, ",
+        "  ROUND(AVG(s.r_score), 2) AS avg_r_score, ",
+        "  ROUND(AVG(s.f_score), 2) AS avg_f_score, ",
+        "  ROUND(AVG(s.m_score), 2) AS avg_m_score, ",
+        "  COUNT(DISTINCT s.golden_id) AS merchant_count ",
+        "FROM main.cdp.gold_segments s ",
+        "GROUP BY COALESCE(s.segment, 'unassigned') ",
+        "ORDER BY merchant_count DESC"
+      ]
+    },
+    {
+      "name": "seg_volume_share",
+      "displayName": "Volume Share by Segment",
+      "queryLines": [
+        "SELECT ",
+        "  COALESCE(s.segment, 'unassigned') AS segment, ",
+        "  COALESCE(SUM(e.txn_volume), 0) AS segment_volume ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "GROUP BY COALESCE(s.segment, 'unassigned') ",
+        "ORDER BY segment_volume DESC"
+      ]
+    },
+    {
+      "name": "seg_detail",
+      "displayName": "Segment Detail",
+      "queryLines": [
+        "SELECT ",
+        "  c.golden_id, ",
+        "  COALESCE(c.first_name, '') AS merchant_name, ",
+        "  COALESCE(s.segment, 'unassigned') AS segment, ",
+        "  COALESCE(s.r_score, 0) AS r_score, ",
+        "  COALESCE(s.f_score, 0) AS f_score, ",
+        "  COALESCE(s.m_score, 0) AS m_score, ",
+        "  COALESCE(e.txn_volume, 0) AS txn_volume, ",
+        "  COALESCE(e.txn_count, 0) AS txn_count, ",
+        "  COALESCE(e.days_since_last_txn, -1) AS days_since_last_txn ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "ORDER BY e.txn_volume DESC NULLS LAST ",
+        "LIMIT 100"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "filters",
+      "displayName": "Filters",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layout": [
+        {
+          "widget": {
+            "name": "filter-segment",
+            "queries": [{
+              "name": "seg_overview_segment",
+              "query": {
+                "datasetName": "seg_overview",
+                "fields": [
+                  {"name": "segment", "expression": "`segment`"}
+                ],
+                "disaggregated": false
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "filter-multi-select",
+              "encodings": {
+                "fields": [{
+                  "fieldName": "segment",
+                  "displayName": "Segment",
+                  "queryName": "seg_overview_segment"
+                }]
+              },
+              "frame": {"showTitle": true, "title": "Segment"}
+            }
+          },
+          "position": {"x": 0, "y": 0, "width": 2, "height": 2}
+        }
+      ]
+    },
+    {
+      "name": "segmentation",
+      "displayName": "Merchant Segmentation",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": ["## PagoNxt Getnet - Merchant Segmentation"]
+            }
+          },
+          "position": {"x": 0, "y": 0, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "multilineTextboxSpec": {
+              "lines": ["RFM-based merchant segments for marketing activation and commercial strategy"]
+            }
+          },
+          "position": {"x": 0, "y": 1, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "section-distribution",
+            "multilineTextboxSpec": {
+              "lines": ["### Segment Distribution"]
+            }
+          },
+          "position": {"x": 0, "y": 2, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "chart-segment-count",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "seg_overview",
+                "fields": [
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "merchant_count", "expression": "`merchant_count`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "segment", "scale": {"type": "categorical"}, "displayName": "Segment"},
+                "y": {"fieldName": "merchant_count", "scale": {"type": "quantitative"}, "displayName": "Merchants"}
+              },
+              "frame": {"showTitle": true, "title": "Merchants per Segment"}
+            }
+          },
+          "position": {"x": 0, "y": 3, "width": 3, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "chart-volume-pie",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "seg_volume_share",
+                "fields": [
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "segment_volume", "expression": "`segment_volume`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {"fieldName": "segment_volume", "scale": {"type": "quantitative"}, "displayName": "Payment Volume"},
+                "color": {"fieldName": "segment", "scale": {"type": "categorical"}, "displayName": "Segment"}
+              },
+              "frame": {"showTitle": true, "title": "Payment Volume Share by Segment"}
+            }
+          },
+          "position": {"x": 3, "y": 3, "width": 3, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "section-rfm",
+            "multilineTextboxSpec": {
+              "lines": ["### RFM Scores by Segment"]
+            }
+          },
+          "position": {"x": 0, "y": 9, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "chart-rfm-scores",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "seg_rfm_scores",
+                "fields": [
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "avg_r_score", "expression": "`avg_r_score`"},
+                  {"name": "avg_f_score", "expression": "`avg_f_score`"},
+                  {"name": "avg_m_score", "expression": "`avg_m_score`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "mark": {"layout": "group"},
+              "encodings": {
+                "x": {"fieldName": "segment", "scale": {"type": "categorical"}, "displayName": "Segment"},
+                "y": {
+                  "scale": {"type": "quantitative"},
+                  "fields": [
+                    {"fieldName": "avg_r_score", "displayName": "Recency (R)"},
+                    {"fieldName": "avg_f_score", "displayName": "Frequency (F)"},
+                    {"fieldName": "avg_m_score", "displayName": "Monetary (M)"}
+                  ]
+                }
+              },
+              "frame": {"showTitle": true, "title": "Average RFM Scores by Segment"}
+            }
+          },
+          "position": {"x": 0, "y": 10, "width": 6, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "section-metrics",
+            "multilineTextboxSpec": {
+              "lines": ["### Segment Performance Metrics"]
+            }
+          },
+          "position": {"x": 0, "y": 16, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "table-segment-metrics",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "seg_overview",
+                "fields": [
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "merchant_count", "expression": "`merchant_count`"},
+                  {"name": "total_volume", "expression": "`total_volume`"},
+                  {"name": "avg_volume", "expression": "`avg_volume`"},
+                  {"name": "avg_txn_count", "expression": "`avg_txn_count`"},
+                  {"name": "avg_recency", "expression": "`avg_recency`"},
+                  {"name": "avg_tickets", "expression": "`avg_tickets`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "segment", "displayName": "Segment"},
+                  {"fieldName": "merchant_count", "displayName": "Merchants"},
+                  {"fieldName": "total_volume", "displayName": "Total Volume"},
+                  {"fieldName": "avg_volume", "displayName": "Avg Volume"},
+                  {"fieldName": "avg_txn_count", "displayName": "Avg Transactions"},
+                  {"fieldName": "avg_recency", "displayName": "Avg Days Inactive"},
+                  {"fieldName": "avg_tickets", "displayName": "Avg Tickets"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "Segment Performance Comparison"}
+            }
+          },
+          "position": {"x": 0, "y": 17, "width": 6, "height": 5}
+        },
+        {
+          "widget": {
+            "name": "section-detail",
+            "multilineTextboxSpec": {
+              "lines": ["### Merchant Detail (Top 100 by Volume)"]
+            }
+          },
+          "position": {"x": 0, "y": 22, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "table-merchant-detail",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "seg_detail",
+                "fields": [
+                  {"name": "merchant_name", "expression": "`merchant_name`"},
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "r_score", "expression": "`r_score`"},
+                  {"name": "f_score", "expression": "`f_score`"},
+                  {"name": "m_score", "expression": "`m_score`"},
+                  {"name": "txn_volume", "expression": "`txn_volume`"},
+                  {"name": "txn_count", "expression": "`txn_count`"},
+                  {"name": "days_since_last_txn", "expression": "`days_since_last_txn`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "merchant_name", "displayName": "Merchant"},
+                  {"fieldName": "segment", "displayName": "Segment"},
+                  {"fieldName": "r_score", "displayName": "R Score"},
+                  {"fieldName": "f_score", "displayName": "F Score"},
+                  {"fieldName": "m_score", "displayName": "M Score"},
+                  {"fieldName": "txn_volume", "displayName": "Volume"},
+                  {"fieldName": "txn_count", "displayName": "Transactions"},
+                  {"fieldName": "days_since_last_txn", "displayName": "Days Since Txn"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "Individual Merchant RFM Detail"}
+            }
+          },
+          "position": {"x": 0, "y": 23, "width": 6, "height": 7}
+        }
+      ]
+    }
+  ]
+}

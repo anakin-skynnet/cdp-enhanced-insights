@@ -1,0 +1,42 @@
+# PagoNxt Getnet CDP / Customer 360 - Databricks Asset Bundle
+# Azure Databricks deployment for dev and prod
+
+bundle:
+  name: pagonxt-getnet-cdp
+
+include:
+  - resources/pipelines.yml
+  - resources/jobs.yml
+  - resources/dashboards.yml
+  - resources/genie_spaces.yml
+  # resources/alerts.yml - SQL alerts: create manually in workspace; schema may vary by CLI version
+
+variables:
+  catalog:
+    default: "main"
+  schema:
+    default: "cdp"
+  warehouse_id:
+    default: "c60fc6392746d138"
+  schema_location_base:
+    default: "/Volumes/main/cdp/cdp_metadata/schemas"
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      profile: DEFAULT
+    variables:
+      catalog: "main"
+      schema: "cdp_dev"
+      schema_location_base: "/Volumes/main/cdp_dev/cdp_metadata/schemas"
+
+  prod:
+    mode: production
+    workspace:
+      profile: DEFAULT
+    variables:
+      catalog: "main"
+      schema: "cdp"
+      schema_location_base: "/Volumes/main/cdp/cdp_metadata/schemas"

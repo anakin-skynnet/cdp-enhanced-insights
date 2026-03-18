@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getnet CDP - Customer 360</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: 'hsl(var(--border))',
+            input: 'hsl(var(--input))',
+            ring: 'hsl(var(--ring))',
+            background: 'hsl(var(--background))',
+            foreground: 'hsl(var(--foreground))',
+            primary: { DEFAULT: 'hsl(var(--primary))', foreground: 'hsl(var(--primary-foreground))' },
+            secondary: { DEFAULT: 'hsl(var(--secondary))', foreground: 'hsl(var(--secondary-foreground))' },
+            destructive: { DEFAULT: 'hsl(var(--destructive))', foreground: 'hsl(var(--destructive-foreground))' },
+            muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted-foreground))' },
+            accent: { DEFAULT: 'hsl(var(--accent))', foreground: 'hsl(var(--accent-foreground))' },
+            card: { DEFAULT: 'hsl(var(--card))', foreground: 'hsl(var(--card-foreground))' },
+            sidebar: { DEFAULT: 'hsl(var(--sidebar))', foreground: 'hsl(var(--sidebar-foreground))', accent: 'hsl(var(--sidebar-accent))', 'accent-fg': 'hsl(var(--sidebar-accent-foreground))' },
+            chart: {
+              1: 'hsl(var(--chart-1))',
+              2: 'hsl(var(--chart-2))',
+              3: 'hsl(var(--chart-3))',
+              4: 'hsl(var(--chart-4))',
+              5: 'hsl(var(--chart-5))',
+            },
+          },
+          borderRadius: { lg: 'var(--radius)', md: 'calc(var(--radius) - 2px)', sm: 'calc(var(--radius) - 4px)' },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --background: 0 0% 3.9%;
+      --foreground: 0 0% 98%;
+      --card: 0 0% 5.5%;
+      --card-foreground: 0 0% 98%;
+      --primary: 142 71% 45%;
+      --primary-foreground: 0 0% 100%;
+      --secondary: 0 0% 14.9%;
+      --secondary-foreground: 0 0% 98%;
+      --muted: 0 0% 14.9%;
+      --muted-foreground: 0 0% 63.9%;
+      --accent: 0 0% 14.9%;
+      --accent-foreground: 0 0% 98%;
+      --destructive: 0 62.8% 30.6%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 0 0% 14.9%;
+      --input: 0 0% 14.9%;
+      --ring: 142 71% 45%;
+      --radius: 0.75rem;
+      --sidebar: 0 0% 4.5%;
+      --sidebar-foreground: 0 0% 95%;
+      --sidebar-accent: 0 0% 10%;
+      --sidebar-accent-foreground: 0 0% 95%;
+      --chart-1: 142 71% 45%;
+      --chart-2: 210 70% 50%;
+      --chart-3: 45 93% 47%;
+      --chart-4: 0 72% 51%;
+      --chart-5: 280 65% 60%;
+    }
+    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: hsl(var(--background)); color: hsl(var(--foreground)); }
+    * { box-sizing: border-box; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: hsl(var(--muted)); border-radius: 3px; }
+    @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+    @keyframes skeleton-loading { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    .skeleton { background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--accent)) 50%, hsl(var(--muted)) 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s ease-in-out infinite; border-radius: var(--radius); }
+    .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 600; line-height: 1.25rem; }
+    .badge-green { background: hsl(142 71% 45% / 0.15); color: hsl(142 71% 55%); }
+    .badge-blue { background: hsl(210 70% 50% / 0.15); color: hsl(210 70% 60%); }
+    .badge-yellow { background: hsl(45 93% 47% / 0.15); color: hsl(45 93% 57%); }
+    .badge-red { background: hsl(0 72% 51% / 0.15); color: hsl(0 72% 61%); }
+    .badge-purple { background: hsl(280 65% 60% / 0.15); color: hsl(280 65% 70%); }
+    .badge-gray { background: hsl(0 0% 40% / 0.15); color: hsl(0 0% 65%); }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border-radius: calc(var(--radius) - 2px); cursor: pointer; transition: all 0.15s; color: hsl(var(--sidebar-foreground)); font-size: 0.875rem; }
+    .nav-item:hover { background: hsl(var(--sidebar-accent)); }
+    .nav-item.active { background: hsl(var(--primary) / 0.15); color: hsl(var(--primary)); font-weight: 600; }
+    canvas { max-height: 300px; }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="w-64 shrink-0 border-r border-border bg-sidebar flex flex-col h-full">
+    <div class="flex items-center gap-3 px-4 py-5 border-b border-border">
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">G</div>
+      <div>
+        <div class="font-semibold text-sm text-sidebar-foreground">Getnet CDP</div>
+        <div class="text-xs text-muted-foreground">Customer 360</div>
+      </div>
+    </div>
+
+    <nav class="flex-1 overflow-y-auto scrollbar-thin px-3 py-4 space-y-1">
+      <div class="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Overview</div>
+      <div class="nav-item active" data-page="dashboard" onclick="navigateTo('dashboard')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-page="merchants" onclick="navigateTo('merchants')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        Merchants
+      </div>
+      <div class="nav-item" data-page="nba" onclick="navigateTo('nba')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        Next Best Actions
+      </div>
+      <div class="nav-item" data-page="anomalies" onclick="navigateTo('anomalies')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        Anomaly Alerts
+      </div>
+
+      <div class="px-3 py-1.5 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Analytics</div>
+      <div class="nav-item" data-page="support" onclick="navigateTo('support')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        Support Analytics
+      </div>
+      <div class="nav-item" data-page="callcenter" onclick="navigateTo('callcenter')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+        Call Center
+      </div>
+      <div class="nav-item" data-page="roi" onclick="navigateTo('roi')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        Campaign ROI
+      </div>
+
+      <div class="px-3 py-1.5 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activation</div>
+      <div class="nav-item" data-page="audiences" onclick="navigateTo('audiences')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path></svg>
+        Audiences
+      </div>
+      <div class="nav-item" data-page="personalization" onclick="navigateTo('personalization')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Personalization
+      </div>
+      <div class="nav-item" data-page="creative" onclick="navigateTo('creative')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        Ad Creative
+      </div>
+
+      <div class="px-3 py-1.5 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Accelerators</div>
+      <div class="nav-item" data-page="clv" onclick="navigateTo('clv')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Customer LTV
+      </div>
+      <div class="nav-item" data-page="attribution" onclick="navigateTo('attribution')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+        Attribution
+      </div>
+      <div class="nav-item" data-page="behavioral" onclick="navigateTo('behavioral')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"></path></svg>
+        Behavioral
+      </div>
+    </nav>
+
+    <!-- Data source indicator -->
+    <div id="data-source-indicator" class="px-4 py-3 border-t border-border">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div id="ds-dot" class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse-dot"></div>
+          <span id="ds-label" class="text-xs text-muted-foreground">Loading...</span>
+        </div>
+        <button onclick="toggleDataInfo()" class="text-xs text-muted-foreground hover:text-foreground transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </button>
+      </div>
+      <div id="ds-details" class="hidden mt-2 p-2 rounded-md bg-muted text-xs text-muted-foreground space-y-1">
+        <div>Source: <span id="ds-source" class="font-mono">-</span></div>
+        <div>Catalog: <span id="ds-catalog" class="font-mono">-</span></div>
+        <div>Schema: <span id="ds-schema" class="font-mono">-</span></div>
+        <div>Connected: <span id="ds-connected" class="font-mono">-</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="flex-1 flex flex-col overflow-hidden">
+    <!-- Header -->
+    <header class="h-14 shrink-0 border-b border-border flex items-center justify-between px-6">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="lg:hidden p-1.5 rounded-md hover:bg-accent">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+        <h1 id="page-title" class="text-lg font-semibold">Dashboard</h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="freshness-btn" onclick="navigateTo('freshness')" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-md text-xs hover:bg-accent transition-colors" title="Data freshness">
+          <div id="freshness-dot" class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+          <span id="freshness-label" class="text-muted-foreground">Data: Fresh</span>
+        </button>
+        <div class="relative">
+          <input id="global-search" type="text" placeholder="Search merchants..."
+            class="h-9 w-56 rounded-md border border-input bg-background px-3 py-1 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            oninput="onGlobalSearch(this.value)" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Scrollable page area -->
+    <div id="page-container" class="flex-1 overflow-y-auto scrollbar-thin p-6">
+      <!-- Pages are rendered here dynamically -->
+    </div>
+  </main>
+
+  <!-- Merchant Detail Sheet (slide-over) -->
+  <div id="merchant-sheet" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/50" onclick="closeMerchantSheet()"></div>
+    <div class="absolute right-0 top-0 bottom-0 w-full max-w-lg bg-card border-l border-border overflow-y-auto scrollbar-thin">
+      <div class="sticky top-0 bg-card/95 backdrop-blur border-b border-border px-6 py-4 flex items-center justify-between z-10">
+        <h2 class="text-lg font-semibold">Merchant Detail</h2>
+        <button onclick="closeMerchantSheet()" class="p-1.5 rounded-md hover:bg-accent">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+      <div id="merchant-sheet-content" class="p-6"></div>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    // State & Config
+    // ═══════════════════════════════════════════════════════════
+    let currentPage = 'dashboard';
+    const chartInstances = {};
+    const CHART_COLORS = [
+      'hsl(142, 71%, 45%)', 'hsl(210, 70%, 50%)', 'hsl(45, 93%, 47%)',
+      'hsl(0, 72%, 51%)', 'hsl(280, 65%, 60%)', 'hsl(190, 80%, 45%)',
+      'hsl(30, 90%, 55%)', 'hsl(330, 70%, 50%)', 'hsl(160, 60%, 40%)',
+    ];
+
+    // ═══════════════════════════════════════════════════════════
+    // API Helper
+    // ═══════════════════════════════════════════════════════════
+    async function api(path, opts) {
+      try {
+        const r = await fetch(path, opts);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return await r.json();
+      } catch (e) {
+        console.error(`API error ${path}:`, e);
+        return null;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Component Helpers
+    // ═══════════════════════════════════════════════════════════
+    function card(title, content, className = '') {
+      return `<div class="rounded-lg border border-border bg-card p-5 ${className}"><div class="text-sm font-medium text-muted-foreground mb-1">${title}</div>${content}</div>`;
+    }
+
+    function kpiCard(title, value, subtitle = '', trend = '') {
+      const trendHtml = trend ? `<span class="text-xs ${trend.startsWith('+') || trend.startsWith('↑') ? 'text-green-400' : 'text-red-400'}">${trend}</span>` : '';
+      return card(title, `<div class="text-2xl font-bold tracking-tight">${value}</div>${subtitle ? `<div class="text-xs text-muted-foreground mt-1">${subtitle} ${trendHtml}</div>` : ''}`);
+    }
+
+    function skeleton(h = 'h-8', w = 'w-full') {
+      return `<div class="skeleton ${h} ${w}"></div>`;
+    }
+
+    function skeletonKpis(n = 4) {
+      return `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">${Array(n).fill('').map(() => card('', skeleton('h-8') + skeleton('h-3', 'w-2/3 mt-2'))).join('')}</div>`;
+    }
+
+    function badge(text, variant = 'gray') {
+      return `<span class="badge badge-${variant}">${text}</span>`;
+    }
+
+    function segmentBadge(seg) {
+      const map = {
+        champions: 'green', loyal: 'blue', potential_loyalists: 'blue',
+        new_customers: 'purple', promising: 'purple',
+        at_risk: 'red', cant_lose: 'red', hibernating: 'yellow', need_attention: 'yellow',
+      };
+      return badge(seg.replace(/_/g, ' '), map[seg] || 'gray');
+    }
+
+    function healthBadge(tier) {
+      const map = { excellent: 'green', good: 'blue', fair: 'yellow', poor: 'red', critical: 'red' };
+      return badge(tier, map[tier] || 'gray');
+    }
+
+    function urgencyBadge(u) {
+      const map = { immediate: 'red', this_week: 'yellow', this_month: 'blue', next_cycle: 'gray' };
+      return badge(u.replace(/_/g, ' '), map[u] || 'gray');
+    }
+
+    function fmtNum(n) {
+      if (n == null) return '-';
+      if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+      if (Math.abs(n) >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+      return n.toLocaleString();
+    }
+
+    function fmtCurrency(n) { return '$' + fmtNum(n); }
+
+    function pct(n) { return n != null ? n.toFixed(1) + '%' : '-'; }
+
+    function tableWrap(headers, rows) {
+      return `
+        <div class="rounded-lg border border-border overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead><tr class="border-b border-border bg-muted/50">${headers.map(h => `<th class="text-left px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">${h}</th>`).join('')}</tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }
+
+    function destroyChart(id) {
+      if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+    }
+
+    function createChart(canvasId, type, data, options = {}) {
+      destroyChart(canvasId);
+      const ctx = document.getElementById(canvasId);
+      if (!ctx) return;
+      const defaults = {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: 'hsl(0,0%,63.9%)', font: { size: 11 } } } },
+        scales: type === 'doughnut' || type === 'pie' ? {} : {
+          x: { ticks: { color: 'hsl(0,0%,63.9%)', font: { size: 10 } }, grid: { color: 'hsl(0,0%,14.9%)' } },
+          y: { ticks: { color: 'hsl(0,0%,63.9%)', font: { size: 10 } }, grid: { color: 'hsl(0,0%,14.9%)' } },
+        }
+      };
+      chartInstances[canvasId] = new Chart(ctx, { type, data, options: { ...defaults, ...options } });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Navigation
+    // ═══════════════════════════════════════════════════════════
+    function navigateTo(page) {
+      currentPage = page;
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+      const titles = {
+        dashboard: 'Dashboard', merchants: 'Merchants', nba: 'Next Best Actions', anomalies: 'Anomaly Alerts',
+        support: 'Support Analytics', callcenter: 'Call Center', roi: 'Campaign ROI',
+        audiences: 'Audiences', personalization: 'Personalization', creative: 'Ad Creative',
+        clv: 'Customer Lifetime Value', attribution: 'Channel Attribution', behavioral: 'Behavioral Segments',
+        freshness: 'Data Freshness',
+      };
+      document.getElementById('page-title').textContent = titles[page] || page;
+      renderPage(page);
+    }
+
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('hidden');
+    }
+
+    function toggleDataInfo() {
+      document.getElementById('ds-details').classList.toggle('hidden');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Search
+    // ═══════════════════════════════════════════════════════════
+    let searchTimeout;
+    function onGlobalSearch(val) {
+      clearTimeout(searchTimeout);
+      if (val.length < 2) return;
+      searchTimeout = setTimeout(() => {
+        navigateTo('merchants');
+        setTimeout(() => loadMerchants(val), 100);
+      }, 400);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Page Router
+    // ═══════════════════════════════════════════════════════════
+    async function renderPage(page) {
+      const container = document.getElementById('page-container');
+      const loaders = {
+        dashboard: loadDashboard,
+        merchants: () => loadMerchants(''),
+        nba: loadNBA,
+        anomalies: loadAnomalies,
+        support: loadSupport,
+        callcenter: loadCallCenter,
+        roi: loadROI,
+        audiences: loadAudiences,
+        personalization: loadPersonalization,
+        creative: loadCreative,
+        clv: loadCLV,
+        attribution: loadAttribution,
+        behavioral: loadBehavioral,
+        freshness: loadFreshness,
+      };
+      container.innerHTML = `<div class="space-y-6">${skeletonKpis()}<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">${card('', skeleton('h-64'))}${card('', skeleton('h-64'))}</div></div>`;
+      if (loaders[page]) await loaders[page]();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Dashboard
+    // ═══════════════════════════════════════════════════════════
+    async function loadDashboard() {
+      const [kpis, segs, health] = await Promise.all([
+        api('/api/dashboard/kpis'),
+        api('/api/dashboard/segments'),
+        api('/api/dashboard/health'),
+      ]);
+      const c = document.getElementById('page-container');
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${kpiCard('Total Merchants', fmtNum(kpis?.total_merchants), 'Active in platform')}
+            ${kpiCard('Total Volume', fmtCurrency(kpis?.total_volume), 'Processing volume')}
+            ${kpiCard('At-Risk Merchants', fmtNum(kpis?.at_risk_merchants), 'Need attention', '')}
+            ${kpiCard('Avg Health Score', kpis?.avg_health_score?.toFixed(1) || '-', 'Out of 100')}
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${card('Segment Distribution', '<div style="height:300px"><canvas id="chart-segments"></canvas></div>')}
+            ${card('Health Distribution', '<div style="height:300px"><canvas id="chart-health"></canvas></div>')}
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            ${kpiCard('Avg Volume', fmtCurrency(kpis?.avg_volume), 'Per merchant')}
+            ${kpiCard('Total Tickets', fmtNum(kpis?.total_tickets), 'Support interactions')}
+            ${kpiCard('Avg Recency', (kpis?.avg_recency || 0) + ' days', 'Since last transaction')}
+          </div>
+        </div>`;
+      if (segs) {
+        createChart('chart-segments', 'doughnut', {
+          labels: segs.map(s => s.segment.replace(/_/g, ' ')),
+          datasets: [{ data: segs.map(s => s.merchant_count), backgroundColor: CHART_COLORS.slice(0, segs.length), borderWidth: 0 }]
+        }, { cutout: '60%' });
+      }
+      if (health) {
+        createChart('chart-health', 'bar', {
+          labels: health.map(h => h.health_tier),
+          datasets: [
+            { label: 'Count', data: health.map(h => h.merchant_count), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 6 },
+            { label: 'Avg Score', data: health.map(h => h.avg_score), backgroundColor: 'hsl(210,70%,50%,0.7)', borderRadius: 6 },
+          ]
+        });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Merchants
+    // ═══════════════════════════════════════════════════════════
+    async function loadMerchants(search = '') {
+      const c = document.getElementById('page-container');
+      const merchants = await api(`/api/merchants?search=${encodeURIComponent(search)}&limit=50`);
+      if (!merchants) { c.innerHTML = card('Error', '<p class="text-muted-foreground">Failed to load merchants.</p>'); return; }
+      const rows = merchants.map(m => `
+        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${m.golden_id}')">
+          <td class="px-4 py-3 font-mono text-xs">${m.golden_id}</td>
+          <td class="px-4 py-3 font-medium">${m.merchant_name}</td>
+          <td class="px-4 py-3">${segmentBadge(m.segment)}</td>
+          <td class="px-4 py-3">${healthBadge(m.health_tier)}</td>
+          <td class="px-4 py-3 text-right font-mono">${m.health_score}</td>
+          <td class="px-4 py-3 text-right font-mono">${fmtCurrency(m.txn_volume)}</td>
+          <td class="px-4 py-3 text-right">${m.days_since_last_txn}d</td>
+          <td class="px-4 py-3 text-right">${m.ticket_count}</td>
+        </tr>`).join('');
+      c.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center gap-3">
+            <input type="text" value="${search}" placeholder="Filter merchants..."
+              class="h-9 w-72 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              oninput="loadMerchants(this.value)" />
+            <span class="text-sm text-muted-foreground">${merchants.length} merchants</span>
+          </div>
+          ${tableWrap(['ID', 'Name', 'Segment', 'Health', 'Score', 'Volume', 'Recency', 'Tickets'], rows)}
+        </div>`;
+    }
+
+    async function openMerchant(gid) {
+      const sheet = document.getElementById('merchant-sheet');
+      const content = document.getElementById('merchant-sheet-content');
+      sheet.classList.remove('hidden');
+      content.innerHTML = `<div class="space-y-4">${skeleton('h-6', 'w-1/2')}${skeleton('h-4', 'w-full')}${skeleton('h-32')}${skeleton('h-32')}</div>`;
+      const [m, timeline] = await Promise.all([api(`/api/merchants/${gid}`), api(`/api/merchants/${gid}/timeline`)]);
+      if (!m) { content.innerHTML = '<p class="text-muted-foreground">Merchant not found.</p>'; return; }
+
+      const eventIcon = { transaction: 'text-green-400', support_ticket: 'text-yellow-400', nba_recommendation: 'text-blue-400', action_taken: 'text-purple-400', anomaly: 'text-red-400', health_update: 'text-cyan-400' };
+      const timelineHtml = (timeline || []).map(e => `
+        <div class="flex gap-3 py-2">
+          <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${eventIcon[e.event_type] || 'text-muted-foreground'} bg-current"></div>
+          <div class="min-w-0">
+            <div class="text-xs text-muted-foreground">${e.event_date} &middot; ${e.source}</div>
+            <div class="text-sm">${e.description}</div>
+            ${e.detail ? `<div class="text-xs text-muted-foreground">${e.detail}</div>` : ''}
+          </div>
+        </div>`).join('');
+
+      content.innerHTML = `
+        <div class="space-y-6">
+          <div>
+            <h3 class="text-xl font-bold">${m.merchant_name}</h3>
+            <p class="text-sm text-muted-foreground font-mono">${m.golden_id}</p>
+          </div>
+          <div class="flex flex-wrap gap-2">${segmentBadge(m.segment)} ${healthBadge(m.health_tier)} ${m.urgency ? urgencyBadge(m.urgency) : ''}</div>
+          <div class="grid grid-cols-2 gap-3">
+            ${kpiCard('Health Score', m.health_score + '/100', '')}
+            ${kpiCard('Volume', fmtCurrency(m.txn_volume), m.txn_count + ' txns')}
+            ${kpiCard('Recency', m.days_since_last_txn + 'd', 'Since last txn')}
+            ${kpiCard('Tickets', m.ticket_count, 'Support tickets')}
+          </div>
+          <div class="rounded-lg border border-border p-4 space-y-3">
+            <h4 class="font-semibold text-sm">RFM Scores</h4>
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div><div class="text-xs text-muted-foreground">Recency</div><div class="text-lg font-bold">${m.r_score}</div></div>
+              <div><div class="text-xs text-muted-foreground">Frequency</div><div class="text-lg font-bold">${m.f_score}</div></div>
+              <div><div class="text-xs text-muted-foreground">Monetary</div><div class="text-lg font-bold">${m.m_score}</div></div>
+            </div>
+          </div>
+          ${m.primary_action ? `
+          <div class="rounded-lg border border-border p-4 space-y-2">
+            <h4 class="font-semibold text-sm">Next Best Action</h4>
+            <div class="text-sm"><span class="text-muted-foreground">Primary:</span> ${m.primary_action.replace(/_/g, ' ')}</div>
+            <div class="text-sm"><span class="text-muted-foreground">Channel:</span> ${(m.primary_channel || '-').replace(/_/g, ' ')}</div>
+            <div class="text-sm"><span class="text-muted-foreground">Revenue Impact:</span> ${fmtCurrency(m.estimated_revenue_impact)}</div>
+          </div>` : ''}
+          <div class="rounded-lg border border-border p-4 space-y-2">
+            <h4 class="font-semibold text-sm">Contact</h4>
+            <div class="text-sm">${m.email || '-'}</div>
+            <div class="text-sm">${m.phone || '-'}</div>
+          </div>
+          ${timelineHtml ? `
+          <div class="rounded-lg border border-border p-4">
+            <h4 class="font-semibold text-sm mb-3">Activity Timeline</h4>
+            <div class="space-y-1 max-h-64 overflow-y-auto scrollbar-thin">${timelineHtml}</div>
+          </div>` : ''}
+        </div>`;
+    }
+
+    function closeMerchantSheet() {
+      document.getElementById('merchant-sheet').classList.add('hidden');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Next Best Actions
+    // ═══════════════════════════════════════════════════════════
+    async function loadNBA() {
+      const [queue, summary] = await Promise.all([api('/api/nba/queue?limit=30'), api('/api/nba/summary')]);
+      const c = document.getElementById('page-container');
+      const summaryCards = summary ? summary.slice(0, 6).map(s =>
+        card(s.primary_action.replace(/_/g, ' '),
+          `<div class="text-xl font-bold">${s.merchant_count}</div>
+           <div class="text-xs text-muted-foreground">${fmtCurrency(s.revenue_impact)} impact</div>
+           <div class="flex gap-2 mt-2">${badge(s.immediate + ' immediate', 'red')} ${badge(s.this_week + ' this week', 'yellow')}</div>`)
+      ).join('') : '';
+      const rows = (queue || []).map(m => `
+        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${m.golden_id}')">
+          <td class="px-4 py-3 font-medium">${m.merchant_name || m.golden_id}</td>
+          <td class="px-4 py-3">${segmentBadge(m.segment)}</td>
+          <td class="px-4 py-3">${urgencyBadge(m.urgency)}</td>
+          <td class="px-4 py-3">${m.primary_action.replace(/_/g, ' ')}</td>
+          <td class="px-4 py-3">${(m.primary_channel || '-').replace(/_/g, ' ')}</td>
+          <td class="px-4 py-3 text-right font-mono">${m.priority_score?.toFixed(0)}</td>
+          <td class="px-4 py-3 text-right font-mono">${fmtCurrency(m.estimated_revenue_impact)}</td>
+        </tr>`).join('');
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${summaryCards}</div>
+          ${tableWrap(['Merchant', 'Segment', 'Urgency', 'Action', 'Channel', 'Priority', 'Revenue Impact'], rows)}
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Support Analytics
+    // ═══════════════════════════════════════════════════════════
+    async function loadSupport() {
+      const [kpis, quality, merchants] = await Promise.all([
+        api('/api/support/kpis'), api('/api/support/quality'), api('/api/support/merchants?limit=20'),
+      ]);
+      const c = document.getElementById('page-container');
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${kpiCard('Total Tickets', fmtNum(kpis?.total_tickets), kpis?.open_tickets + ' open')}
+            ${kpiCard('Avg First Response', (kpis?.avg_first_response_min || 0).toFixed(0) + 'min', 'SLA: ' + pct(kpis?.sla_first_response_pct))}
+            ${kpiCard('Avg Resolution', (kpis?.avg_resolution_min || 0).toFixed(0) + 'min', 'SLA: ' + pct(kpis?.sla_resolution_pct))}
+            ${kpiCard('CSAT Score', (kpis?.overall_csat || 0).toFixed(1), 'Overall satisfaction')}
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${card('Support Quality Distribution', '<div style="height:280px"><canvas id="chart-support-quality"></canvas></div>')}
+            ${card('Top Support Merchants', '<div id="support-merchants-table"></div>')}
+          </div>
+        </div>`;
+      if (quality) {
+        createChart('chart-support-quality', 'bar', {
+          labels: quality.map(q => q.support_quality_tier),
+          datasets: [
+            { label: 'Merchants', data: quality.map(q => q.merchant_count), backgroundColor: CHART_COLORS.slice(0, quality.length), borderRadius: 6 },
+          ]
+        });
+      }
+      if (merchants) {
+        const rows = merchants.map(m => `
+          <tr class="border-b border-border hover:bg-muted/50">
+            <td class="px-4 py-2 font-medium text-sm">${m.merchant_name || m.golden_id}</td>
+            <td class="px-4 py-2 text-right">${m.total_tickets}</td>
+            <td class="px-4 py-2 text-right">${m.avg_resolution_min?.toFixed(0) || '-'}m</td>
+            <td class="px-4 py-2 text-right">${m.csat_score?.toFixed(1) || '-'}</td>
+            <td class="px-4 py-2">${healthBadge(m.support_quality_tier)}</td>
+          </tr>`).join('');
+        document.getElementById('support-merchants-table').innerHTML =
+          tableWrap(['Merchant', 'Tickets', 'Avg Resolution', 'CSAT', 'Quality'], rows);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Call Center
+    // ═══════════════════════════════════════════════════════════
+    async function loadCallCenter() {
+      const [kpis, agents, queues, sentiment] = await Promise.all([
+        api('/api/call-center/kpis'), api('/api/call-center/agents?limit=10'),
+        api('/api/call-center/queues'), api('/api/call-center/sentiment'),
+      ]);
+      const c = document.getElementById('page-container');
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${kpiCard('Total Interactions', fmtNum(kpis?.total_interactions), kpis?.total_voice + ' voice / ' + kpis?.total_chat + ' chat')}
+            ${kpiCard('Avg Handle Time', (kpis?.avg_handle_time || 0) + 's', 'Per interaction')}
+            ${kpiCard('Resolution Rate', pct(kpis?.avg_resolution_rate), 'First contact')}
+            ${kpiCard('Abandonment', pct(kpis?.avg_abandonment_rate), 'Call drop rate')}
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${card('Sentiment by Topic', '<div style="height:300px"><canvas id="chart-sentiment"></canvas></div>')}
+            ${card('Queue Performance', '<div id="queue-table"></div>')}
+          </div>
+          ${card('Agent Performance', '<div id="agent-table"></div>')}
+        </div>`;
+      if (sentiment) {
+        createChart('chart-sentiment', 'bar', {
+          labels: sentiment.map(s => s.topic_category.replace(/_/g, ' ')),
+          datasets: [
+            { label: 'Positive %', data: sentiment.map(s => s.positive_pct), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 4 },
+            { label: 'Neutral %', data: sentiment.map(s => s.neutral_pct), backgroundColor: 'hsl(210,70%,50%,0.7)', borderRadius: 4 },
+            { label: 'Negative %', data: sentiment.map(s => s.negative_pct), backgroundColor: 'hsl(0,72%,51%,0.7)', borderRadius: 4 },
+          ]
+        }, { scales: { x: { stacked: true, ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' } }, y: { stacked: true, ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' } } } });
+      }
+      if (queues) {
+        const rows = queues.map(q => `
+          <tr class="border-b border-border"><td class="px-4 py-2">${q.queue_name}</td>
+          <td class="px-4 py-2 text-right">${q.total_interactions}</td>
+          <td class="px-4 py-2 text-right">${q.avg_handle_time_sec}s</td>
+          <td class="px-4 py-2 text-right">${q.avg_queue_wait_sec}s</td>
+          <td class="px-4 py-2 text-right">${pct(q.abandonment_rate)}</td>
+          <td class="px-4 py-2 text-right">${pct(q.service_level_pct)}</td></tr>`).join('');
+        document.getElementById('queue-table').innerHTML = tableWrap(['Queue', 'Volume', 'Handle Time', 'Wait', 'Abandon %', 'SLA %'], rows);
+      }
+      if (agents) {
+        const rows = agents.map(a => `
+          <tr class="border-b border-border"><td class="px-4 py-2 font-mono text-xs">${a.agent_id}</td>
+          <td class="px-4 py-2 text-right">${a.total_interactions}</td>
+          <td class="px-4 py-2 text-right">${a.voice_calls}</td>
+          <td class="px-4 py-2 text-right">${a.chat_sessions}</td>
+          <td class="px-4 py-2 text-right">${a.avg_handle_time_sec}s</td>
+          <td class="px-4 py-2 text-right">${pct(a.resolution_rate)}</td></tr>`).join('');
+        document.getElementById('agent-table').innerHTML = tableWrap(['Agent', 'Total', 'Voice', 'Chat', 'Avg Handle', 'Resolution %'], rows);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Campaign ROI
+    // ═══════════════════════════════════════════════════════════
+    async function loadROI() {
+      const [roi, outcomes] = await Promise.all([api('/api/campaign-roi'), api('/api/campaign-roi/outcomes')]);
+      const c = document.getElementById('page-container');
+      const totalRevenue = roi ? roi.reduce((s, r) => s + (r.total_post_revenue || 0), 0) : 0;
+      const totalConv = roi ? roi.reduce((s, r) => s + (r.conversions || 0), 0) : 0;
+      const totalTargeted = roi ? roi.reduce((s, r) => s + (r.merchants_targeted || 0), 0) : 0;
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${kpiCard('Total Post-Campaign Revenue', fmtCurrency(totalRevenue), 'From all campaigns')}
+            ${kpiCard('Total Conversions', fmtNum(totalConv), 'Of ' + totalTargeted + ' targeted')}
+            ${kpiCard('Avg Conversion Rate', totalTargeted ? pct(totalConv * 100 / totalTargeted) : '-', 'Overall')}
+            ${kpiCard('Campaigns Analyzed', roi?.length || 0, 'Unique type/channel')}
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${card('Campaign ROI by Type', '<div style="height:300px"><canvas id="chart-roi"></canvas></div>')}
+            ${card('Campaign Outcomes', '<div style="height:300px"><canvas id="chart-outcomes"></canvas></div>')}
+          </div>
+          ${card('Campaign Details', '<div id="roi-table"></div>')}
+        </div>`;
+      if (roi) {
+        createChart('chart-roi', 'bar', {
+          labels: roi.map(r => r.campaign_type.replace(/_/g, ' ')),
+          datasets: [
+            { label: 'Post Revenue', data: roi.map(r => r.total_post_revenue), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 6 },
+            { label: 'Conversions', data: roi.map(r => r.conversions), backgroundColor: 'hsl(210,70%,50%,0.7)', borderRadius: 6, yAxisID: 'y1' },
+          ]
+        }, {
+          scales: {
+            x: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' } },
+            y: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' }, position: 'left' },
+            y1: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { display: false }, position: 'right' },
+          }
+        });
+        const rows = roi.map(r => `
+          <tr class="border-b border-border"><td class="px-4 py-2">${r.campaign_type.replace(/_/g, ' ')}</td>
+          <td class="px-4 py-2">${r.channel.replace(/_/g, ' ')}</td>
+          <td class="px-4 py-2 text-right">${r.merchants_targeted}</td>
+          <td class="px-4 py-2 text-right">${r.conversions}</td>
+          <td class="px-4 py-2 text-right">${pct(r.conversion_rate)}</td>
+          <td class="px-4 py-2 text-right font-mono">${fmtCurrency(r.total_post_revenue)}</td>
+          <td class="px-4 py-2 text-right">${r.reactivations}</td></tr>`).join('');
+        document.getElementById('roi-table').innerHTML = tableWrap(['Campaign', 'Channel', 'Targeted', 'Conversions', 'Rate', 'Revenue', 'Reactivations'], rows);
+      }
+      if (outcomes) {
+        createChart('chart-outcomes', 'doughnut', {
+          labels: outcomes.map(o => o.campaign_outcome),
+          datasets: [{ data: outcomes.map(o => o.merchant_count), backgroundColor: CHART_COLORS.slice(0, outcomes.length), borderWidth: 0 }]
+        }, { cutout: '55%' });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Audiences
+    // ═══════════════════════════════════════════════════════════
+    async function loadAudiences() {
+      const summary = await api('/api/audiences/summary');
+      const c = document.getElementById('page-container');
+      const s = summary?.[0] || summary || {};
+      const types = [
+        { key: 'churn_risk', label: 'Churn Risk', color: 'red', icon: '⚠' },
+        { key: 'high_value', label: 'High Value', color: 'green', icon: '★' },
+        { key: 'vip', label: 'VIP', color: 'purple', icon: '♛' },
+        { key: 'winback', label: 'Win-back', color: 'yellow', icon: '↩' },
+        { key: 'growth', label: 'Growth', color: 'blue', icon: '↑' },
+        { key: 'new_onboarding', label: 'Onboarding', color: 'purple', icon: '✦' },
+        { key: 'immediate_action', label: 'Immediate', color: 'red', icon: '⚡' },
+      ];
+      const audienceCards = types.map(t =>
+        `<div class="rounded-lg border border-border bg-card p-4 cursor-pointer hover:border-primary/50 transition-colors" onclick="loadAudienceDetail('${t.key}', '${t.label}')">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-lg">${t.icon}</span>
+            <div class="flex items-center gap-1">
+              ${badge(t.label, t.color)}
+              <a href="/api/export/audience?audience_type=${t.key}&limit=500" onclick="event.stopPropagation()" title="Export CSV"
+                class="ml-1 text-muted-foreground hover:text-foreground transition-colors">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              </a>
+            </div>
+          </div>
+          <div class="text-2xl font-bold">${fmtNum(s[t.key] || 0)}</div>
+          <div class="text-xs text-muted-foreground mt-1">merchants</div>
+        </div>`
+      ).join('');
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${kpiCard('Total Activatable', fmtNum(s.total_activatable || 0), 'Ready for campaigns')}
+            ${audienceCards}
+          </div>
+          <div id="audience-detail"></div>
+        </div>`;
+    }
+
+    async function loadAudienceDetail(type, label) {
+      const list = await api(`/api/audiences/${type}?limit=50`);
+      const el = document.getElementById('audience-detail');
+      if (!list || !list.length) { el.innerHTML = card(label, '<p class="text-muted-foreground text-sm">No merchants in this audience.</p>'); return; }
+      const rows = list.map(m => `
+        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer" onclick="openMerchant('${m.golden_id}')">
+          <td class="px-4 py-2 font-mono text-xs">${m.golden_id}</td>
+          <td class="px-4 py-2">${m.merchant_name}</td>
+          <td class="px-4 py-2">${segmentBadge(m.rfm_segment)}</td>
+          <td class="px-4 py-2 text-right">${m.health_score}</td>
+          <td class="px-4 py-2 text-right font-mono">${fmtCurrency(m.txn_volume)}</td>
+          <td class="px-4 py-2">${m.urgency ? urgencyBadge(m.urgency) : '-'}</td>
+        </tr>`).join('');
+      el.innerHTML = card(`${label} Audience (${list.length})`, tableWrap(['ID', 'Name', 'Segment', 'Health', 'Volume', 'Urgency'], rows));
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Personalization
+    // ═══════════════════════════════════════════════════════════
+    async function loadPersonalization() {
+      const [summary, propensity] = await Promise.all([api('/api/personalization/summary'), api('/api/propensity')]);
+      const c = document.getElementById('page-container');
+      const propRows = (propensity || []).map(p => `
+        <tr class="border-b border-border">
+          <td class="px-4 py-2">${badge(p.propensity_tier.replace(/_/g, ' '), p.propensity_tier.includes('churn') ? 'red' : p.propensity_tier.includes('upsell') ? 'green' : 'blue')}</td>
+          <td class="px-4 py-2 text-right">${p.merchant_count}</td>
+          <td class="px-4 py-2 text-right">${(p.avg_churn * 100).toFixed(1)}%</td>
+          <td class="px-4 py-2 text-right">${(p.avg_upsell * 100).toFixed(1)}%</td>
+          <td class="px-4 py-2 text-right">${(p.avg_activation * 100).toFixed(1)}%</td>
+        </tr>`).join('');
+      const summaryRows = (summary || []).map(s => `
+        <tr class="border-b border-border">
+          <td class="px-4 py-2">${s.content_theme.replace(/_/g, ' ')}</td>
+          <td class="px-4 py-2">${badge(s.merchant_tier, s.merchant_tier === 'premium' ? 'green' : s.merchant_tier === 'growth' ? 'blue' : 'gray')}</td>
+          <td class="px-4 py-2 text-right">${s.merchant_count}</td>
+          <td class="px-4 py-2 text-right">${(s.avg_upsell * 100).toFixed(0)}%</td>
+          <td class="px-4 py-2 text-right">${(s.avg_churn * 100).toFixed(0)}%</td>
+        </tr>`).join('');
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${card('Propensity Tiers', '<div style="height:280px"><canvas id="chart-propensity"></canvas></div>')}
+            <div class="space-y-4">
+              ${card('Propensity Breakdown', tableWrap(['Tier', 'Count', 'Churn', 'Upsell', 'Activation'], propRows))}
+            </div>
+          </div>
+          ${card('Personalization Signals', tableWrap(['Theme', 'Tier', 'Merchants', 'Upsell', 'Churn'], summaryRows))}
+        </div>`;
+      if (propensity) {
+        createChart('chart-propensity', 'doughnut', {
+          labels: propensity.map(p => p.propensity_tier.replace(/_/g, ' ')),
+          datasets: [{ data: propensity.map(p => p.merchant_count), backgroundColor: CHART_COLORS.slice(0, propensity.length), borderWidth: 0 }]
+        }, { cutout: '55%' });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Ad Creative
+    // ═══════════════════════════════════════════════════════════
+    async function loadCreative() {
+      const creatives = await api('/api/ad-creative');
+      const c = document.getElementById('page-container');
+      if (!creatives || !creatives.length) { c.innerHTML = card('Ad Creative Library', '<p class="text-muted-foreground">No creatives available.</p>'); return; }
+      const cards = creatives.map(cr => `
+        <div class="rounded-lg border border-border bg-card overflow-hidden">
+          <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+            ${segmentBadge(cr.segment)}
+            <span class="text-xs text-muted-foreground">${cr.merchant_count} merchants</span>
+          </div>
+          <div class="p-5 space-y-3">
+            <div>
+              <div class="text-xs text-muted-foreground mb-1">Email Subject</div>
+              <div class="text-sm font-medium">${cr.email_subject || '-'}</div>
+            </div>
+            <div>
+              <div class="text-xs text-muted-foreground mb-1">SMS</div>
+              <div class="text-sm">${cr.sms_message || '-'}</div>
+            </div>
+            <div>
+              <div class="text-xs text-muted-foreground mb-1">Push</div>
+              <div class="text-sm">${cr.push_notification || '-'}</div>
+            </div>
+            <div>
+              <div class="text-xs text-muted-foreground mb-1">Ad</div>
+              <div class="text-sm font-semibold">${cr.ad_headline || '-'}</div>
+              <div class="text-xs text-muted-foreground">${cr.ad_description || ''}</div>
+            </div>
+            <div class="flex items-center justify-between pt-2 border-t border-border">
+              ${badge(cr.tone || '', 'blue')}
+              <span class="text-xs font-medium text-primary">${cr.cta || ''}</span>
+            </div>
+          </div>
+        </div>`).join('');
+      c.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div>`;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: CLV
+    // ═══════════════════════════════════════════════════════════
+    async function loadCLV() {
+      const [summary, top] = await Promise.all([api('/api/clv/summary'), api('/api/clv/top?limit=15')]);
+      const c = document.getElementById('page-container');
+      const totalCLV = summary ? summary.reduce((s, t) => s + (t.total_clv || 0), 0) : 0;
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${kpiCard('Total 12m CLV', fmtCurrency(totalCLV), 'Predicted value')}
+            ${kpiCard('CLV Tiers', summary?.length || 0, 'Segmentation tiers')}
+            ${kpiCard('Avg P(Alive)', summary ? (summary.reduce((s, t) => s + t.avg_p_alive, 0) / summary.length * 100).toFixed(1) + '%' : '-', 'Active probability')}
+            ${kpiCard('Top Merchants', top?.length || 0, 'Highest lifetime value')}
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${card('CLV by Tier', '<div style="height:280px"><canvas id="chart-clv"></canvas></div>')}
+            ${card('Top CLV Merchants', '<div id="clv-table"></div>')}
+          </div>
+        </div>`;
+      if (summary) {
+        createChart('chart-clv', 'bar', {
+          labels: summary.map(s => s.clv_tier.replace(/_/g, ' ')),
+          datasets: [
+            { label: 'Total CLV', data: summary.map(s => s.total_clv), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 6 },
+          ]
+        });
+      }
+      if (top) {
+        const rows = top.map(m => `
+          <tr class="border-b border-border hover:bg-muted/50 cursor-pointer" onclick="openMerchant('${m.golden_id}')">
+            <td class="px-4 py-2">${m.merchant_name || m.golden_id}</td>
+            <td class="px-4 py-2">${badge(m.clv_tier.replace(/_/g, ' '), m.clv_tier === 'very_high' ? 'green' : m.clv_tier === 'high' ? 'blue' : 'gray')}</td>
+            <td class="px-4 py-2 text-right font-mono">${fmtCurrency(m.clv_12m)}</td>
+            <td class="px-4 py-2 text-right">${(m.p_alive * 100).toFixed(1)}%</td>
+            <td class="px-4 py-2 text-right">${m.predicted_purchases_12m?.toFixed(1) || '-'}</td>
+          </tr>`).join('');
+        document.getElementById('clv-table').innerHTML = tableWrap(['Merchant', 'Tier', 'CLV 12m', 'P(Alive)', 'Pred Purchases'], rows);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Attribution
+    // ═══════════════════════════════════════════════════════════
+    async function loadAttribution() {
+      const data = await api('/api/attribution');
+      const c = document.getElementById('page-container');
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${card('Markov Chain Attribution', '<div style="height:320px"><canvas id="chart-attr"></canvas></div>')}
+            ${card('Multi-Touch Comparison', '<div style="height:320px"><canvas id="chart-attr-compare"></canvas></div>')}
+          </div>
+          ${card('Channel Details', '<div id="attr-table"></div>')}
+        </div>`;
+      if (data) {
+        createChart('chart-attr', 'doughnut', {
+          labels: data.map(d => d.channel.replace(/_/g, ' ')),
+          datasets: [{ data: data.map(d => d.markov_attributed_value), backgroundColor: CHART_COLORS.slice(0, data.length), borderWidth: 0 }]
+        }, { cutout: '55%' });
+        createChart('chart-attr-compare', 'bar', {
+          labels: data.map(d => d.channel.replace(/_/g, ' ')),
+          datasets: [
+            { label: 'Markov', data: data.map(d => d.markov_attributed_value), backgroundColor: CHART_COLORS[0], borderRadius: 4 },
+            { label: 'First Touch', data: data.map(d => d.first_touch_value), backgroundColor: CHART_COLORS[1], borderRadius: 4 },
+            { label: 'Last Touch', data: data.map(d => d.last_touch_value), backgroundColor: CHART_COLORS[2], borderRadius: 4 },
+            { label: 'Linear', data: data.map(d => d.linear_value), backgroundColor: CHART_COLORS[3], borderRadius: 4 },
+          ]
+        });
+        const rows = data.map(d => `
+          <tr class="border-b border-border">
+            <td class="px-4 py-2 font-medium">${d.channel.replace(/_/g, ' ')}</td>
+            <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.markov_attributed_value)}</td>
+            <td class="px-4 py-2 text-right">${pct((d.markov_attribution_share || 0) * 100)}</td>
+            <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.first_touch_value)}</td>
+            <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.last_touch_value)}</td>
+            <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.linear_value)}</td>
+          </tr>`).join('');
+        document.getElementById('attr-table').innerHTML = tableWrap(['Channel', 'Markov Value', 'Share', 'First Touch', 'Last Touch', 'Linear'], rows);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Behavioral Segments
+    // ═══════════════════════════════════════════════════════════
+    async function loadBehavioral() {
+      const data = await api('/api/behavioral-segments');
+      const c = document.getElementById('page-container');
+      c.innerHTML = `
+        <div class="space-y-6">
+          ${card('Behavioral Clusters', '<div style="height:320px"><canvas id="chart-behavioral"></canvas></div>')}
+          ${card('Cluster Details', '<div id="behavioral-table"></div>')}
+        </div>`;
+      if (data) {
+        createChart('chart-behavioral', 'bar', {
+          labels: data.map(d => d.behavioral_segment.replace(/_/g, ' ')),
+          datasets: [
+            { label: 'Merchants', data: data.map(d => d.merchant_count), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 6 },
+            { label: 'Avg Health', data: data.map(d => d.avg_health), backgroundColor: 'hsl(210,70%,50%,0.7)', borderRadius: 6, yAxisID: 'y1' },
+          ]
+        }, {
+          scales: {
+            x: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' } },
+            y: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' }, position: 'left' },
+            y1: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { display: false }, position: 'right' },
+          }
+        });
+        const rows = data.map(d => `
+          <tr class="border-b border-border">
+            <td class="px-4 py-2 font-medium">${d.behavioral_segment.replace(/_/g, ' ')}</td>
+            <td class="px-4 py-2 text-right">${d.merchant_count}</td>
+            <td class="px-4 py-2 text-right">${d.avg_health}</td>
+            <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.avg_volume)}</td>
+            <td class="px-4 py-2 text-right">${d.avg_tickets}</td>
+            <td class="px-4 py-2 text-right">${d.avg_recency}d</td>
+          </tr>`).join('');
+        document.getElementById('behavioral-table').innerHTML = tableWrap(['Segment', 'Merchants', 'Avg Health', 'Avg Volume', 'Avg Tickets', 'Avg Recency'], rows);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Anomaly Alerts
+    // ═══════════════════════════════════════════════════════════
+    async function loadAnomalies() {
+      const [kpis, alerts] = await Promise.all([api('/api/anomaly-alerts/kpis'), api('/api/anomaly-alerts?limit=50')]);
+      const c = document.getElementById('page-container');
+      const anomalyBadge = (t) => {
+        const m = { volume_drop: 'red', unexpected_inactivity: 'yellow', ticket_spike: 'purple', health_collapse: 'red' };
+        return badge(t.replace(/_/g, ' '), m[t] || 'gray');
+      };
+      const rows = (alerts || []).map(a => `
+        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${a.golden_id}')">
+          <td class="px-4 py-3 font-medium">${a.merchant_name || a.golden_id}</td>
+          <td class="px-4 py-3">${anomalyBadge(a.anomaly_type)}</td>
+          <td class="px-4 py-3">${segmentBadge(a.segment || 'unassigned')}</td>
+          <td class="px-4 py-3">${healthBadge(a.health_tier || 'unknown')}</td>
+          <td class="px-4 py-3 text-right font-mono text-red-400">${a.deviation_pct?.toFixed(1)}%</td>
+          <td class="px-4 py-3 text-right font-mono">${fmtCurrency(a.current_volume)}</td>
+          <td class="px-4 py-3 text-right font-mono">${fmtCurrency(a.estimated_revenue_impact)}</td>
+          <td class="px-4 py-3">${a.urgency ? urgencyBadge(a.urgency) : '-'}</td>
+          <td class="px-4 py-3 text-xs text-muted-foreground">${a.detected_at || '-'}</td>
+        </tr>`).join('');
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            ${kpiCard('Total Alerts', fmtNum(kpis?.total_alerts), 'Active anomalies')}
+            ${kpiCard('Volume Drops', fmtNum(kpis?.volume_drops), 'Transaction decline')}
+            ${kpiCard('Inactivity', fmtNum(kpis?.unexpected_inactivity), 'Unexpected gaps')}
+            ${kpiCard('Ticket Spikes', fmtNum(kpis?.ticket_spikes), 'Support surge')}
+            ${kpiCard('Health Collapse', fmtNum(kpis?.health_collapses), 'Critical drop')}
+            ${kpiCard('Revenue at Risk', fmtCurrency(kpis?.total_revenue_at_risk), 'Total exposure')}
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            ${card('Alert Distribution', '<div style="height:280px"><canvas id="chart-anomaly-dist"></canvas></div>')}
+            ${card('Severity Distribution', '<div style="height:280px"><canvas id="chart-anomaly-severity"></canvas></div>')}
+          </div>
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold">Active Alerts</h3>
+            <a href="/api/export/anomaly-alerts?limit=500" class="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">Export CSV</a>
+          </div>
+          ${tableWrap(['Merchant', 'Anomaly', 'Segment', 'Health', 'Deviation', 'Volume', 'Revenue Risk', 'Urgency', 'Detected'], rows)}
+        </div>`;
+      if (kpis) {
+        createChart('chart-anomaly-dist', 'doughnut', {
+          labels: ['Volume Drop', 'Inactivity', 'Ticket Spike', 'Health Collapse'],
+          datasets: [{ data: [kpis.volume_drops, kpis.unexpected_inactivity, kpis.ticket_spikes, kpis.health_collapses],
+            backgroundColor: ['hsl(0,72%,51%,0.8)', 'hsl(45,93%,47%,0.8)', 'hsl(280,65%,60%,0.8)', 'hsl(0,72%,35%,0.8)'], borderWidth: 0 }]
+        }, { cutout: '55%' });
+      }
+      if (alerts && alerts.length) {
+        const buckets = { 'Critical (>60%)': 0, 'High (40-60%)': 0, 'Medium (20-40%)': 0, 'Low (<20%)': 0 };
+        alerts.forEach(a => {
+          const d = Math.abs(a.deviation_pct || 0);
+          if (d > 60) buckets['Critical (>60%)']++;
+          else if (d > 40) buckets['High (40-60%)']++;
+          else if (d > 20) buckets['Medium (20-40%)']++;
+          else buckets['Low (<20%)']++;
+        });
+        createChart('chart-anomaly-severity', 'bar', {
+          labels: Object.keys(buckets),
+          datasets: [{ label: 'Alerts', data: Object.values(buckets),
+            backgroundColor: ['hsl(0,72%,51%,0.8)', 'hsl(30,90%,55%,0.8)', 'hsl(45,93%,47%,0.8)', 'hsl(210,70%,50%,0.8)'], borderRadius: 6 }]
+        });
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // PAGE: Data Freshness
+    // ═══════════════════════════════════════════════════════════
+    async function loadFreshness() {
+      const data = await api('/api/data-freshness');
+      const c = document.getElementById('page-container');
+      if (!data) { c.innerHTML = card('Data Freshness', '<p class="text-muted-foreground">Failed to load.</p>'); return; }
+      const healthy = data.filter(t => t.status === 'healthy').length;
+      const stale = data.filter(t => t.status === 'stale').length;
+      const empty = data.filter(t => t.status === 'empty').length;
+      const rows = data.map(t => {
+        const statusBadge = t.status === 'healthy' ? badge('Healthy', 'green') : t.status === 'stale' ? badge('Stale', 'yellow') : badge('Empty', 'red');
+        return `
+          <tr class="border-b border-border">
+            <td class="px-4 py-3 font-mono text-sm">${t.table_name}</td>
+            <td class="px-4 py-3 text-sm">${t.last_updated || '-'}</td>
+            <td class="px-4 py-3 text-right font-mono">${fmtNum(t.row_count)}</td>
+            <td class="px-4 py-3">${statusBadge}</td>
+          </tr>`;
+      }).join('');
+      c.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            ${kpiCard('Healthy Tables', healthy + '/' + data.length, 'Updated within 4 hours')}
+            ${kpiCard('Stale Tables', stale.toString(), 'May need pipeline refresh')}
+            ${kpiCard('Empty Tables', empty.toString(), 'No data loaded')}
+          </div>
+          ${card('Gold Layer Tables', tableWrap(['Table', 'Last Updated', 'Rows', 'Status'], rows))}
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Init
+    // ═══════════════════════════════════════════════════════════
+    async function initApp() {
+      const config = await api('/api/config');
+      const dot = document.getElementById('ds-dot');
+      const label = document.getElementById('ds-label');
+      if (config) {
+        const isMock = config.source === 'mock';
+        dot.className = `w-2 h-2 rounded-full ${isMock ? 'bg-yellow-500' : config.warehouse_connected ? 'bg-green-500' : 'bg-red-500'} animate-pulse-dot`;
+        label.textContent = isMock ? 'Mock Data' : config.warehouse_connected ? 'Databricks Connected' : 'Databricks Disconnected';
+        document.getElementById('ds-source').textContent = config.source;
+        document.getElementById('ds-catalog').textContent = config.catalog;
+        document.getElementById('ds-schema').textContent = config.schema_name || config.schema;
+        document.getElementById('ds-connected').textContent = config.warehouse_connected ? 'Yes' : 'No';
+      }
+      navigateTo('dashboard');
+      loadFreshnessIndicator();
+    }
+
+    async function loadFreshnessIndicator() {
+      const data = await api('/api/data-freshness');
+      if (!data) return;
+      const stale = data.filter(t => t.status !== 'healthy').length;
+      const btn = document.getElementById('freshness-btn');
+      const dot = document.getElementById('freshness-dot');
+      const label = document.getElementById('freshness-label');
+      btn.classList.remove('hidden');
+      btn.classList.add('flex');
+      if (stale === 0) {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-green-500';
+        label.textContent = 'Data: Fresh';
+      } else {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-yellow-500 animate-pulse-dot';
+        label.textContent = `${stale} stale table${stale > 1 ? 's' : ''}`;
+      }
+    }
+
+    initApp();
+
+    // ═══════════════════════════════════════════════════════════
+    // AI Chat Panel (CDP Supervisor Agent + Genie)
+    // ═══════════════════════════════════════════════════════════
+    let chatOpen = false;
+    let chatMode = 'agent'; // 'agent' or 'genie'
+    let chatHistory = [];
+
+    function toggleChat() {
+      chatOpen = !chatOpen;
+      document.getElementById('ai-chat-panel').classList.toggle('hidden', !chatOpen);
+      document.getElementById('chat-fab').classList.toggle('ring-2', chatOpen);
+      if (chatOpen && chatHistory.length === 0) {
+        appendBotMessage("Hello! I'm the **Getnet CDP Intelligence Hub**. I can help you with churn prevention, campaign strategy, next best actions, and more.\n\nTry: *What are the top priority actions this week?*");
+      }
+    }
+
+    function switchChatMode(mode) {
+      chatMode = mode;
+      document.getElementById('mode-agent').classList.toggle('bg-primary', mode === 'agent');
+      document.getElementById('mode-agent').classList.toggle('text-primary-foreground', mode === 'agent');
+      document.getElementById('mode-agent').classList.toggle('bg-muted', mode !== 'agent');
+      document.getElementById('mode-genie').classList.toggle('bg-primary', mode === 'genie');
+      document.getElementById('mode-genie').classList.toggle('text-primary-foreground', mode === 'genie');
+      document.getElementById('mode-genie').classList.toggle('bg-muted', mode !== 'genie');
+      document.getElementById('chat-input').placeholder = mode === 'agent'
+        ? 'Ask the CDP Agent...'
+        : 'Ask Genie a data question...';
+    }
+
+    function appendUserMessage(text) {
+      chatHistory.push({ role: 'user', content: text });
+      const el = document.getElementById('chat-messages');
+      el.innerHTML += `<div class="flex justify-end"><div class="max-w-[80%] rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm">${escapeHtml(text)}</div></div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    let _feedbackCounter = 0;
+    function appendBotMessage(md) {
+      chatHistory.push({ role: 'assistant', content: md });
+      const el = document.getElementById('chat-messages');
+      const fid = 'fb-' + (++_feedbackCounter);
+      el.innerHTML += `
+        <div class="flex flex-col">
+          <div class="max-w-[85%] rounded-lg bg-muted px-3 py-2 text-sm prose-sm">${renderMd(md)}</div>
+          <div id="${fid}" class="flex gap-1 mt-1 ml-1">
+            <button onclick="rateBotMsg('${fid}','${escapeHtml(md.substring(0,200))}',5)" class="text-muted-foreground hover:text-green-400 transition-colors p-0.5" title="Helpful">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
+            </button>
+            <button onclick="rateBotMsg('${fid}','${escapeHtml(md.substring(0,200))}',1)" class="text-muted-foreground hover:text-red-400 transition-colors p-0.5" title="Not helpful">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v2a3.5 3.5 0 003.5 3.5h.792c.486 0 .937-.268 1.168-.695l1.044-1.93c.385-.713.565-1.505.565-2.307V9.5a2 2 0 00-2-2H14m-7 7h2"></path></svg>
+            </button>
+          </div>
+        </div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    async function rateBotMsg(fid, content, rating) {
+      const el = document.getElementById(fid);
+      if (el) el.innerHTML = `<span class="text-xs text-muted-foreground">${rating >= 3 ? 'Thanks!' : 'Noted'}</span>`;
+      await apiPost('/api/agent/feedback', { message_content: content, rating, comment: '' });
+    }
+
+    function appendGenieResult(data) {
+      const el = document.getElementById('chat-messages');
+      let html = '';
+      if (data.error) {
+        html = `<div class="text-red-400 text-sm">${data.error}</div>`;
+      } else if (data.rows && data.rows.length) {
+        const cols = data.columns || Object.keys(data.rows[0]);
+        const rows = data.rows.map(r => `<tr class="border-b border-border">${cols.map(c => `<td class="px-2 py-1 text-xs">${r[c] ?? '-'}</td>`).join('')}</tr>`).join('');
+        html = `<div class="text-xs text-muted-foreground mb-1">${data.row_count} rows</div>
+                <div class="overflow-x-auto rounded border border-border">
+                  <table class="w-full text-xs"><thead><tr class="bg-muted/50">${cols.map(c => `<th class="px-2 py-1 text-left font-medium">${c}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
+                </div>`;
+      } else {
+        html = '<div class="text-muted-foreground text-sm">No results returned.</div>';
+      }
+      el.innerHTML += `<div class="flex"><div class="max-w-[90%] rounded-lg bg-muted px-3 py-2">${html}</div></div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function appendLoading() {
+      const el = document.getElementById('chat-messages');
+      el.innerHTML += `<div id="chat-loading" class="flex"><div class="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground"><span class="animate-pulse">Thinking...</span></div></div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function removeLoading() {
+      const el = document.getElementById('chat-loading');
+      if (el) el.remove();
+    }
+
+    async function sendChat() {
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      appendUserMessage(text);
+      appendLoading();
+
+      if (chatMode === 'genie') {
+        const result = await api('/api/genie/ask', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ question: text }) });
+        removeLoading();
+        if (result) appendGenieResult(result);
+        else appendBotMessage('Genie request failed. Please try again.');
+      } else {
+        const result = await apiPost('/api/agent/chat', { messages: chatHistory.filter(m => m.role === 'user').map(m => ({ role: 'user', content: m.content })) });
+        removeLoading();
+        if (result?.output) {
+          const texts = result.output
+            .filter(o => o.type === 'message')
+            .flatMap(o => (o.content || []).filter(c => c.type === 'output_text').map(c => c.text));
+          appendBotMessage(texts.join('\n\n') || 'No response from agent.');
+        } else {
+          appendBotMessage('Agent request failed. Check the connection.');
+        }
+      }
+    }
+
+    async function apiPost(path, body) {
+      try {
+        const r = await fetch(path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        return await r.json();
+      } catch(e) { console.error(e); return null; }
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function renderMd(md) {
+      return md
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/\n\n/g, '<br><br>')
+        .replace(/\n/g, '<br>')
+        .replace(/\|(.+)\|/g, (match) => {
+          if (match.includes('---')) return '';
+          const cells = match.split('|').filter(c => c.trim());
+          return `<div class="flex gap-4 text-xs font-mono">${cells.map(c => `<span>${c.trim()}</span>`).join('')}</div>`;
+        });
+    }
+
+    function handleChatKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+    }
+  </script>
+
+  <!-- AI Chat FAB -->
+  <button id="chat-fab" onclick="toggleChat()"
+    class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center ring-ring">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+  </button>
+
+  <!-- AI Chat Panel -->
+  <div id="ai-chat-panel" class="fixed bottom-24 right-6 z-50 hidden w-96 h-[32rem] rounded-lg border border-border bg-card shadow-2xl flex flex-col overflow-hidden">
+    <div class="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">AI</div>
+        <span class="text-sm font-semibold">CDP Intelligence</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button id="mode-agent" onclick="switchChatMode('agent')" class="text-xs px-2 py-1 rounded bg-primary text-primary-foreground transition-colors">Agent</button>
+        <button id="mode-genie" onclick="switchChatMode('genie')" class="text-xs px-2 py-1 rounded bg-muted text-muted-foreground transition-colors">Genie</button>
+      </div>
+    </div>
+    <div id="chat-messages" class="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-3"></div>
+    <div class="px-4 py-3 border-t border-border shrink-0">
+      <div class="flex gap-2">
+        <input id="chat-input" type="text" placeholder="Ask the CDP Agent..."
+          class="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          onkeydown="handleChatKey(event)" />
+        <button onclick="sendChat()" class="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+        </button>
+      </div>
+      <div class="flex gap-2 mt-2 flex-wrap">
+        <button onclick="document.getElementById('chat-input').value='What are the top priority actions this week?';sendChat()" class="text-xs px-2 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">Weekly priorities</button>
+        <button onclick="document.getElementById('chat-input').value='Show me at-risk merchants with highest revenue';sendChat()" class="text-xs px-2 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">Churn risk</button>
+        <button onclick="document.getElementById('chat-input').value='Design a win-back campaign for hibernating merchants';sendChat()" class="text-xs px-2 py-1 rounded-full border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">Campaign ideas</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

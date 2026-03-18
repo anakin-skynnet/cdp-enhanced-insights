@@ -1,0 +1,506 @@
+{
+  "datasets": [
+    {
+      "name": "nba_kpis",
+      "displayName": "NBA KPIs",
+      "queryLines": [
+        "SELECT ",
+        "  COUNT(*) AS total_merchants_with_actions, ",
+        "  COUNT(CASE WHEN urgency = 'immediate' THEN 1 END) AS immediate_actions, ",
+        "  COUNT(CASE WHEN urgency = 'this_week' THEN 1 END) AS this_week_actions, ",
+        "  ROUND(SUM(estimated_revenue_impact), 0) AS total_revenue_impact, ",
+        "  ROUND(AVG(health_score), 1) AS avg_health_score, ",
+        "  COUNT(CASE WHEN health_tier = 'critical' THEN 1 END) AS critical_merchants ",
+        "FROM main.cdp.gold_next_best_actions"
+      ]
+    },
+    {
+      "name": "nba_by_action",
+      "displayName": "Merchants by Action Type",
+      "queryLines": [
+        "SELECT ",
+        "  primary_action, ",
+        "  COUNT(*) AS merchant_count, ",
+        "  ROUND(SUM(estimated_revenue_impact), 0) AS revenue_impact, ",
+        "  ROUND(AVG(health_score), 1) AS avg_health, ",
+        "  COUNT(CASE WHEN urgency = 'immediate' THEN 1 END) AS immediate ",
+        "FROM main.cdp.gold_next_best_actions ",
+        "GROUP BY primary_action ",
+        "ORDER BY revenue_impact DESC"
+      ]
+    },
+    {
+      "name": "nba_by_urgency",
+      "displayName": "Actions by Urgency",
+      "queryLines": [
+        "SELECT ",
+        "  urgency, ",
+        "  COUNT(*) AS merchant_count, ",
+        "  ROUND(SUM(estimated_revenue_impact), 0) AS revenue_impact ",
+        "FROM main.cdp.gold_next_best_actions ",
+        "GROUP BY urgency ",
+        "ORDER BY CASE urgency ",
+        "  WHEN 'immediate' THEN 1 ",
+        "  WHEN 'this_week' THEN 2 ",
+        "  WHEN 'this_month' THEN 3 ",
+        "  ELSE 4 END"
+      ]
+    },
+    {
+      "name": "nba_by_channel",
+      "displayName": "Actions by Channel",
+      "queryLines": [
+        "SELECT ",
+        "  primary_channel, ",
+        "  COUNT(*) AS merchant_count, ",
+        "  ROUND(SUM(estimated_revenue_impact), 0) AS revenue_impact ",
+        "FROM main.cdp.gold_next_best_actions ",
+        "GROUP BY primary_channel ",
+        "ORDER BY revenue_impact DESC"
+      ]
+    },
+    {
+      "name": "nba_health_distribution",
+      "displayName": "Health Score Distribution",
+      "queryLines": [
+        "SELECT ",
+        "  health_tier, ",
+        "  COUNT(*) AS merchant_count, ",
+        "  ROUND(AVG(health_score), 1) AS avg_score, ",
+        "  ROUND(SUM(txn_volume), 0) AS total_volume ",
+        "FROM main.cdp.gold_next_best_actions ",
+        "GROUP BY health_tier ",
+        "ORDER BY CASE health_tier ",
+        "  WHEN 'critical' THEN 1 ",
+        "  WHEN 'poor' THEN 2 ",
+        "  WHEN 'fair' THEN 3 ",
+        "  WHEN 'good' THEN 4 ",
+        "  WHEN 'excellent' THEN 5 END"
+      ]
+    },
+    {
+      "name": "nba_top_immediate",
+      "displayName": "Top Immediate Actions",
+      "queryLines": [
+        "SELECT ",
+        "  merchant_name, ",
+        "  segment, ",
+        "  health_score, ",
+        "  health_tier, ",
+        "  primary_action, ",
+        "  primary_channel, ",
+        "  ROUND(estimated_revenue_impact, 0) AS revenue_impact, ",
+        "  days_since_last_txn, ",
+        "  ticket_count ",
+        "FROM main.cdp.gold_next_best_actions ",
+        "WHERE urgency = 'immediate' ",
+        "ORDER BY priority_score DESC ",
+        "LIMIT 25"
+      ]
+    },
+    {
+      "name": "nba_segment_health",
+      "displayName": "Segment Health Matrix",
+      "queryLines": [
+        "SELECT ",
+        "  segment, ",
+        "  ROUND(AVG(health_score), 1) AS avg_health, ",
+        "  COUNT(*) AS merchants, ",
+        "  COUNT(CASE WHEN health_tier IN ('critical', 'poor') THEN 1 END) AS unhealthy, ",
+        "  ROUND(SUM(estimated_revenue_impact), 0) AS total_impact, ",
+        "  FIRST(primary_action) AS most_common_action ",
+        "FROM main.cdp.gold_next_best_actions ",
+        "GROUP BY segment ",
+        "ORDER BY avg_health ASC"
+      ]
+    },
+    {
+      "name": "nba_revenue_impact_by_segment",
+      "displayName": "Revenue at Risk by Segment",
+      "queryLines": [
+        "SELECT ",
+        "  segment, ",
+        "  ROUND(SUM(estimated_revenue_impact), 0) AS revenue_impact ",
+        "FROM main.cdp.gold_next_best_actions ",
+        "GROUP BY segment ",
+        "ORDER BY revenue_impact DESC"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "nba_overview",
+      "displayName": "Next Best Actions",
+      "layout": [
+        {
+          "widget": {
+            "name": "kpi_total_actions",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_kpis",
+                  "fields": [
+                    { "name": "total_merchants_with_actions", "expression": "`total_merchants_with_actions`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "counter",
+              "encodings": {
+                "value": { "fieldName": "total_merchants_with_actions", "displayName": "Total Actions Queued" }
+              }
+            }
+          },
+          "position": { "x": 0, "y": 0, "width": 2, "height": 2 }
+        },
+        {
+          "widget": {
+            "name": "kpi_immediate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_kpis",
+                  "fields": [
+                    { "name": "immediate_actions", "expression": "`immediate_actions`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "counter",
+              "encodings": {
+                "value": { "fieldName": "immediate_actions", "displayName": "Immediate (Act Now)" }
+              }
+            }
+          },
+          "position": { "x": 2, "y": 0, "width": 2, "height": 2 }
+        },
+        {
+          "widget": {
+            "name": "kpi_revenue_impact",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_kpis",
+                  "fields": [
+                    { "name": "total_revenue_impact", "expression": "`total_revenue_impact`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "counter",
+              "encodings": {
+                "value": { "fieldName": "total_revenue_impact", "displayName": "Total Revenue Impact" }
+              }
+            }
+          },
+          "position": { "x": 4, "y": 0, "width": 2, "height": 2 }
+        },
+        {
+          "widget": {
+            "name": "kpi_critical",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_kpis",
+                  "fields": [
+                    { "name": "critical_merchants", "expression": "`critical_merchants`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "counter",
+              "encodings": {
+                "value": { "fieldName": "critical_merchants", "displayName": "Critical Health Merchants" }
+              }
+            }
+          },
+          "position": { "x": 0, "y": 2, "width": 2, "height": 2 }
+        },
+        {
+          "widget": {
+            "name": "kpi_avg_health",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_kpis",
+                  "fields": [
+                    { "name": "avg_health_score", "expression": "`avg_health_score`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "counter",
+              "encodings": {
+                "value": { "fieldName": "avg_health_score", "displayName": "Avg Health Score" }
+              }
+            }
+          },
+          "position": { "x": 2, "y": 2, "width": 2, "height": 2 }
+        },
+        {
+          "widget": {
+            "name": "kpi_this_week",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_kpis",
+                  "fields": [
+                    { "name": "this_week_actions", "expression": "`this_week_actions`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "counter",
+              "encodings": {
+                "value": { "fieldName": "this_week_actions", "displayName": "This Week Actions" }
+              }
+            }
+          },
+          "position": { "x": 4, "y": 2, "width": 2, "height": 2 }
+        },
+        {
+          "widget": {
+            "name": "chart_by_action",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_by_action",
+                  "fields": [
+                    { "name": "primary_action", "expression": "`primary_action`" },
+                    { "name": "merchant_count", "expression": "`merchant_count`" },
+                    { "name": "revenue_impact", "expression": "`revenue_impact`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": { "fieldName": "primary_action", "scale": { "type": "categorical" }, "displayName": "Action" },
+                "y": { "fieldName": "revenue_impact", "scale": { "type": "quantitative" }, "displayName": "Revenue Impact" }
+              }
+            }
+          },
+          "position": { "x": 0, "y": 4, "width": 3, "height": 4 }
+        },
+        {
+          "widget": {
+            "name": "chart_by_urgency",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_by_urgency",
+                  "fields": [
+                    { "name": "urgency", "expression": "`urgency`" },
+                    { "name": "merchant_count", "expression": "`merchant_count`" },
+                    { "name": "revenue_impact", "expression": "`revenue_impact`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": { "fieldName": "urgency", "scale": { "type": "categorical" }, "displayName": "Urgency" },
+                "y": { "fieldName": "merchant_count", "scale": { "type": "quantitative" }, "displayName": "Merchants" }
+              }
+            }
+          },
+          "position": { "x": 3, "y": 4, "width": 3, "height": 4 }
+        },
+        {
+          "widget": {
+            "name": "chart_by_channel",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_by_channel",
+                  "fields": [
+                    { "name": "primary_channel", "expression": "`primary_channel`" },
+                    { "name": "merchant_count", "expression": "`merchant_count`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "theta": { "fieldName": "merchant_count", "displayName": "Merchants" },
+                "color": { "fieldName": "primary_channel", "scale": { "type": "categorical" }, "displayName": "Channel" }
+              }
+            }
+          },
+          "position": { "x": 0, "y": 8, "width": 3, "height": 4 }
+        },
+        {
+          "widget": {
+            "name": "chart_health_dist",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_health_distribution",
+                  "fields": [
+                    { "name": "health_tier", "expression": "`health_tier`" },
+                    { "name": "merchant_count", "expression": "`merchant_count`" },
+                    { "name": "total_volume", "expression": "`total_volume`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": { "fieldName": "health_tier", "scale": { "type": "categorical" }, "displayName": "Health Tier" },
+                "y": { "fieldName": "merchant_count", "scale": { "type": "quantitative" }, "displayName": "Merchants" }
+              }
+            }
+          },
+          "position": { "x": 3, "y": 8, "width": 3, "height": 4 }
+        },
+        {
+          "widget": {
+            "name": "chart_revenue_by_segment",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_revenue_impact_by_segment",
+                  "fields": [
+                    { "name": "segment", "expression": "`segment`" },
+                    { "name": "revenue_impact", "expression": "`revenue_impact`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": { "fieldName": "segment", "scale": { "type": "categorical" }, "displayName": "Segment" },
+                "y": { "fieldName": "revenue_impact", "scale": { "type": "quantitative" }, "displayName": "Revenue at Risk" }
+              }
+            }
+          },
+          "position": { "x": 0, "y": 12, "width": 3, "height": 4 }
+        },
+        {
+          "widget": {
+            "name": "table_segment_health",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_segment_health",
+                  "fields": [
+                    { "name": "segment", "expression": "`segment`" },
+                    { "name": "avg_health", "expression": "`avg_health`" },
+                    { "name": "merchants", "expression": "`merchants`" },
+                    { "name": "unhealthy", "expression": "`unhealthy`" },
+                    { "name": "total_impact", "expression": "`total_impact`" },
+                    { "name": "most_common_action", "expression": "`most_common_action`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  { "fieldName": "segment", "displayName": "Segment" },
+                  { "fieldName": "avg_health", "displayName": "Avg Health" },
+                  { "fieldName": "merchants", "displayName": "Merchants" },
+                  { "fieldName": "unhealthy", "displayName": "Unhealthy" },
+                  { "fieldName": "total_impact", "displayName": "Revenue Impact" },
+                  { "fieldName": "most_common_action", "displayName": "Top Action" }
+                ]
+              }
+            }
+          },
+          "position": { "x": 3, "y": 12, "width": 3, "height": 4 }
+        },
+        {
+          "widget": {
+            "name": "table_immediate_actions",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "nba_top_immediate",
+                  "fields": [
+                    { "name": "merchant_name", "expression": "`merchant_name`" },
+                    { "name": "segment", "expression": "`segment`" },
+                    { "name": "health_score", "expression": "`health_score`" },
+                    { "name": "health_tier", "expression": "`health_tier`" },
+                    { "name": "primary_action", "expression": "`primary_action`" },
+                    { "name": "primary_channel", "expression": "`primary_channel`" },
+                    { "name": "revenue_impact", "expression": "`revenue_impact`" },
+                    { "name": "days_since_last_txn", "expression": "`days_since_last_txn`" },
+                    { "name": "ticket_count", "expression": "`ticket_count`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  { "fieldName": "merchant_name", "displayName": "Merchant" },
+                  { "fieldName": "segment", "displayName": "Segment" },
+                  { "fieldName": "health_score", "displayName": "Health" },
+                  { "fieldName": "health_tier", "displayName": "Tier" },
+                  { "fieldName": "primary_action", "displayName": "Action" },
+                  { "fieldName": "primary_channel", "displayName": "Channel" },
+                  { "fieldName": "revenue_impact", "displayName": "Revenue Impact" },
+                  { "fieldName": "days_since_last_txn", "displayName": "Days Inactive" },
+                  { "fieldName": "ticket_count", "displayName": "Tickets" }
+                ]
+              }
+            }
+          },
+          "position": { "x": 0, "y": 16, "width": 6, "height": 5 }
+        }
+      ]
+    }
+  ]
+}

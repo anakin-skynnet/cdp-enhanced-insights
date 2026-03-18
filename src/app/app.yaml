@@ -1,0 +1,26 @@
+command:
+  - "uvicorn"
+  - "app.main:app"
+  - "--host"
+  - "0.0.0.0"
+  - "--port"
+  - "8080"
+
+env:
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql-warehouse
+
+  - name: CDP_CATALOG
+    value: "main"
+
+  - name: CDP_SCHEMA
+    value: "cdp"
+
+  - name: CDP_DATA_SOURCE
+    value: "databricks"
+
+  - name: CDP_AGENT_ENDPOINT
+    value: "main-cdp-cdp_supervisor_agent"
+
+  - name: CDP_GENIE_SPACE_ID
+    value: ""

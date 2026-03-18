@@ -1,0 +1,60 @@
+# PagoNxt Getnet CDP - Lakeflow Spark Declarative Pipelines
+# Bronze, Silver, and Gold pipelines for medallion architecture
+
+resources:
+  pipelines:
+    cdp_ingestion:
+      name: "[${bundle.target}] CDP Bronze Ingestion"
+      catalog: ${var.catalog}
+      target: ${var.schema}
+      libraries:
+        - glob:
+            include: ../src/cdp_etl/transformations/bronze/**
+      root_path: ../src/cdp_etl
+      serverless: true
+      configuration:
+        schema_location_base: ${var.schema_location_base}
+      development: true
+      photon: true
+      channel: current
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"
+
+    cdp_silver:
+      name: "[${bundle.target}] CDP Silver Transformations"
+      catalog: ${var.catalog}
+      target: ${var.schema}
+      libraries:
+        - glob:
+            include: ../src/cdp_etl/transformations/silver/**
+      root_path: ../src/cdp_etl
+      serverless: true
+      configuration:
+        catalog: ${var.catalog}
+        schema: ${var.schema}
+      development: true
+      photon: true
+      channel: current
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"
+
+    cdp_gold_identity:
+      name: "[${bundle.target}] CDP Gold Golden Record"
+      catalog: ${var.catalog}
+      target: ${var.schema}
+      libraries:
+        - glob:
+            include: ../src/cdp_etl/transformations/gold/**
+      root_path: ../src/cdp_etl
+      serverless: true
+      configuration:
+        catalog: ${var.catalog}
+        schema: ${var.schema}
+      development: true
+      photon: true
+      channel: current
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

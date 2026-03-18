@@ -1,0 +1,167 @@
+{
+  "pages": [
+    {
+      "name": "support_analytics",
+      "displayName": "Support Analytics",
+      "layout": [
+        {
+          "widget": {
+            "name": "support_kpis",
+            "queries": [
+              {
+                "name": "support_kpis",
+                "query": {
+                  "datasetName": "support_kpis",
+                  "disaggregated": true,
+                  "fields": [
+                    {"name": "merchants_with_tickets", "expression": "`merchants_with_tickets`"},
+                    {"name": "total_tickets", "expression": "`total_tickets`"},
+                    {"name": "open_tickets", "expression": "`open_tickets`"},
+                    {"name": "avg_first_response_min", "expression": "`avg_first_response_min`"},
+                    {"name": "avg_resolution_min", "expression": "`avg_resolution_min`"},
+                    {"name": "overall_csat", "expression": "`overall_csat`"},
+                    {"name": "sla_first_response_pct", "expression": "`sla_first_response_pct`"},
+                    {"name": "sla_resolution_pct", "expression": "`sla_resolution_pct`"}
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {"fieldName": "total_tickets", "displayName": "Total Tickets"}
+              }
+            }
+          },
+          "position": {"x": 0, "y": 0, "width": 6, "height": 2}
+        },
+        {
+          "widget": {
+            "name": "quality_distribution",
+            "queries": [
+              {
+                "name": "quality_distribution",
+                "query": {
+                  "datasetName": "quality_dist",
+                  "disaggregated": true,
+                  "fields": [
+                    {"name": "support_quality_tier", "expression": "`support_quality_tier`"},
+                    {"name": "merchant_count", "expression": "`merchant_count`"},
+                    {"name": "avg_resolution", "expression": "`avg_resolution`"},
+                    {"name": "avg_csat", "expression": "`avg_csat`"}
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "support_quality_tier", "displayName": "Quality Tier"},
+                "y": {"fieldName": "merchant_count", "displayName": "Merchants"}
+              }
+            }
+          },
+          "position": {"x": 0, "y": 2, "width": 3, "height": 4}
+        },
+        {
+          "widget": {
+            "name": "resolution_by_tier",
+            "queries": [
+              {
+                "name": "resolution_by_tier",
+                "query": {
+                  "datasetName": "quality_dist",
+                  "disaggregated": true,
+                  "fields": [
+                    {"name": "support_quality_tier", "expression": "`support_quality_tier`"},
+                    {"name": "avg_resolution", "expression": "`avg_resolution`"},
+                    {"name": "avg_csat", "expression": "`avg_csat`"}
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "support_quality_tier", "displayName": "Quality Tier"},
+                "y": {"fieldName": "avg_resolution", "displayName": "Avg Resolution (min)"}
+              }
+            }
+          },
+          "position": {"x": 3, "y": 2, "width": 3, "height": 4}
+        },
+        {
+          "widget": {
+            "name": "top_ticket_merchants",
+            "queries": [
+              {
+                "name": "top_ticket_merchants",
+                "query": {
+                  "datasetName": "top_merchants",
+                  "disaggregated": true,
+                  "fields": [
+                    {"name": "golden_id", "expression": "`golden_id`"},
+                    {"name": "total_tickets", "expression": "`total_tickets`"},
+                    {"name": "avg_resolution_min", "expression": "`avg_resolution_min`"},
+                    {"name": "csat_score", "expression": "`csat_score`"},
+                    {"name": "support_quality_tier", "expression": "`support_quality_tier`"}
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "table"
+            }
+          },
+          "position": {"x": 0, "y": 6, "width": 6, "height": 4}
+        }
+      ]
+    }
+  ],
+  "datasets": [
+    {
+      "name": "support_kpis",
+      "displayName": "Support KPIs",
+      "queryLines": [
+        "SELECT",
+        "  COUNT(*) AS merchants_with_tickets,",
+        "  SUM(total_tickets) AS total_tickets,",
+        "  SUM(open_tickets) AS open_tickets,",
+        "  ROUND(AVG(avg_first_response_min), 1) AS avg_first_response_min,",
+        "  ROUND(AVG(avg_resolution_min), 1) AS avg_resolution_min,",
+        "  ROUND(AVG(csat_score), 1) AS overall_csat,",
+        "  ROUND(AVG(sla_first_response_pct), 1) AS sla_first_response_pct,",
+        "  ROUND(AVG(sla_resolution_pct), 1) AS sla_resolution_pct",
+        "FROM main.cdp.gold_support_analytics"
+      ]
+    },
+    {
+      "name": "quality_dist",
+      "displayName": "Quality Distribution",
+      "queryLines": [
+        "SELECT support_quality_tier,",
+        "  COUNT(*) AS merchant_count,",
+        "  ROUND(AVG(avg_resolution_min), 0) AS avg_resolution,",
+        "  ROUND(AVG(csat_score), 1) AS avg_csat",
+        "FROM main.cdp.gold_support_analytics",
+        "GROUP BY support_quality_tier"
+      ]
+    },
+    {
+      "name": "top_merchants",
+      "displayName": "Top Ticket Merchants",
+      "queryLines": [
+        "SELECT golden_id, total_tickets, open_tickets,",
+        "  ROUND(avg_first_response_min, 0) AS avg_first_response_min,",
+        "  ROUND(avg_resolution_min, 0) AS avg_resolution_min,",
+        "  csat_score, sla_resolution_pct, support_quality_tier",
+        "FROM main.cdp.gold_support_analytics",
+        "ORDER BY total_tickets DESC LIMIT 50"
+      ]
+    }
+  ]
+}

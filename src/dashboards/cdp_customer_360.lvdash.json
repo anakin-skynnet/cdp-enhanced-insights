@@ -1,0 +1,317 @@
+{
+  "datasets": [
+    {
+      "name": "c360_summary",
+      "displayName": "Customer 360 Summary",
+      "queryLines": [
+        "SELECT ",
+        "  COUNT(DISTINCT c.golden_id) AS total_merchants, ",
+        "  COALESCE(SUM(e.txn_volume), 0) AS total_payment_volume, ",
+        "  COALESCE(ROUND(AVG(e.txn_volume), 2), 0) AS avg_volume_per_merchant, ",
+        "  COALESCE(ROUND(AVG(e.txn_count), 1), 0) AS avg_txn_per_merchant, ",
+        "  COALESCE(SUM(e.ticket_count), 0) AS total_tickets, ",
+        "  COALESCE(ROUND(AVG(e.days_since_last_txn), 0), 0) AS avg_days_since_last_txn ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id"
+      ]
+    },
+    {
+      "name": "c360_by_segment",
+      "displayName": "Merchants by Segment",
+      "queryLines": [
+        "SELECT ",
+        "  COALESCE(s.segment, 'unassigned') AS segment, ",
+        "  COUNT(DISTINCT c.golden_id) AS merchant_count, ",
+        "  COALESCE(SUM(e.txn_volume), 0) AS segment_volume, ",
+        "  COALESCE(ROUND(AVG(e.txn_count), 1), 0) AS avg_txn_count ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "GROUP BY COALESCE(s.segment, 'unassigned')"
+      ]
+    },
+    {
+      "name": "c360_by_source",
+      "displayName": "Merchants by Source",
+      "queryLines": [
+        "SELECT ",
+        "  primary_source_type AS source, ",
+        "  COUNT(DISTINCT golden_id) AS merchant_count ",
+        "FROM main.cdp.gold_customer_360 ",
+        "GROUP BY primary_source_type"
+      ]
+    },
+    {
+      "name": "c360_top_merchants",
+      "displayName": "Top Merchants",
+      "queryLines": [
+        "SELECT ",
+        "  c.golden_id, ",
+        "  COALESCE(c.first_name, '') AS merchant_name, ",
+        "  c.email, ",
+        "  COALESCE(s.segment, 'unassigned') AS segment, ",
+        "  COALESCE(e.txn_volume, 0) AS txn_volume, ",
+        "  COALESCE(e.txn_count, 0) AS txn_count, ",
+        "  COALESCE(e.ticket_count, 0) AS ticket_count, ",
+        "  COALESCE(e.days_since_last_txn, -1) AS days_since_last_txn ",
+        "FROM main.cdp.gold_customer_360 c ",
+        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "ORDER BY e.txn_volume DESC NULLS LAST ",
+        "LIMIT 50"
+      ]
+    },
+    {
+      "name": "c360_identity_stats",
+      "displayName": "Identity Graph Stats",
+      "queryLines": [
+        "SELECT ",
+        "  source_type, ",
+        "  COUNT(*) AS record_count, ",
+        "  COUNT(DISTINCT golden_id) AS unique_identities ",
+        "FROM main.cdp.gold_identity_graph ",
+        "GROUP BY source_type"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "overview",
+      "displayName": "Customer 360 Overview",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layout": [
+        {
+          "widget": {
+            "name": "title",
+            "multilineTextboxSpec": {
+              "lines": ["## PagoNxt Getnet - Customer 360 Overview"]
+            }
+          },
+          "position": {"x": 0, "y": 0, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "multilineTextboxSpec": {
+              "lines": ["Golden record KPIs, merchant engagement, and identity resolution metrics"]
+            }
+          },
+          "position": {"x": 0, "y": 1, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "kpi-total-merchants",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "c360_summary",
+                "fields": [{"name": "total_merchants", "expression": "`total_merchants`"}],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {"fieldName": "total_merchants", "displayName": "Total Merchants"}
+              },
+              "frame": {"showTitle": true, "title": "Total Merchants (Golden Record)"}
+            }
+          },
+          "position": {"x": 0, "y": 2, "width": 2, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi-total-volume",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "c360_summary",
+                "fields": [{"name": "total_payment_volume", "expression": "`total_payment_volume`"}],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {"fieldName": "total_payment_volume", "displayName": "Total Payment Volume"}
+              },
+              "frame": {"showTitle": true, "title": "Total Payment Volume"}
+            }
+          },
+          "position": {"x": 2, "y": 2, "width": 2, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "kpi-total-tickets",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "c360_summary",
+                "fields": [{"name": "total_tickets", "expression": "`total_tickets`"}],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {"fieldName": "total_tickets", "displayName": "Support Tickets"}
+              },
+              "frame": {"showTitle": true, "title": "Total Support Tickets"}
+            }
+          },
+          "position": {"x": 4, "y": 2, "width": 2, "height": 3}
+        },
+        {
+          "widget": {
+            "name": "section-distribution",
+            "multilineTextboxSpec": {
+              "lines": ["### Merchant Distribution"]
+            }
+          },
+          "position": {"x": 0, "y": 5, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "chart-segment-pie",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "c360_by_segment",
+                "fields": [
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "merchant_count", "expression": "`merchant_count`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {"fieldName": "merchant_count", "scale": {"type": "quantitative"}, "displayName": "Merchants"},
+                "color": {"fieldName": "segment", "scale": {"type": "categorical"}, "displayName": "Segment"}
+              },
+              "frame": {"showTitle": true, "title": "Merchants by Segment"}
+            }
+          },
+          "position": {"x": 0, "y": 6, "width": 3, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "chart-source-bar",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "c360_by_source",
+                "fields": [
+                  {"name": "source", "expression": "`source`"},
+                  {"name": "merchant_count", "expression": "`merchant_count`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "source", "scale": {"type": "categorical"}, "displayName": "Source System"},
+                "y": {"fieldName": "merchant_count", "scale": {"type": "quantitative"}, "displayName": "Merchants"}
+              },
+              "frame": {"showTitle": true, "title": "Merchants by Source System"}
+            }
+          },
+          "position": {"x": 3, "y": 6, "width": 3, "height": 6}
+        },
+        {
+          "widget": {
+            "name": "section-identity",
+            "multilineTextboxSpec": {
+              "lines": ["### Identity Resolution"]
+            }
+          },
+          "position": {"x": 0, "y": 12, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "table-identity-stats",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "c360_identity_stats",
+                "fields": [
+                  {"name": "source_type", "expression": "`source_type`"},
+                  {"name": "record_count", "expression": "`record_count`"},
+                  {"name": "unique_identities", "expression": "`unique_identities`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "source_type", "displayName": "Source Type"},
+                  {"fieldName": "record_count", "displayName": "Source Records"},
+                  {"fieldName": "unique_identities", "displayName": "Resolved Identities"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "Identity Graph by Source"}
+            }
+          },
+          "position": {"x": 0, "y": 13, "width": 6, "height": 4}
+        },
+        {
+          "widget": {
+            "name": "section-top-merchants",
+            "multilineTextboxSpec": {
+              "lines": ["### Top Merchants by Payment Volume"]
+            }
+          },
+          "position": {"x": 0, "y": 17, "width": 6, "height": 1}
+        },
+        {
+          "widget": {
+            "name": "table-top-merchants",
+            "queries": [{
+              "name": "main_query",
+              "query": {
+                "datasetName": "c360_top_merchants",
+                "fields": [
+                  {"name": "merchant_name", "expression": "`merchant_name`"},
+                  {"name": "email", "expression": "`email`"},
+                  {"name": "segment", "expression": "`segment`"},
+                  {"name": "txn_volume", "expression": "`txn_volume`"},
+                  {"name": "txn_count", "expression": "`txn_count`"},
+                  {"name": "ticket_count", "expression": "`ticket_count`"},
+                  {"name": "days_since_last_txn", "expression": "`days_since_last_txn`"}
+                ],
+                "disaggregated": true
+              }
+            }],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {"fieldName": "merchant_name", "displayName": "Merchant"},
+                  {"fieldName": "email", "displayName": "Email"},
+                  {"fieldName": "segment", "displayName": "Segment"},
+                  {"fieldName": "txn_volume", "displayName": "Payment Volume"},
+                  {"fieldName": "txn_count", "displayName": "Transactions"},
+                  {"fieldName": "ticket_count", "displayName": "Tickets"},
+                  {"fieldName": "days_since_last_txn", "displayName": "Days Since Last Txn"}
+                ]
+              },
+              "frame": {"showTitle": true, "title": "Top 50 Merchants"}
+            }
+          },
+          "position": {"x": 0, "y": 18, "width": 6, "height": 7}
+        }
+      ]
+    }
+  ]
+}

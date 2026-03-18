@@ -1,0 +1,64 @@
+resources:
+  genie_spaces:
+    getnet_merchant_360:
+      display_name: "[${bundle.target}] Getnet Merchant 360 Analytics"
+      description: |
+        Natural language analytics for the PagoNxt Getnet Customer 360 platform.
+        Ask questions about merchant health, churn risk, segments, transactions,
+        support quality, call center performance, campaign ROI, and more.
+      warehouse_id: ${var.warehouse_id}
+      table_identifiers:
+        - "${var.catalog}.${var.schema}.gold_customer_360"
+        - "${var.catalog}.${var.schema}.gold_engagement_metrics"
+        - "${var.catalog}.${var.schema}.gold_segments"
+        - "${var.catalog}.${var.schema}.gold_health_score"
+        - "${var.catalog}.${var.schema}.gold_next_best_actions"
+        - "${var.catalog}.${var.schema}.gold_identity_graph"
+        - "${var.catalog}.${var.schema}.gold_customer_ltv"
+        - "${var.catalog}.${var.schema}.gold_behavioral_segments"
+        - "${var.catalog}.${var.schema}.gold_channel_attribution"
+        - "${var.catalog}.${var.schema}.gold_support_analytics"
+        - "${var.catalog}.${var.schema}.gold_call_center_analytics"
+        - "${var.catalog}.${var.schema}.gold_call_center_sentiment"
+        - "${var.catalog}.${var.schema}.gold_propensity_scores"
+        - "${var.catalog}.${var.schema}.gold_personalization_signals"
+        - "${var.catalog}.${var.schema}.gold_campaign_roi"
+        - "${var.catalog}.${var.schema}.gold_audience_exports"
+        - "${var.catalog}.${var.schema}.gold_ad_creative_library"
+        - "${var.catalog}.${var.schema}.gold_anomaly_alerts"
+        - "${var.catalog}.${var.schema}.nba_action_log"
+        - "${var.catalog}.${var.schema}.agent_feedback_log"
+      sql_instructions: |
+        -- Merchant-centric C360 data model for PagoNxt Getnet payment platform.
+        -- All merchants have a golden_id as their primary key.
+        -- gold_customer_360 is the master entity table from identity resolution.
+        -- gold_engagement_metrics has transaction aggregates (txn_volume, txn_count, days_since_last_txn).
+        -- gold_segments has RFM segments: champions, loyal, potential_loyalists, new_customers, promising, at_risk, cant_lose, hibernating, need_attention.
+        -- gold_health_score has a composite 0-100 health score with tiers: excellent (75+), good (55-74), fair (35-54), poor (15-34), critical (0-14).
+        -- gold_next_best_actions has the recommended action, channel, urgency, and priority score for each merchant.
+        -- gold_customer_ltv has predicted 12-month customer lifetime value from BG/NBD + Gamma-Gamma models.
+        -- gold_support_analytics has ticket resolution metrics from Zendesk (avg_first_response_min, avg_resolution_min, csat_score).
+        -- gold_call_center_analytics has agent and queue metrics from Genesys.
+        -- gold_call_center_sentiment has AI-generated sentiment and topic classification from call transcripts.
+        -- gold_propensity_scores has churn, upsell, and activation propensity from XGBoost models.
+        -- gold_campaign_roi has campaign effectiveness metrics (conversion_rate, post_30d_volume).
+        -- gold_anomaly_alerts has real-time alerts: anomaly_type (volume_drop, unexpected_inactivity, ticket_spike, health_collapse), deviation_pct, estimated_revenue_impact.
+        -- nba_action_log tracks actions executed on merchants (used for closed-loop attribution).
+        -- agent_feedback_log tracks user ratings (1-5) on AI agent responses for quality monitoring.
+        -- Monetary values are in local currency (ARS for Argentina, MXN for Mexico).
+        -- When asked about "at-risk merchants", filter on segment IN ('at_risk', 'cant_lose', 'hibernating').
+        -- When asked about "high-value merchants", use txn_volume > 50000 or clv_tier IN ('very_high', 'high').
+      sample_prompts:
+        - "Show me the top 10 merchants at risk of churning, with their volume and health score"
+        - "What is the churn risk distribution across segments?"
+        - "Which merchants have the highest CLV but are showing declining health?"
+        - "Compare average resolution time across support quality tiers"
+        - "What percentage of call center interactions have negative sentiment?"
+        - "Show campaign ROI by channel, with conversion rates"
+        - "How many merchants are in each audience activation segment?"
+        - "Which agents have the best resolution rate in the call center?"
+        - "List merchants with anomaly alerts in the last 7 days"
+        - "What is the total revenue at risk from merchants with immediate urgency actions?"
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

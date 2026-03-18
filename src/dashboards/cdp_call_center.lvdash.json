@@ -1,0 +1,176 @@
+{
+  "pages": [
+    {
+      "name": "call_center",
+      "displayName": "Call Center Analytics",
+      "layout": [
+        {
+          "widget": {
+            "name": "cc_kpis",
+            "queries": [
+              {
+                "name": "cc_kpis",
+                "query": {
+                  "datasetName": "cc_kpis",
+                  "disaggregated": true,
+                  "fields": [
+                    {"name": "total_interactions", "expression": "`total_interactions`"},
+                    {"name": "total_voice", "expression": "`total_voice`"},
+                    {"name": "total_chat", "expression": "`total_chat`"},
+                    {"name": "avg_handle_time", "expression": "`avg_handle_time`"},
+                    {"name": "avg_resolution_rate", "expression": "`avg_resolution_rate`"},
+                    {"name": "avg_abandonment_rate", "expression": "`avg_abandonment_rate`"}
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {"fieldName": "total_interactions", "displayName": "Total Interactions"}
+              }
+            }
+          },
+          "position": {"x": 0, "y": 0, "width": 6, "height": 2}
+        },
+        {
+          "widget": {
+            "name": "agent_performance",
+            "queries": [
+              {
+                "name": "agent_performance",
+                "query": {
+                  "datasetName": "agent_metrics",
+                  "disaggregated": true,
+                  "fields": [
+                    {"name": "entity_id", "expression": "`entity_id`"},
+                    {"name": "total_interactions", "expression": "`total_interactions`"},
+                    {"name": "avg_handle_time_sec", "expression": "`avg_handle_time_sec`"},
+                    {"name": "resolution_rate", "expression": "`resolution_rate`"},
+                    {"name": "abandonment_rate", "expression": "`abandonment_rate`"}
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "table"
+            }
+          },
+          "position": {"x": 0, "y": 2, "width": 3, "height": 4}
+        },
+        {
+          "widget": {
+            "name": "queue_performance",
+            "queries": [
+              {
+                "name": "queue_performance",
+                "query": {
+                  "datasetName": "queue_metrics",
+                  "disaggregated": true,
+                  "fields": [
+                    {"name": "queue_name", "expression": "`queue_name`"},
+                    {"name": "total_interactions", "expression": "`total_interactions`"},
+                    {"name": "avg_queue_wait_sec", "expression": "`avg_queue_wait_sec`"},
+                    {"name": "service_level_pct", "expression": "`service_level_pct`"},
+                    {"name": "abandonment_rate", "expression": "`abandonment_rate`"}
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "table"
+            }
+          },
+          "position": {"x": 3, "y": 2, "width": 3, "height": 4}
+        },
+        {
+          "widget": {
+            "name": "sentiment_by_topic",
+            "queries": [
+              {
+                "name": "sentiment_by_topic",
+                "query": {
+                  "datasetName": "sentiment_data",
+                  "disaggregated": true,
+                  "fields": [
+                    {"name": "topic_category", "expression": "`topic_category`"},
+                    {"name": "interaction_count", "expression": "`interaction_count`"},
+                    {"name": "positive_pct", "expression": "`positive_pct`"},
+                    {"name": "negative_pct", "expression": "`negative_pct`"}
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {"fieldName": "topic_category", "displayName": "Topic"},
+                "y": {"fieldName": "interaction_count", "displayName": "Interactions"}
+              }
+            }
+          },
+          "position": {"x": 0, "y": 6, "width": 6, "height": 4}
+        }
+      ]
+    }
+  ],
+  "datasets": [
+    {
+      "name": "cc_kpis",
+      "displayName": "Call Center KPIs",
+      "queryLines": [
+        "SELECT",
+        "  SUM(total_interactions) AS total_interactions,",
+        "  SUM(voice_calls) AS total_voice,",
+        "  SUM(chat_sessions) AS total_chat,",
+        "  ROUND(AVG(avg_handle_time_sec), 0) AS avg_handle_time,",
+        "  ROUND(AVG(resolution_rate), 1) AS avg_resolution_rate,",
+        "  ROUND(AVG(abandonment_rate), 1) AS avg_abandonment_rate",
+        "FROM main.cdp.gold_call_center_analytics",
+        "WHERE metric_type = 'agent'"
+      ]
+    },
+    {
+      "name": "agent_metrics",
+      "displayName": "Agent Metrics",
+      "queryLines": [
+        "SELECT entity_id, total_interactions, voice_calls, chat_sessions,",
+        "  avg_handle_time_sec, avg_talk_time_sec, avg_hold_time_sec,",
+        "  avg_queue_wait_sec, resolution_rate, abandonment_rate",
+        "FROM main.cdp.gold_call_center_analytics",
+        "WHERE metric_type = 'agent'",
+        "ORDER BY total_interactions DESC LIMIT 30"
+      ]
+    },
+    {
+      "name": "queue_metrics",
+      "displayName": "Queue Metrics",
+      "queryLines": [
+        "SELECT entity_id AS queue_name, total_interactions,",
+        "  avg_handle_time_sec, avg_queue_wait_sec,",
+        "  abandonment_rate, service_level_pct",
+        "FROM main.cdp.gold_call_center_analytics",
+        "WHERE metric_type = 'queue'",
+        "ORDER BY total_interactions DESC"
+      ]
+    },
+    {
+      "name": "sentiment_data",
+      "displayName": "Sentiment by Topic",
+      "queryLines": [
+        "SELECT topic_category,",
+        "  COUNT(*) AS interaction_count,",
+        "  ROUND(COUNT(CASE WHEN sentiment = 'positive' THEN 1 END) * 100.0 / COUNT(*), 1) AS positive_pct,",
+        "  ROUND(COUNT(CASE WHEN sentiment = 'negative' THEN 1 END) * 100.0 / COUNT(*), 1) AS negative_pct,",
+        "  ROUND(COUNT(CASE WHEN sentiment = 'neutral' THEN 1 END) * 100.0 / COUNT(*), 1) AS neutral_pct",
+        "FROM main.cdp.gold_call_center_sentiment",
+        "GROUP BY topic_category",
+        "ORDER BY interaction_count DESC"
+      ]
+    }
+  ]
+}
