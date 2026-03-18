@@ -1,0 +1,27 @@
+{
+  "name": "cdp-enhanced-insights",
+  "version": "1.0.0",
+  "description": "Customer Data Platform and Customer 360 solution on **Azure Databricks** for PagoNxt Getnet—Santander's payment and acquiring platform.",
+  "main": "qa-test-app.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anakin-skynnet/cdp-enhanced-insights.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/anakin-skynnet/cdp-enhanced-insights/issues"
+  },
+  "homepage": "https://github.com/anakin-skynnet/cdp-enhanced-insights#readme",
+  "devDependencies": {
+    "playwright": "^1.58.2"
+  }
+}

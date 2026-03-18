@@ -1,0 +1,52 @@
+{
+  "pages": [
+    {
+      "name": "Dashboard",
+      "kpis": 8,
+      "charts": 2,
+      "issues": [],
+      "screenshot": "qa-screenshot-dashboard.png"
+    },
+    {
+      "name": "Merchants",
+      "tableRows": 50,
+      "rowsAfterSearch": 1,
+      "exportButton": true,
+      "issues": [],
+      "screenshot": "qa-screenshot-merchants.png"
+    },
+    {
+      "name": "Next Best Actions",
+      "tableRows": 30,
+      "exportButton": true,
+      "issues": [],
+      "screenshot": "qa-screenshot-nba.png"
+    },
+    {
+      "name": "Anomaly Alerts",
+      "kpis": 6,
+      "charts": 2,
+      "tableRows": 30,
+      "exportButton": true,
+      "issues": [],
+      "screenshot": "qa-screenshot-anomalies.png"
+    },
+    {
+      "name": "Support Analytics",
+      "kpis": 4,
+      "charts": 1,
+      "tableRows": 20,
+      "issues": [],
+      "screenshot": "qa-screenshot-support.png"
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "issues": []
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [
+    "[warning] cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation"
+  ]
+}

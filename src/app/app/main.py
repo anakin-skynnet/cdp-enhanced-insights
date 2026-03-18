@@ -317,8 +317,10 @@ async def export_csv(
         rows = ds.get_nba_queue(limit=limit)
     elif resource_type == "anomaly-alerts":
         rows = ds.get_anomaly_alerts(limit=limit)
+    elif resource_type == "support":
+        rows = ds.get_support_merchants(limit=limit)
     else:
-        raise HTTPException(status_code=400, detail="Supported: audience, merchants, nba, anomaly-alerts")
+        raise HTTPException(status_code=400, detail="Supported: audience, merchants, nba, anomaly-alerts, support")
     if not rows:
         raise HTTPException(status_code=404, detail="No data found")
     output = io.StringIO()

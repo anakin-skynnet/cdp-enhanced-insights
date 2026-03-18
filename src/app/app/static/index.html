@@ -195,7 +195,7 @@
     <!-- Header -->
     <header class="h-14 shrink-0 border-b border-border flex items-center justify-between px-6">
       <div class="flex items-center gap-3">
-        <button onclick="toggleSidebar()" class="lg:hidden p-1.5 rounded-md hover:bg-accent">
+        <button onclick="toggleSidebar()" class="lg:hidden p-1.5 rounded-md hover:bg-accent" aria-label="Toggle navigation sidebar">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
         </button>
         <h1 id="page-title" class="text-lg font-semibold">Dashboard</h1>
@@ -225,7 +225,7 @@
     <div class="absolute right-0 top-0 bottom-0 w-full max-w-lg bg-card border-l border-border overflow-y-auto scrollbar-thin">
       <div class="sticky top-0 bg-card/95 backdrop-blur border-b border-border px-6 py-4 flex items-center justify-between z-10">
         <h2 class="text-lg font-semibold">Merchant Detail</h2>
-        <button onclick="closeMerchantSheet()" class="p-1.5 rounded-md hover:bg-accent">
+        <button onclick="closeMerchantSheet()" class="p-1.5 rounded-md hover:bg-accent" aria-label="Close merchant detail">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
@@ -465,11 +465,18 @@
     // ═══════════════════════════════════════════════════════════
     // PAGE: Merchants
     // ═══════════════════════════════════════════════════════════
-    async function loadMerchants(search = '') {
+    let merchantPage = 0;
+    const MERCHANT_PAGE_SIZE = 25;
+
+    async function loadMerchants(search = '', page = 0) {
+      merchantPage = page;
       const c = document.getElementById('page-container');
-      const merchants = await api(`/api/merchants?search=${encodeURIComponent(search)}&limit=50`);
+      const merchants = await api(`/api/merchants?search=${encodeURIComponent(search)}&limit=200`);
       if (!merchants) { c.innerHTML = card('Error', '<p class="text-muted-foreground">Failed to load merchants.</p>'); return; }
-      const rows = merchants.map(m => `
+      const total = merchants.length;
+      const totalPages = Math.ceil(total / MERCHANT_PAGE_SIZE);
+      const sliced = merchants.slice(page * MERCHANT_PAGE_SIZE, (page + 1) * MERCHANT_PAGE_SIZE);
+      const rows = sliced.map(m => `
         <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${m.golden_id}')">
           <td class="px-4 py-3 font-mono text-xs">${m.golden_id}</td>
           <td class="px-4 py-3 font-medium">${m.merchant_name}</td>
@@ -480,16 +487,20 @@
           <td class="px-4 py-3 text-right">${m.days_since_last_txn}d</td>
           <td class="px-4 py-3 text-right">${m.ticket_count}</td>
         </tr>`).join('');
+      const paginationBtns = totalPages > 1 ? Array.from({length: totalPages}, (_, i) =>
+        `<button onclick="loadMerchants('${search.replace(/'/g,"\\'")}', ${i})" class="w-8 h-8 rounded text-xs ${i === page ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'} transition-colors">${i + 1}</button>`
+      ).join('') : '';
       c.innerHTML = `
         <div class="space-y-4">
           <div class="flex items-center gap-3">
             <input type="text" value="${search}" placeholder="Filter merchants..."
               class="h-9 w-72 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               oninput="debounceMerchantSearch(this.value)" />
-            <span class="text-sm text-muted-foreground">${merchants.length} merchants</span>
-            <a href="/api/export/merchants?limit=500" class="ml-auto text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">Export CSV</a>
+            <span class="text-sm text-muted-foreground">${total} merchants${totalPages > 1 ? ` · page ${page + 1}/${totalPages}` : ''}</span>
+            <a href="/api/export/merchants?limit=500" class="ml-auto text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors" aria-label="Export merchants as CSV">Export CSV</a>
           </div>
           ${tableWrap(['ID', 'Name', 'Segment', 'Health', 'Score', 'Volume', 'Recency', 'Tickets'], rows)}
+          ${paginationBtns ? `<div class="flex items-center justify-center gap-1 pt-2">${paginationBtns}</div>` : ''}
         </div>`;
     }
 
@@ -609,7 +620,7 @@
           </div>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             ${card('Support Quality Distribution', '<div style="height:280px"><canvas id="chart-support-quality"></canvas></div>')}
-            ${card('Top Support Merchants', '<div id="support-merchants-table"></div>')}
+            ${card('<div class="flex items-center justify-between w-full"><span>Top Support Merchants</span><a href="/api/export/support?limit=500" class="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors font-normal">Export CSV</a></div>', '<div id="support-merchants-table"></div>')}
           </div>
         </div>`;
       if (quality) {
@@ -849,13 +860,21 @@
       const creatives = await api('/api/ad-creative');
       const c = document.getElementById('page-container');
       if (!creatives || !creatives.length) { c.innerHTML = card('Ad Creative Library', '<p class="text-muted-foreground">No creatives available.</p>'); return; }
-      const cards = creatives.map(cr => `
+      let _crId = 0;
+      const cards = creatives.map(cr => {
+        const cid = 'cr-' + (++_crId);
+        return `
         <div class="rounded-lg border border-border bg-card overflow-hidden">
           <div class="px-5 py-4 border-b border-border flex items-center justify-between">
             ${segmentBadge(cr.segment)}
-            <span class="text-xs text-muted-foreground">${cr.merchant_count} merchants</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-muted-foreground">${cr.merchant_count} merchants</span>
+              <button onclick="copyCreative('${cid}')" class="text-muted-foreground hover:text-foreground transition-colors" aria-label="Copy creative to clipboard" title="Copy all">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+              </button>
+            </div>
           </div>
-          <div class="p-5 space-y-3">
+          <div id="${cid}" class="p-5 space-y-3">
             <div>
               <div class="text-xs text-muted-foreground mb-1">Email Subject</div>
               <div class="text-sm font-medium">${cr.email_subject || '-'}</div>
@@ -878,7 +897,8 @@
               <span class="text-xs font-medium text-primary">${cr.cta || ''}</span>
             </div>
           </div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
       c.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div>`;
     }
 
@@ -1594,6 +1614,33 @@
       </div>`;
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // Clipboard Utilities
+    // ═══════════════════════════════════════════════════════════
+    function copyCreative(cid) {
+      const el = document.getElementById(cid);
+      if (!el) return;
+      const text = el.innerText.replace(/\n{3,}/g, '\n\n').trim();
+      navigator.clipboard.writeText(text).then(() => showToast('Creative copied to clipboard'));
+    }
+
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+    }
+
+    function showToast(msg) {
+      let t = document.getElementById('app-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'app-toast';
+        t.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-lg bg-foreground text-background text-sm font-medium shadow-lg transition-all duration-300 opacity-0 pointer-events-none';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.classList.remove('opacity-0'); t.classList.add('opacity-100');
+      setTimeout(() => { t.classList.remove('opacity-100'); t.classList.add('opacity-0'); }, 2000);
+    }
+
     initApp();
 
     // ═══════════════════════════════════════════════════════════
@@ -1641,10 +1688,13 @@
         <div class="flex flex-col">
           <div class="max-w-[85%] rounded-lg bg-muted px-3 py-2 text-sm prose-sm">${renderMd(md)}</div>
           <div id="${fid}" class="flex gap-1 mt-1 ml-1">
-            <button onclick="rateBotMsg('${fid}','${escapeHtml(md.substring(0,200))}',5)" class="text-muted-foreground hover:text-green-400 transition-colors p-0.5" title="Helpful">
+            <button onclick="copyToClipboard(\`${md.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)" class="text-muted-foreground hover:text-foreground transition-colors p-0.5" title="Copy response" aria-label="Copy response">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </button>
+            <button onclick="rateBotMsg('${fid}','${escapeHtml(md.substring(0,200))}',5)" class="text-muted-foreground hover:text-green-400 transition-colors p-0.5" title="Helpful" aria-label="Mark as helpful">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
             </button>
-            <button onclick="rateBotMsg('${fid}','${escapeHtml(md.substring(0,200))}',1)" class="text-muted-foreground hover:text-red-400 transition-colors p-0.5" title="Not helpful">
+            <button onclick="rateBotMsg('${fid}','${escapeHtml(md.substring(0,200))}',1)" class="text-muted-foreground hover:text-red-400 transition-colors p-0.5" title="Not helpful" aria-label="Mark as not helpful">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v2a3.5 3.5 0 003.5 3.5h.792c.486 0 .937-.268 1.168-.695l1.044-1.93c.385-.713.565-1.505.565-2.307V9.5a2 2 0 00-2-2H14m-7 7h2"></path></svg>
             </button>
           </div>
@@ -1745,7 +1795,7 @@
   </script>
 
   <!-- AI Chat FAB -->
-  <button id="chat-fab" onclick="toggleChat()"
+  <button id="chat-fab" onclick="toggleChat()" aria-label="Open AI chat assistant"
     class="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all flex items-center justify-center ring-ring">
     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
   </button>
@@ -1768,7 +1818,7 @@
         <input id="chat-input" type="text" placeholder="Ask the CDP Agent..."
           class="flex-1 h-9 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           onkeydown="handleChatKey(event)" />
-        <button onclick="sendChat()" class="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
+        <button onclick="sendChat()" class="h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity" aria-label="Send message">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
         </button>
       </div>
