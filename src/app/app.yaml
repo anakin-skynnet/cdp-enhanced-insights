@@ -8,7 +8,7 @@ command:
 
 env:
   - name: DATABRICKS_WAREHOUSE_ID
-    valueFrom: sql-warehouse
+    value: "c60fc6392746d138"
 
   - name: CDP_CATALOG
     value: "main"
@@ -24,9 +24,3 @@ env:
 
   - name: CDP_GENIE_SPACE_ID
     value: ""
-
-resources:
-  - name: sql-warehouse
-    sql_warehouse:
-      id: c60fc6392746d138
-      permission: CAN_USE
