@@ -109,8 +109,8 @@ def query_one(sql: str, params: dict | None = None) -> dict | None:
 
 # ── Canned queries ──────────────────────────────────────────────
 
-CATALOG = os.environ.get("CDP_CATALOG", "main")
-SCHEMA = os.environ.get("CDP_SCHEMA", "cdp")
+CATALOG = os.environ.get("CDP_CATALOG", "ahs_demos_catalog")
+SCHEMA = os.environ.get("CDP_SCHEMA", "cdp_360")
 
 
 def _t(table: str) -> str:

@@ -13,12 +13,12 @@ The agent can:
   5. Provide attribution summaries of past actions
 
 Tools:
-  - main.cdp.get_next_best_actions: priority-ranked NBA queue
-  - main.cdp.get_nba_summary: action-type level summary
-  - main.cdp.get_health_scores: health score breakdown
-  - main.cdp.lookup_merchant: full C360 merchant profile
-  - main.cdp.get_action_history: past actions for a merchant
-  - main.cdp.get_action_log_summary: overall action attribution
+  - ahs_demos_catalog.cdp_360.get_next_best_actions: priority-ranked NBA queue
+  - ahs_demos_catalog.cdp_360.get_nba_summary: action-type level summary
+  - ahs_demos_catalog.cdp_360.get_health_scores: health score breakdown
+  - ahs_demos_catalog.cdp_360.lookup_merchant: full C360 merchant profile
+  - ahs_demos_catalog.cdp_360.get_action_history: past actions for a merchant
+  - ahs_demos_catalog.cdp_360.get_action_log_summary: overall action attribution
 """
 
 import mlflow
@@ -135,12 +135,12 @@ class NextBestActionAgent(ResponsesAgent):
 
         uc_toolkit = UCFunctionToolkit(
             function_names=[
-                "main.cdp.get_next_best_actions",
-                "main.cdp.get_nba_summary",
-                "main.cdp.get_health_scores",
-                "main.cdp.lookup_merchant",
-                "main.cdp.get_action_history",
-                "main.cdp.get_action_log_summary",
+                "ahs_demos_catalog.cdp_360.get_next_best_actions",
+                "ahs_demos_catalog.cdp_360.get_nba_summary",
+                "ahs_demos_catalog.cdp_360.get_health_scores",
+                "ahs_demos_catalog.cdp_360.lookup_merchant",
+                "ahs_demos_catalog.cdp_360.get_action_history",
+                "ahs_demos_catalog.cdp_360.get_action_log_summary",
             ]
         )
         self.tools = list(uc_toolkit.tools)

@@ -11,8 +11,8 @@
         "  COALESCE(ROUND(AVG(e.txn_count), 1), 0) AS avg_txn_per_merchant, ",
         "  COALESCE(SUM(e.ticket_count), 0) AS total_tickets, ",
         "  COALESCE(ROUND(AVG(e.days_since_last_txn), 0), 0) AS avg_days_since_last_txn ",
-        "FROM main.cdp.gold_customer_360 c ",
-        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id"
+        "FROM ahs_demos_catalog.cdp_360.gold_customer_360 c ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id"
       ]
     },
     {
@@ -24,9 +24,9 @@
         "  COUNT(DISTINCT c.golden_id) AS merchant_count, ",
         "  COALESCE(SUM(e.txn_volume), 0) AS segment_volume, ",
         "  COALESCE(ROUND(AVG(e.txn_count), 1), 0) AS avg_txn_count ",
-        "FROM main.cdp.gold_customer_360 c ",
-        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
-        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "FROM ahs_demos_catalog.cdp_360.gold_customer_360 c ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id ",
         "GROUP BY COALESCE(s.segment, 'unassigned')"
       ]
     },
@@ -37,7 +37,7 @@
         "SELECT ",
         "  primary_source_type AS source, ",
         "  COUNT(DISTINCT golden_id) AS merchant_count ",
-        "FROM main.cdp.gold_customer_360 ",
+        "FROM ahs_demos_catalog.cdp_360.gold_customer_360 ",
         "GROUP BY primary_source_type"
       ]
     },
@@ -54,9 +54,9 @@
         "  COALESCE(e.txn_count, 0) AS txn_count, ",
         "  COALESCE(e.ticket_count, 0) AS ticket_count, ",
         "  COALESCE(e.days_since_last_txn, -1) AS days_since_last_txn ",
-        "FROM main.cdp.gold_customer_360 c ",
-        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
-        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "FROM ahs_demos_catalog.cdp_360.gold_customer_360 c ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id ",
         "ORDER BY e.txn_volume DESC NULLS LAST ",
         "LIMIT 50"
       ]
@@ -69,7 +69,7 @@
         "  source_type, ",
         "  COUNT(*) AS record_count, ",
         "  COUNT(DISTINCT golden_id) AS unique_identities ",
-        "FROM main.cdp.gold_identity_graph ",
+        "FROM ahs_demos_catalog.cdp_360.gold_identity_graph ",
         "GROUP BY source_type"
       ]
     }

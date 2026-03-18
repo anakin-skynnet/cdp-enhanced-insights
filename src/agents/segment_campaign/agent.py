@@ -7,10 +7,10 @@ segment composition, then recommends campaign strategies, channels,
 and audience lists for activation via Hightouch/SFMC.
 
 Tools:
-  - main.cdp.get_segment_summary: segment-level metrics
-  - main.cdp.get_segment_merchants: audience list for a segment
-  - main.cdp.lookup_merchant: individual merchant deep-dive
-  - main.cdp.get_churn_kpis: overall health context
+  - ahs_demos_catalog.cdp_360.get_segment_summary: segment-level metrics
+  - ahs_demos_catalog.cdp_360.get_segment_merchants: audience list for a segment
+  - ahs_demos_catalog.cdp_360.lookup_merchant: individual merchant deep-dive
+  - ahs_demos_catalog.cdp_360.get_churn_kpis: overall health context
 """
 
 import mlflow
@@ -90,10 +90,10 @@ class SegmentCampaignAgent(ResponsesAgent):
 
         uc_toolkit = UCFunctionToolkit(
             function_names=[
-                "main.cdp.get_segment_summary",
-                "main.cdp.get_segment_merchants",
-                "main.cdp.lookup_merchant",
-                "main.cdp.get_churn_kpis",
+                "ahs_demos_catalog.cdp_360.get_segment_summary",
+                "ahs_demos_catalog.cdp_360.get_segment_merchants",
+                "ahs_demos_catalog.cdp_360.lookup_merchant",
+                "ahs_demos_catalog.cdp_360.get_churn_kpis",
             ]
         )
         self.tools = list(uc_toolkit.tools)

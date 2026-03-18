@@ -10,10 +10,10 @@ Create a Genie Space for natural language analytics on the Customer 360 golden r
 4. **Description:** Ask questions about merchant data, churn risk, segments, and engagement
 5. **SQL Warehouse:** Select shared warehouse
 6. **Tables:** Add:
-   - `main.cdp.gold_customer_360`
-   - `main.cdp.gold_engagement_metrics`
-   - `main.cdp.gold_segments`
-   - `main.cdp.gold_identity_graph`
+   - `ahs_demos_catalog.cdp_360.gold_customer_360`
+   - `ahs_demos_catalog.cdp_360.gold_engagement_metrics`
+   - `ahs_demos_catalog.cdp_360.gold_segments`
+   - `ahs_demos_catalog.cdp_360.gold_identity_graph`
 7. **Sample questions:**
    - "Show me churn risk by segment"
    - "Top 10 merchants by payment volume"

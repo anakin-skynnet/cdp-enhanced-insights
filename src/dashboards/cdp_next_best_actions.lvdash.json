@@ -11,7 +11,7 @@
         "  ROUND(SUM(estimated_revenue_impact), 0) AS total_revenue_impact, ",
         "  ROUND(AVG(health_score), 1) AS avg_health_score, ",
         "  COUNT(CASE WHEN health_tier = 'critical' THEN 1 END) AS critical_merchants ",
-        "FROM main.cdp.gold_next_best_actions"
+        "FROM ahs_demos_catalog.cdp_360.gold_next_best_actions"
       ]
     },
     {
@@ -24,7 +24,7 @@
         "  ROUND(SUM(estimated_revenue_impact), 0) AS revenue_impact, ",
         "  ROUND(AVG(health_score), 1) AS avg_health, ",
         "  COUNT(CASE WHEN urgency = 'immediate' THEN 1 END) AS immediate ",
-        "FROM main.cdp.gold_next_best_actions ",
+        "FROM ahs_demos_catalog.cdp_360.gold_next_best_actions ",
         "GROUP BY primary_action ",
         "ORDER BY revenue_impact DESC"
       ]
@@ -37,7 +37,7 @@
         "  urgency, ",
         "  COUNT(*) AS merchant_count, ",
         "  ROUND(SUM(estimated_revenue_impact), 0) AS revenue_impact ",
-        "FROM main.cdp.gold_next_best_actions ",
+        "FROM ahs_demos_catalog.cdp_360.gold_next_best_actions ",
         "GROUP BY urgency ",
         "ORDER BY CASE urgency ",
         "  WHEN 'immediate' THEN 1 ",
@@ -54,7 +54,7 @@
         "  primary_channel, ",
         "  COUNT(*) AS merchant_count, ",
         "  ROUND(SUM(estimated_revenue_impact), 0) AS revenue_impact ",
-        "FROM main.cdp.gold_next_best_actions ",
+        "FROM ahs_demos_catalog.cdp_360.gold_next_best_actions ",
         "GROUP BY primary_channel ",
         "ORDER BY revenue_impact DESC"
       ]
@@ -68,7 +68,7 @@
         "  COUNT(*) AS merchant_count, ",
         "  ROUND(AVG(health_score), 1) AS avg_score, ",
         "  ROUND(SUM(txn_volume), 0) AS total_volume ",
-        "FROM main.cdp.gold_next_best_actions ",
+        "FROM ahs_demos_catalog.cdp_360.gold_next_best_actions ",
         "GROUP BY health_tier ",
         "ORDER BY CASE health_tier ",
         "  WHEN 'critical' THEN 1 ",
@@ -92,7 +92,7 @@
         "  ROUND(estimated_revenue_impact, 0) AS revenue_impact, ",
         "  days_since_last_txn, ",
         "  ticket_count ",
-        "FROM main.cdp.gold_next_best_actions ",
+        "FROM ahs_demos_catalog.cdp_360.gold_next_best_actions ",
         "WHERE urgency = 'immediate' ",
         "ORDER BY priority_score DESC ",
         "LIMIT 25"
@@ -109,7 +109,7 @@
         "  COUNT(CASE WHEN health_tier IN ('critical', 'poor') THEN 1 END) AS unhealthy, ",
         "  ROUND(SUM(estimated_revenue_impact), 0) AS total_impact, ",
         "  FIRST(primary_action) AS most_common_action ",
-        "FROM main.cdp.gold_next_best_actions ",
+        "FROM ahs_demos_catalog.cdp_360.gold_next_best_actions ",
         "GROUP BY segment ",
         "ORDER BY avg_health ASC"
       ]
@@ -121,7 +121,7 @@
         "SELECT ",
         "  segment, ",
         "  ROUND(SUM(estimated_revenue_impact), 0) AS revenue_impact ",
-        "FROM main.cdp.gold_next_best_actions ",
+        "FROM ahs_demos_catalog.cdp_360.gold_next_best_actions ",
         "GROUP BY segment ",
         "ORDER BY revenue_impact DESC"
       ]

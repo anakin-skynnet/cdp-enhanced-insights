@@ -11,9 +11,9 @@
         "  COUNT(DISTINCT c.golden_id) AS total_merchants, ",
         "  ROUND(COUNT(DISTINCT CASE WHEN e.days_since_last_txn > 90 THEN c.golden_id END) * 100.0 / ",
         "    NULLIF(COUNT(DISTINCT c.golden_id), 0), 1) AS churn_rate_pct ",
-        "FROM main.cdp.gold_customer_360 c ",
-        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
-        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id"
+        "FROM ahs_demos_catalog.cdp_360.gold_customer_360 c ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id"
       ]
     },
     {
@@ -25,9 +25,9 @@
         "  COUNT(DISTINCT c.golden_id) AS merchant_count, ",
         "  COALESCE(SUM(e.txn_volume), 0) AS volume_at_risk, ",
         "  COALESCE(ROUND(AVG(e.days_since_last_txn), 0), 0) AS avg_days_inactive ",
-        "FROM main.cdp.gold_customer_360 c ",
-        "LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
-        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "FROM ahs_demos_catalog.cdp_360.gold_customer_360 c ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id ",
         "GROUP BY COALESCE(s.segment, 'unassigned') ",
         "ORDER BY merchant_count DESC"
       ]
@@ -54,8 +54,8 @@
         "    ELSE 6 ",
         "  END AS bucket_order, ",
         "  COUNT(DISTINCT c.golden_id) AS merchant_count ",
-        "FROM main.cdp.gold_customer_360 c ",
-        "JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "FROM ahs_demos_catalog.cdp_360.gold_customer_360 c ",
+        "JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
         "GROUP BY 1, 2 ",
         "ORDER BY bucket_order"
       ]
@@ -73,9 +73,9 @@
         "  COALESCE(e.txn_count, 0) AS txn_count, ",
         "  COALESCE(e.ticket_count, 0) AS ticket_count, ",
         "  COALESCE(e.days_since_last_txn, -1) AS days_since_last_txn ",
-        "FROM main.cdp.gold_customer_360 c ",
-        "JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
-        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "FROM ahs_demos_catalog.cdp_360.gold_customer_360 c ",
+        "JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id ",
         "WHERE s.segment IN ('at_risk', 'cant_lose', 'hibernating') ",
         "ORDER BY e.txn_volume DESC NULLS LAST ",
         "LIMIT 100"
@@ -88,9 +88,9 @@
         "SELECT ",
         "  COALESCE(s.segment, 'unassigned') AS segment, ",
         "  COALESCE(SUM(e.txn_volume), 0) AS volume_at_risk ",
-        "FROM main.cdp.gold_customer_360 c ",
-        "JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
-        "LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id ",
+        "FROM ahs_demos_catalog.cdp_360.gold_customer_360 c ",
+        "JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id ",
+        "LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id ",
         "WHERE s.segment IN ('at_risk', 'cant_lose', 'hibernating') ",
         "GROUP BY COALESCE(s.segment, 'unassigned') ",
         "ORDER BY volume_at_risk DESC"

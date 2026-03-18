@@ -27,53 +27,53 @@ base_resources = [
 ]
 
 uc_functions_churn = [
-    DatabricksFunction(function_name="main.cdp.get_churn_kpis"),
-    DatabricksFunction(function_name="main.cdp.get_at_risk_merchants"),
-    DatabricksFunction(function_name="main.cdp.lookup_merchant"),
-    DatabricksFunction(function_name="main.cdp.get_segment_summary"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_churn_kpis"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_at_risk_merchants"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.lookup_merchant"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_summary"),
 ]
 
 uc_functions_campaign = [
-    DatabricksFunction(function_name="main.cdp.get_segment_summary"),
-    DatabricksFunction(function_name="main.cdp.get_segment_merchants"),
-    DatabricksFunction(function_name="main.cdp.lookup_merchant"),
-    DatabricksFunction(function_name="main.cdp.get_churn_kpis"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_summary"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_merchants"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.lookup_merchant"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_churn_kpis"),
 ]
 
 uc_functions_nba = [
-    DatabricksFunction(function_name="main.cdp.get_next_best_actions"),
-    DatabricksFunction(function_name="main.cdp.get_nba_summary"),
-    DatabricksFunction(function_name="main.cdp.get_health_scores"),
-    DatabricksFunction(function_name="main.cdp.lookup_merchant"),
-    DatabricksFunction(function_name="main.cdp.get_action_history"),
-    DatabricksFunction(function_name="main.cdp.get_action_log_summary"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_next_best_actions"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_nba_summary"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_health_scores"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.lookup_merchant"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_action_history"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_action_log_summary"),
 ]
 
 ALL_UC_FUNCTIONS = [
-    DatabricksFunction(function_name="main.cdp.lookup_merchant"),
-    DatabricksFunction(function_name="main.cdp.get_at_risk_merchants"),
-    DatabricksFunction(function_name="main.cdp.get_segment_summary"),
-    DatabricksFunction(function_name="main.cdp.get_segment_merchants"),
-    DatabricksFunction(function_name="main.cdp.get_next_best_actions"),
-    DatabricksFunction(function_name="main.cdp.get_nba_summary"),
-    DatabricksFunction(function_name="main.cdp.get_health_scores"),
-    DatabricksFunction(function_name="main.cdp.get_action_history"),
-    DatabricksFunction(function_name="main.cdp.get_action_log_summary"),
-    DatabricksFunction(function_name="main.cdp.get_churn_kpis"),
-    DatabricksFunction(function_name="main.cdp.get_clv_rankings"),
-    DatabricksFunction(function_name="main.cdp.get_clv_summary"),
-    DatabricksFunction(function_name="main.cdp.get_channel_attribution"),
-    DatabricksFunction(function_name="main.cdp.get_behavioral_segments"),
-    DatabricksFunction(function_name="main.cdp.get_support_analytics"),
-    DatabricksFunction(function_name="main.cdp.get_support_kpis"),
-    DatabricksFunction(function_name="main.cdp.get_call_center_agents"),
-    DatabricksFunction(function_name="main.cdp.get_call_center_sentiment"),
-    DatabricksFunction(function_name="main.cdp.get_personalization_signals"),
-    DatabricksFunction(function_name="main.cdp.get_ad_creative"),
-    DatabricksFunction(function_name="main.cdp.get_campaign_roi"),
-    DatabricksFunction(function_name="main.cdp.get_audience"),
-    DatabricksFunction(function_name="main.cdp.get_anomaly_alerts"),
-    DatabricksFunction(function_name="main.cdp.get_merchant_timeline"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.lookup_merchant"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_at_risk_merchants"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_summary"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_merchants"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_next_best_actions"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_nba_summary"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_health_scores"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_action_history"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_action_log_summary"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_churn_kpis"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_clv_rankings"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_clv_summary"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_channel_attribution"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_behavioral_segments"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_support_analytics"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_support_kpis"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_call_center_agents"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_call_center_sentiment"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_personalization_signals"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_ad_creative"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_campaign_roi"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_audience"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_anomaly_alerts"),
+    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_merchant_timeline"),
 ]
 
 pip_requirements = [
@@ -98,7 +98,7 @@ with mlflow.start_run(run_name="churn_prevention_agent"):
         input_example={
             "input": [{"role": "user", "content": "Show me the top at-risk merchants by revenue"}]
         },
-        registered_model_name="main.cdp.churn_prevention_agent",
+        registered_model_name="ahs_demos_catalog.cdp_360.churn_prevention_agent",
     )
     print(f"Churn agent logged: {model_info.model_uri}")
 
@@ -118,7 +118,7 @@ with mlflow.start_run(run_name="segment_campaign_agent"):
         input_example={
             "input": [{"role": "user", "content": "Design a campaign to re-engage hibernating merchants"}]
         },
-        registered_model_name="main.cdp.segment_campaign_agent",
+        registered_model_name="ahs_demos_catalog.cdp_360.segment_campaign_agent",
     )
     print(f"Campaign agent logged: {model_info.model_uri}")
 
@@ -138,7 +138,7 @@ with mlflow.start_run(run_name="next_best_action_agent"):
         input_example={
             "input": [{"role": "user", "content": "What are the top priority actions for this week?"}]
         },
-        registered_model_name="main.cdp.next_best_action_agent",
+        registered_model_name="ahs_demos_catalog.cdp_360.next_best_action_agent",
     )
     print(f"NBA agent logged: {model_info.model_uri}")
 
@@ -163,7 +163,7 @@ with mlflow.start_run(run_name="cdp_supervisor_agent"):
         input_example={
             "input": [{"role": "user", "content": "Give me a complete overview of our merchant health and top priorities this week"}]
         },
-        registered_model_name="main.cdp.cdp_supervisor_agent",
+        registered_model_name="ahs_demos_catalog.cdp_360.cdp_supervisor_agent",
     )
     print(f"Supervisor agent logged: {model_info.model_uri}")
 
@@ -177,25 +177,25 @@ with mlflow.start_run(run_name="cdp_supervisor_agent"):
 from databricks import agents
 
 agents.deploy(
-    "main.cdp.cdp_supervisor_agent",
+    "ahs_demos_catalog.cdp_360.cdp_supervisor_agent",
     version="1",
     tags={"use_case": "cdp_supervisor", "cdp": "getnet", "role": "primary"},
 )
 
 agents.deploy(
-    "main.cdp.churn_prevention_agent",
+    "ahs_demos_catalog.cdp_360.churn_prevention_agent",
     version="1",
     tags={"use_case": "churn_prevention", "cdp": "getnet"},
 )
 
 agents.deploy(
-    "main.cdp.segment_campaign_agent",
+    "ahs_demos_catalog.cdp_360.segment_campaign_agent",
     version="1",
     tags={"use_case": "segment_campaigns", "cdp": "getnet"},
 )
 
 agents.deploy(
-    "main.cdp.next_best_action_agent",
+    "ahs_demos_catalog.cdp_360.next_best_action_agent",
     version="1",
     tags={"use_case": "next_best_action", "cdp": "getnet"},
 )

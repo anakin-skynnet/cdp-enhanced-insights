@@ -6,10 +6,10 @@ retention actions. Uses UC Functions to query the golden record and
 engagement metrics, then reasons about the best intervention strategy.
 
 Tools:
-  - main.cdp.get_churn_kpis: aggregate churn dashboard
-  - main.cdp.get_at_risk_merchants: list merchants at risk
-  - main.cdp.lookup_merchant: deep-dive into a specific merchant
-  - main.cdp.get_segment_summary: segment-level context
+  - ahs_demos_catalog.cdp_360.get_churn_kpis: aggregate churn dashboard
+  - ahs_demos_catalog.cdp_360.get_at_risk_merchants: list merchants at risk
+  - ahs_demos_catalog.cdp_360.lookup_merchant: deep-dive into a specific merchant
+  - ahs_demos_catalog.cdp_360.get_segment_summary: segment-level context
 """
 
 import mlflow
@@ -81,10 +81,10 @@ class ChurnPreventionAgent(ResponsesAgent):
 
         uc_toolkit = UCFunctionToolkit(
             function_names=[
-                "main.cdp.get_churn_kpis",
-                "main.cdp.get_at_risk_merchants",
-                "main.cdp.lookup_merchant",
-                "main.cdp.get_segment_summary",
+                "ahs_demos_catalog.cdp_360.get_churn_kpis",
+                "ahs_demos_catalog.cdp_360.get_at_risk_merchants",
+                "ahs_demos_catalog.cdp_360.lookup_merchant",
+                "ahs_demos_catalog.cdp_360.get_segment_summary",
             ]
         )
         self.tools = list(uc_toolkit.tools)

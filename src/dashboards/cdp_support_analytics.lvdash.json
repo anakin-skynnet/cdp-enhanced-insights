@@ -136,7 +136,7 @@
         "  ROUND(AVG(csat_score), 1) AS overall_csat,",
         "  ROUND(AVG(sla_first_response_pct), 1) AS sla_first_response_pct,",
         "  ROUND(AVG(sla_resolution_pct), 1) AS sla_resolution_pct",
-        "FROM main.cdp.gold_support_analytics"
+        "FROM ahs_demos_catalog.cdp_360.gold_support_analytics"
       ]
     },
     {
@@ -147,7 +147,7 @@
         "  COUNT(*) AS merchant_count,",
         "  ROUND(AVG(avg_resolution_min), 0) AS avg_resolution,",
         "  ROUND(AVG(csat_score), 1) AS avg_csat",
-        "FROM main.cdp.gold_support_analytics",
+        "FROM ahs_demos_catalog.cdp_360.gold_support_analytics",
         "GROUP BY support_quality_tier"
       ]
     },
@@ -159,7 +159,7 @@
         "  ROUND(avg_first_response_min, 0) AS avg_first_response_min,",
         "  ROUND(avg_resolution_min, 0) AS avg_resolution_min,",
         "  csat_score, sla_resolution_pct, support_quality_tier",
-        "FROM main.cdp.gold_support_analytics",
+        "FROM ahs_demos_catalog.cdp_360.gold_support_analytics",
         "ORDER BY total_tickets DESC LIMIT 50"
       ]
     }

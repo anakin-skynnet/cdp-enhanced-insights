@@ -14,13 +14,13 @@ include:
 
 variables:
   catalog:
-    default: "main"
+    default: "ahs_demos_catalog"
   schema:
-    default: "cdp"
+    default: "cdp_360"
   warehouse_id:
     default: "c60fc6392746d138"
   schema_location_base:
-    default: "/Volumes/main/cdp/cdp_metadata/schemas"
+    default: "/Volumes/ahs_demos_catalog/cdp_360/cdp_metadata/schemas"
 
 targets:
   dev:
@@ -29,15 +29,15 @@ targets:
     workspace:
       profile: DEFAULT
     variables:
-      catalog: "main"
-      schema: "cdp_dev"
-      schema_location_base: "/Volumes/main/cdp_dev/cdp_metadata/schemas"
+      catalog: "ahs_demos_catalog"
+      schema: "cdp_360"
+      schema_location_base: "/Volumes/ahs_demos_catalog/cdp_360/cdp_metadata/schemas"
 
   prod:
     mode: production
     workspace:
       profile: DEFAULT
     variables:
-      catalog: "main"
-      schema: "cdp"
-      schema_location_base: "/Volumes/main/cdp/cdp_metadata/schemas"
+      catalog: "ahs_demos_catalog"
+      schema: "cdp_360"
+      schema_location_base: "/Volumes/ahs_demos_catalog/cdp_360/cdp_metadata/schemas"

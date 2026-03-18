@@ -25,7 +25,7 @@ SELECT
   last_name,
   primary_source_id,
   primary_source_type
-FROM main.cdp.gold_customer_360
+FROM ahs_demos_catalog.cdp_360.gold_customer_360
 WHERE email IS NOT NULL
 ```
 
@@ -39,9 +39,9 @@ SELECT
   e.days_since_last_txn,
   e.txn_volume,
   s.segment
-FROM main.cdp.gold_customer_360 c
-JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id
-LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id
+FROM ahs_demos_catalog.cdp_360.gold_customer_360 c
+JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id
+LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id
 WHERE e.days_since_last_txn BETWEEN 60 AND 90
   AND s.segment IN ('at_risk', 'cant_lose')
 ```

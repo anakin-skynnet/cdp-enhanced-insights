@@ -130,7 +130,7 @@
         "  ROUND(AVG(avg_handle_time_sec), 0) AS avg_handle_time,",
         "  ROUND(AVG(resolution_rate), 1) AS avg_resolution_rate,",
         "  ROUND(AVG(abandonment_rate), 1) AS avg_abandonment_rate",
-        "FROM main.cdp.gold_call_center_analytics",
+        "FROM ahs_demos_catalog.cdp_360.gold_call_center_analytics",
         "WHERE metric_type = 'agent'"
       ]
     },
@@ -141,7 +141,7 @@
         "SELECT entity_id, total_interactions, voice_calls, chat_sessions,",
         "  avg_handle_time_sec, avg_talk_time_sec, avg_hold_time_sec,",
         "  avg_queue_wait_sec, resolution_rate, abandonment_rate",
-        "FROM main.cdp.gold_call_center_analytics",
+        "FROM ahs_demos_catalog.cdp_360.gold_call_center_analytics",
         "WHERE metric_type = 'agent'",
         "ORDER BY total_interactions DESC LIMIT 30"
       ]
@@ -153,7 +153,7 @@
         "SELECT entity_id AS queue_name, total_interactions,",
         "  avg_handle_time_sec, avg_queue_wait_sec,",
         "  abandonment_rate, service_level_pct",
-        "FROM main.cdp.gold_call_center_analytics",
+        "FROM ahs_demos_catalog.cdp_360.gold_call_center_analytics",
         "WHERE metric_type = 'queue'",
         "ORDER BY total_interactions DESC"
       ]
@@ -167,7 +167,7 @@
         "  ROUND(COUNT(CASE WHEN sentiment = 'positive' THEN 1 END) * 100.0 / COUNT(*), 1) AS positive_pct,",
         "  ROUND(COUNT(CASE WHEN sentiment = 'negative' THEN 1 END) * 100.0 / COUNT(*), 1) AS negative_pct,",
         "  ROUND(COUNT(CASE WHEN sentiment = 'neutral' THEN 1 END) * 100.0 / COUNT(*), 1) AS neutral_pct",
-        "FROM main.cdp.gold_call_center_sentiment",
+        "FROM ahs_demos_catalog.cdp_360.gold_call_center_sentiment",
         "GROUP BY topic_category",
         "ORDER BY interaction_count DESC"
       ]

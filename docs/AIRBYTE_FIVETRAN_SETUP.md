@@ -10,7 +10,7 @@ Third-party connectors for Genesys, Apian, Oracle Siebel, and Qualtrics. Data la
 2. OAuth2 authentication with Genesys
 3. Select streams: Users, Telephony, Stations, Routing, Locations, Analytics Conversation Details
 4. Configure sync frequency (e.g., hourly)
-5. Destination: Databricks Lakehouse - write to `main.cdp_dev.airbyte_raw_genesys` or Volume path
+5. Destination: Databricks Lakehouse - write to `ahs_demos_catalog.cdp_360_dev.airbyte_raw_genesys` or Volume path
 
 ### Fivetran
 

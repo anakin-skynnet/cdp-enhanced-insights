@@ -25,7 +25,7 @@ action_history AS (
     COUNT(DISTINCT action_type) AS distinct_action_types,
     MAX(executed_at) AS last_action_date,
     FIRST_VALUE(channel) OVER (PARTITION BY golden_id ORDER BY executed_at DESC) AS last_channel_used
-  FROM main.cdp.nba_action_log
+  FROM ahs_demos_catalog.cdp_360.nba_action_log
   GROUP BY golden_id
 ),
 txn_patterns AS (

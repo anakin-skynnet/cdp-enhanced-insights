@@ -13,7 +13,7 @@ WITH campaigns AS (
     notes AS campaign_name,
     executed_at AS campaign_date,
     ROW_NUMBER() OVER (PARTITION BY golden_id, action_type ORDER BY executed_at DESC) AS rn
-  FROM main.cdp.nba_action_log
+  FROM ahs_demos_catalog.cdp_360.nba_action_log
 ),
 pre_action AS (
   SELECT
@@ -29,9 +29,9 @@ pre_action AS (
     COALESCE(h.health_tier, 'unknown') AS current_health_tier,
     COALESCE(s.segment, 'unassigned') AS current_segment
   FROM campaigns c
-  LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id
-  LEFT JOIN main.cdp.gold_health_score h ON c.golden_id = h.golden_id
-  LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_health_score h ON c.golden_id = h.golden_id
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id
   WHERE c.rn = 1
 ),
 post_action_txns AS (
@@ -44,8 +44,8 @@ post_action_txns AS (
     COALESCE(SUM(t.amount), 0) AS post_txn_volume,
     MIN(t.transaction_date) AS first_post_txn_date
   FROM campaigns c
-  JOIN main.cdp.gold_identity_graph ig ON c.golden_id = ig.golden_id
-  JOIN main.cdp.silver_transactions t
+  JOIN ahs_demos_catalog.cdp_360.gold_identity_graph ig ON c.golden_id = ig.golden_id
+  JOIN ahs_demos_catalog.cdp_360.silver_transactions t
     ON ig.source_id = t.customer_external_id
     AND t.transaction_date > c.campaign_date
     AND t.transaction_date <= DATEADD(DAY, 30, c.campaign_date)

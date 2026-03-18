@@ -4,7 +4,7 @@
 -- Run this notebook once to create the functions.
 
 -- 1. Look up a merchant by golden_id, email, or name fragment
-CREATE OR REPLACE FUNCTION main.cdp.lookup_merchant(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.lookup_merchant(
   search_term STRING COMMENT 'Golden ID, email address, or merchant name fragment to search for'
 )
 RETURNS TABLE(
@@ -37,16 +37,16 @@ RETURN
     COALESCE(s.r_score, 0) AS r_score,
     COALESCE(s.f_score, 0) AS f_score,
     COALESCE(s.m_score, 0) AS m_score
-  FROM main.cdp.gold_customer_360 c
-  LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id
-  LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id
+  FROM ahs_demos_catalog.cdp_360.gold_customer_360 c
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id
   WHERE c.golden_id = search_term
      OR LOWER(c.email) = LOWER(search_term)
      OR LOWER(c.first_name) LIKE CONCAT('%', LOWER(search_term), '%')
   LIMIT 20;
 
 -- 2. Get at-risk merchants (churn candidates)
-CREATE OR REPLACE FUNCTION main.cdp.get_at_risk_merchants(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_at_risk_merchants(
   risk_level STRING DEFAULT 'all' COMMENT 'Filter: "high" (>90d inactive), "medium" (60-90d), "all" at-risk segments',
   top_n INT DEFAULT 25 COMMENT 'Number of merchants to return'
 )
@@ -72,9 +72,9 @@ RETURN
     COALESCE(e.txn_count, 0) AS txn_count,
     COALESCE(e.days_since_last_txn, -1) AS days_since_last_txn,
     COALESCE(e.ticket_count, 0) AS ticket_count
-  FROM main.cdp.gold_customer_360 c
-  JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id
-  LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id
+  FROM ahs_demos_catalog.cdp_360.gold_customer_360 c
+  JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id
   WHERE (
     (risk_level = 'high' AND e.days_since_last_txn > 90)
     OR (risk_level = 'medium' AND e.days_since_last_txn BETWEEN 60 AND 90)
@@ -84,7 +84,7 @@ RETURN
   LIMIT top_n;
 
 -- 3. Get segment summary with performance metrics
-CREATE OR REPLACE FUNCTION main.cdp.get_segment_summary(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_segment_summary(
   segment_filter STRING DEFAULT 'all' COMMENT 'Segment name to filter, or "all" for all segments'
 )
 RETURNS TABLE(
@@ -107,15 +107,15 @@ RETURN
     COALESCE(ROUND(AVG(e.txn_count), 1), 0) AS avg_txn_count,
     COALESCE(ROUND(AVG(e.days_since_last_txn), 0), 0) AS avg_recency,
     COALESCE(ROUND(AVG(e.ticket_count), 1), 0) AS avg_tickets
-  FROM main.cdp.gold_customer_360 c
-  LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id
-  LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id
+  FROM ahs_demos_catalog.cdp_360.gold_customer_360 c
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id
   WHERE segment_filter = 'all' OR COALESCE(s.segment, 'unassigned') = segment_filter
   GROUP BY COALESCE(s.segment, 'unassigned')
   ORDER BY total_volume DESC;
 
 -- 4. Get merchants in a specific segment for campaign targeting
-CREATE OR REPLACE FUNCTION main.cdp.get_segment_merchants(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_segment_merchants(
   target_segment STRING COMMENT 'Segment name: champions, loyal, potential_loyalists, new_customers, promising, at_risk, cant_lose, hibernating, need_attention',
   top_n INT DEFAULT 50 COMMENT 'Number of merchants to return'
 )
@@ -143,15 +143,15 @@ RETURN
     COALESCE(s.r_score, 0) AS r_score,
     COALESCE(s.f_score, 0) AS f_score,
     COALESCE(s.m_score, 0) AS m_score
-  FROM main.cdp.gold_customer_360 c
-  JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id
-  LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id
+  FROM ahs_demos_catalog.cdp_360.gold_customer_360 c
+  JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id
   WHERE s.segment = target_segment
   ORDER BY e.txn_volume DESC NULLS LAST
   LIMIT top_n;
 
 -- 5. Get next best actions for merchants (priority-ranked)
-CREATE OR REPLACE FUNCTION main.cdp.get_next_best_actions(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_next_best_actions(
   urgency_filter STRING DEFAULT 'all' COMMENT 'Filter: "immediate", "this_week", "this_month", or "all"',
   segment_filter STRING DEFAULT 'all' COMMENT 'Filter by segment name, or "all"',
   top_n INT DEFAULT 30 COMMENT 'Number of merchants to return'
@@ -192,14 +192,14 @@ RETURN
     txn_volume,
     days_since_last_txn,
     ticket_count
-  FROM main.cdp.gold_next_best_actions
+  FROM ahs_demos_catalog.cdp_360.gold_next_best_actions
   WHERE (urgency_filter = 'all' OR urgency = urgency_filter)
     AND (segment_filter = 'all' OR segment = segment_filter)
   ORDER BY priority_score DESC
   LIMIT top_n;
 
 -- 6. Get NBA summary by action type
-CREATE OR REPLACE FUNCTION main.cdp.get_nba_summary()
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_nba_summary()
 RETURNS TABLE(
   primary_action STRING,
   merchant_count BIGINT,
@@ -220,12 +220,12 @@ RETURN
     COUNT(CASE WHEN urgency = 'immediate' THEN 1 END) AS immediate_count,
     COUNT(CASE WHEN urgency = 'this_week' THEN 1 END) AS this_week_count,
     FIRST(primary_channel) AS top_channel
-  FROM main.cdp.gold_next_best_actions
+  FROM ahs_demos_catalog.cdp_360.gold_next_best_actions
   GROUP BY primary_action
   ORDER BY total_revenue_impact DESC;
 
 -- 7. Get merchant health score details
-CREATE OR REPLACE FUNCTION main.cdp.get_health_scores(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_health_scores(
   health_filter STRING DEFAULT 'all' COMMENT 'Filter: "critical", "poor", "fair", "good", "excellent", or "all"',
   top_n INT DEFAULT 30 COMMENT 'Number of merchants to return'
 )
@@ -259,13 +259,13 @@ RETURN
     txn_volume,
     days_since_last_txn,
     ticket_count
-  FROM main.cdp.gold_health_score
+  FROM ahs_demos_catalog.cdp_360.gold_health_score
   WHERE health_filter = 'all' OR health_tier = health_filter
   ORDER BY health_score ASC
   LIMIT top_n;
 
 -- 8. Action tracking table for attribution and closed-loop measurement
-CREATE TABLE IF NOT EXISTS main.cdp.nba_action_log (
+CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.nba_action_log (
   action_id STRING DEFAULT uuid(),
   golden_id STRING NOT NULL,
   action_type STRING NOT NULL,
@@ -276,7 +276,7 @@ CREATE TABLE IF NOT EXISTS main.cdp.nba_action_log (
 );
 
 -- Agent feedback tracking for evaluation loop
-CREATE TABLE IF NOT EXISTS main.cdp.agent_feedback_log (
+CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.agent_feedback_log (
   feedback_id STRING DEFAULT uuid(),
   message_content STRING,
   rating INT,
@@ -285,7 +285,7 @@ CREATE TABLE IF NOT EXISTS main.cdp.agent_feedback_log (
 );
 
 -- 9. Get action history for a merchant
-CREATE OR REPLACE FUNCTION main.cdp.get_action_history(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_action_history(
   merchant_golden_id STRING COMMENT 'Golden ID of the merchant',
   top_n INT DEFAULT 20 COMMENT 'Number of recent actions to return'
 )
@@ -302,13 +302,13 @@ LANGUAGE SQL
 COMMENT 'Get recent action history for a merchant from the NBA action log. Useful to avoid repeating actions.'
 RETURN
   SELECT action_id, golden_id, action_type, channel, executed_by, notes, executed_at
-  FROM main.cdp.nba_action_log
+  FROM ahs_demos_catalog.cdp_360.nba_action_log
   WHERE golden_id = merchant_golden_id
   ORDER BY executed_at DESC
   LIMIT top_n;
 
 -- 10. Get action log summary (for attribution reporting)
-CREATE OR REPLACE FUNCTION main.cdp.get_action_log_summary()
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_action_log_summary()
 RETURNS TABLE(
   action_type STRING,
   total_actions BIGINT,
@@ -325,12 +325,12 @@ RETURN
     COUNT(DISTINCT golden_id) AS unique_merchants,
     MAX(executed_at) AS most_recent,
     FIRST(channel) AS top_channel
-  FROM main.cdp.nba_action_log
+  FROM ahs_demos_catalog.cdp_360.nba_action_log
   GROUP BY action_type
   ORDER BY total_actions DESC;
 
 -- 11. Get churn risk KPIs
-CREATE OR REPLACE FUNCTION main.cdp.get_churn_kpis()
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_churn_kpis()
 RETURNS TABLE(
   total_merchants BIGINT,
   at_risk_count BIGINT,
@@ -350,16 +350,16 @@ RETURN
     ROUND(COUNT(DISTINCT CASE WHEN e.days_since_last_txn > 90 THEN c.golden_id END) * 100.0 /
       NULLIF(COUNT(DISTINCT c.golden_id), 0), 1) AS churn_rate_pct,
     COALESCE(SUM(CASE WHEN s.segment IN ('at_risk', 'cant_lose', 'hibernating') THEN e.txn_volume ELSE 0 END), 0) AS volume_at_risk
-  FROM main.cdp.gold_customer_360 c
-  LEFT JOIN main.cdp.gold_engagement_metrics e ON c.golden_id = e.golden_id
-  LEFT JOIN main.cdp.gold_segments s ON c.golden_id = s.golden_id;
+  FROM ahs_demos_catalog.cdp_360.gold_customer_360 c
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_engagement_metrics e ON c.golden_id = e.golden_id
+  LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id;
 
 -- ═══════════════════════════════════════════════════════════════
 -- SOLUTION ACCELERATOR FUNCTIONS
 -- ═══════════════════════════════════════════════════════════════
 
 -- 12. Get Customer Lifetime Value rankings
-CREATE OR REPLACE FUNCTION main.cdp.get_clv_rankings(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_clv_rankings(
   clv_tier_filter STRING DEFAULT 'all' COMMENT 'Filter: "very_high", "high", "medium", "low", "very_low", or "all"',
   top_n INT DEFAULT 30 COMMENT 'Number of merchants to return'
 )
@@ -379,13 +379,13 @@ RETURN
   SELECT golden_id, clv_12m, clv_tier, p_alive,
          predicted_purchases_12m, total_amount,
          CAST(frequency AS INT), CAST(recency AS INT)
-  FROM main.cdp.gold_customer_ltv
+  FROM ahs_demos_catalog.cdp_360.gold_customer_ltv
   WHERE clv_tier_filter = 'all' OR clv_tier = clv_tier_filter
   ORDER BY clv_12m DESC
   LIMIT top_n;
 
 -- 13. Get CLV summary by tier
-CREATE OR REPLACE FUNCTION main.cdp.get_clv_summary()
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_clv_summary()
 RETURNS TABLE(
   clv_tier STRING,
   merchant_count BIGINT,
@@ -402,12 +402,12 @@ RETURN
          ROUND(SUM(clv_12m), 2) AS total_clv,
          ROUND(AVG(p_alive), 3) AS avg_p_alive,
          ROUND(AVG(predicted_purchases_12m), 1) AS avg_predicted_purchases
-  FROM main.cdp.gold_customer_ltv
+  FROM ahs_demos_catalog.cdp_360.gold_customer_ltv
   GROUP BY clv_tier
   ORDER BY avg_clv DESC;
 
 -- 14. Get channel attribution results
-CREATE OR REPLACE FUNCTION main.cdp.get_channel_attribution()
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_channel_attribution()
 RETURNS TABLE(
   channel STRING,
   markov_attributed_value DOUBLE,
@@ -422,11 +422,11 @@ COMMENT 'Get multi-touch attribution by channel. Markov Chain (data-driven) plus
 RETURN
   SELECT channel, markov_attributed_value, markov_attribution_share,
          first_touch_value, last_touch_value, linear_value, time_decay_value
-  FROM main.cdp.gold_channel_attribution
+  FROM ahs_demos_catalog.cdp_360.gold_channel_attribution
   ORDER BY markov_attributed_value DESC;
 
 -- 15. Get behavioral segments (K-Means clusters)
-CREATE OR REPLACE FUNCTION main.cdp.get_behavioral_segments()
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_behavioral_segments()
 RETURNS TABLE(
   behavioral_segment STRING,
   merchant_count BIGINT,
@@ -444,7 +444,7 @@ RETURN
          ROUND(AVG(txn_volume), 2) AS avg_txn_volume,
          ROUND(AVG(ticket_count), 1) AS avg_ticket_count,
          ROUND(AVG(days_since_last_txn), 0) AS avg_days_inactive
-  FROM main.cdp.gold_behavioral_segments
+  FROM ahs_demos_catalog.cdp_360.gold_behavioral_segments
   GROUP BY behavioral_segment
   ORDER BY avg_txn_volume DESC;
 
@@ -453,7 +453,7 @@ RETURN
 -- ═══════════════════════════════════════════════════════════════
 
 -- 16. Get support analytics per merchant
-CREATE OR REPLACE FUNCTION main.cdp.get_support_analytics(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_support_analytics(
   quality_filter STRING DEFAULT 'all' COMMENT 'Filter: "excellent", "good", "fair", "poor", or "all"',
   top_n INT DEFAULT 30 COMMENT 'Number of merchants to return'
 )
@@ -475,13 +475,13 @@ RETURN
   SELECT golden_id, total_tickets, open_tickets, resolved_tickets,
          avg_first_response_min, avg_resolution_min, csat_score,
          sla_first_response_pct, sla_resolution_pct, support_quality_tier
-  FROM main.cdp.gold_support_analytics
+  FROM ahs_demos_catalog.cdp_360.gold_support_analytics
   WHERE quality_filter = 'all' OR support_quality_tier = quality_filter
   ORDER BY total_tickets DESC
   LIMIT top_n;
 
 -- 17. Get support KPIs (aggregate)
-CREATE OR REPLACE FUNCTION main.cdp.get_support_kpis()
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_support_kpis()
 RETURNS TABLE(
   total_merchants_with_tickets BIGINT,
   total_tickets BIGINT,
@@ -504,14 +504,14 @@ RETURN
     ROUND(AVG(csat_score), 1) AS overall_csat,
     ROUND(AVG(sla_first_response_pct), 1) AS sla_first_response_pct,
     ROUND(AVG(sla_resolution_pct), 1) AS sla_resolution_pct
-  FROM main.cdp.gold_support_analytics;
+  FROM ahs_demos_catalog.cdp_360.gold_support_analytics;
 
 -- ═══════════════════════════════════════════════════════════════
 -- CALL CENTER ANALYTICS FUNCTIONS
 -- ═══════════════════════════════════════════════════════════════
 
 -- 18. Get call center agent performance
-CREATE OR REPLACE FUNCTION main.cdp.get_call_center_agents(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_call_center_agents(
   top_n INT DEFAULT 20 COMMENT 'Number of agents to return'
 )
 RETURNS TABLE(
@@ -529,13 +529,13 @@ COMMENT 'Get call center agent performance metrics.'
 RETURN
   SELECT entity_id, total_interactions, voice_calls, chat_sessions,
          avg_handle_time_sec, avg_queue_wait_sec, resolution_rate, abandonment_rate
-  FROM main.cdp.gold_call_center_analytics
+  FROM ahs_demos_catalog.cdp_360.gold_call_center_analytics
   WHERE metric_type = 'agent'
   ORDER BY total_interactions DESC
   LIMIT top_n;
 
 -- 19. Get call center sentiment summary
-CREATE OR REPLACE FUNCTION main.cdp.get_call_center_sentiment()
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_call_center_sentiment()
 RETURNS TABLE(
   topic_category STRING,
   interaction_count BIGINT,
@@ -552,7 +552,7 @@ RETURN
     ROUND(COUNT(CASE WHEN sentiment = 'positive' THEN 1 END) * 100.0 / COUNT(*), 1) AS positive_pct,
     ROUND(COUNT(CASE WHEN sentiment = 'negative' THEN 1 END) * 100.0 / COUNT(*), 1) AS negative_pct,
     ROUND(AVG(duration_seconds), 0) AS avg_duration_sec
-  FROM main.cdp.gold_call_center_sentiment
+  FROM ahs_demos_catalog.cdp_360.gold_call_center_sentiment
   GROUP BY topic_category
   ORDER BY interaction_count DESC;
 
@@ -561,7 +561,7 @@ RETURN
 -- ═══════════════════════════════════════════════════════════════
 
 -- 20. Get personalization signals for a merchant
-CREATE OR REPLACE FUNCTION main.cdp.get_personalization_signals(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_personalization_signals(
   merchant_id STRING COMMENT 'Golden ID of the merchant'
 )
 RETURNS TABLE(
@@ -586,7 +586,7 @@ RETURN
          preferred_time_slot, recommended_channel, upsell_propensity,
          churn_propensity, activation_propensity, content_theme,
          merchant_tier, next_best_action, nba_urgency
-  FROM main.cdp.gold_personalization_signals
+  FROM ahs_demos_catalog.cdp_360.gold_personalization_signals
   WHERE golden_id = merchant_id;
 
 -- ═══════════════════════════════════════════════════════════════
@@ -594,7 +594,7 @@ RETURN
 -- ═══════════════════════════════════════════════════════════════
 
 -- 21. Get ad creative library by segment
-CREATE OR REPLACE FUNCTION main.cdp.get_ad_creative(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_ad_creative(
   segment_filter STRING DEFAULT 'all' COMMENT 'Segment name or "all"'
 )
 RETURNS TABLE(
@@ -612,7 +612,7 @@ COMMENT 'Get AI-generated ad creative (email, SMS, push, ad copy) per segment.'
 RETURN
   SELECT segment, email_subject, sms_message, push_notification,
          ad_headline, ad_description, tone, cta
-  FROM main.cdp.gold_ad_creative_library
+  FROM ahs_demos_catalog.cdp_360.gold_ad_creative_library
   WHERE segment_filter = 'all' OR segment = segment_filter
   ORDER BY segment;
 
@@ -621,7 +621,7 @@ RETURN
 -- ═══════════════════════════════════════════════════════════════
 
 -- 22. Get campaign ROI summary
-CREATE OR REPLACE FUNCTION main.cdp.get_campaign_roi(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_campaign_roi(
   campaign_type_filter STRING DEFAULT 'all' COMMENT 'Filter by campaign type or "all"'
 )
 RETURNS TABLE(
@@ -645,7 +645,7 @@ RETURN
     ROUND(SUM(post_30d_volume), 0) AS total_post_revenue,
     COUNT(CASE WHEN campaign_outcome = 'reactivated' THEN 1 END) AS reactivations,
     ROUND(AVG(days_to_first_txn), 0) AS avg_days_to_convert
-  FROM main.cdp.gold_campaign_roi
+  FROM ahs_demos_catalog.cdp_360.gold_campaign_roi
   WHERE campaign_type_filter = 'all' OR campaign_type = campaign_type_filter
   GROUP BY campaign_type, channel
   ORDER BY total_post_revenue DESC;
@@ -655,7 +655,7 @@ RETURN
 -- ═══════════════════════════════════════════════════════════════
 
 -- 23. Get audience for activation
-CREATE OR REPLACE FUNCTION main.cdp.get_audience(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_audience(
   audience_type STRING DEFAULT 'churn_risk' COMMENT 'Audience: churn_risk, high_value, new_onboarding, winback, growth, vip, immediate_action',
   top_n INT DEFAULT 100 COMMENT 'Max merchants to return'
 )
@@ -676,7 +676,7 @@ RETURN
   SELECT golden_id, merchant_name, email, hashed_email,
          rfm_segment, health_score, txn_volume,
          primary_action, urgency
-  FROM main.cdp.gold_audience_exports
+  FROM ahs_demos_catalog.cdp_360.gold_audience_exports
   WHERE (
     (audience_type = 'churn_risk' AND audience_churn_risk)
     OR (audience_type = 'high_value' AND audience_high_value)
@@ -694,7 +694,7 @@ RETURN
 -- ────────────────────────────────────────────────────────────────
 -- 24. Anomaly Alerts
 -- ────────────────────────────────────────────────────────────────
-CREATE OR REPLACE FUNCTION main.cdp.get_anomaly_alerts(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_anomaly_alerts(
   alert_type STRING DEFAULT 'all' COMMENT 'Filter: volume_drop, unexpected_inactivity, ticket_spike, health_collapse, or all',
   top_n INT DEFAULT 50 COMMENT 'Max alerts to return'
 )
@@ -718,7 +718,7 @@ RETURN
   SELECT golden_id, merchant_name, segment, health_score,
          anomaly_type, deviation_pct, current_volume, avg_volume_30d,
          recommended_action, urgency, estimated_revenue_impact, detected_at
-  FROM main.cdp.gold_anomaly_alerts
+  FROM ahs_demos_catalog.cdp_360.gold_anomaly_alerts
   WHERE anomaly_type IS NOT NULL
     AND (alert_type = 'all' OR anomaly_type = alert_type)
   ORDER BY ABS(deviation_pct) DESC
@@ -728,7 +728,7 @@ RETURN
 -- ────────────────────────────────────────────────────────────────
 -- 25. Merchant Activity Timeline
 -- ────────────────────────────────────────────────────────────────
-CREATE OR REPLACE FUNCTION main.cdp.get_merchant_timeline(
+CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.get_merchant_timeline(
   merchant_id STRING COMMENT 'Merchant golden_id',
   max_events INT DEFAULT 30 COMMENT 'Max events to return'
 )
@@ -748,7 +748,7 @@ RETURN
            CONCAT('Transaction volume: $', ROUND(txn_volume, 0)) AS description,
            CONCAT(txn_count, ' transactions') AS detail,
            'engagement' AS source
-    FROM main.cdp.gold_engagement_metrics
+    FROM ahs_demos_catalog.cdp_360.gold_engagement_metrics
     WHERE golden_id = merchant_id
   ),
   nba_events AS (
@@ -757,7 +757,7 @@ RETURN
            CONCAT('Action: ', primary_action) AS description,
            CONCAT('Channel: ', primary_channel, ' | Urgency: ', urgency) AS detail,
            'nba' AS source
-    FROM main.cdp.gold_next_best_actions
+    FROM ahs_demos_catalog.cdp_360.gold_next_best_actions
     WHERE golden_id = merchant_id
   ),
   action_events AS (
@@ -766,7 +766,7 @@ RETURN
            CONCAT('Executed: ', action_type, ' via ', channel) AS description,
            COALESCE(notes, '') AS detail,
            'action_log' AS source
-    FROM main.cdp.nba_action_log
+    FROM ahs_demos_catalog.cdp_360.nba_action_log
     WHERE golden_id = merchant_id
   ),
   anomaly_events AS (
@@ -775,7 +775,7 @@ RETURN
            CONCAT('Anomaly: ', anomaly_type) AS description,
            CONCAT('Deviation: ', ROUND(deviation_pct, 1), '%') AS detail,
            'anomaly' AS source
-    FROM main.cdp.gold_anomaly_alerts
+    FROM ahs_demos_catalog.cdp_360.gold_anomaly_alerts
     WHERE golden_id = merchant_id AND anomaly_type IS NOT NULL
   )
   SELECT * FROM txn_events
