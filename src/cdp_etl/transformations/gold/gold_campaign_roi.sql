@@ -3,7 +3,7 @@
 -- to measure lift, conversion, and revenue attribution
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_campaign_roi
-REFRESH EVERY 1 HOUR
+SCHEDULE REFRESH EVERY 1 HOUR
 AS
 WITH campaigns AS (
   SELECT

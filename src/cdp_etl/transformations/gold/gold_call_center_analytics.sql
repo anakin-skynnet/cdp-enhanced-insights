@@ -3,7 +3,7 @@
 -- Source: silver_interactions (Genesys) enriched with NLP via ai_query()
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_call_center_analytics
-REFRESH EVERY 1 HOUR
+SCHEDULE REFRESH EVERY 1 HOUR
 AS
 WITH interaction_enriched AS (
   SELECT

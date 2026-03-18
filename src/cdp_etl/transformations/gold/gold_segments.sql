@@ -2,7 +2,7 @@
 -- For marketing activation and churn targeting
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_segments
-REFRESH EVERY 1 HOUR
+SCHEDULE REFRESH EVERY 1 HOUR
 AS
 WITH rfm AS (
   SELECT

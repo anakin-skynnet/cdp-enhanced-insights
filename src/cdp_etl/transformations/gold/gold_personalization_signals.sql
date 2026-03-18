@@ -4,7 +4,7 @@
 -- Feeds the Personalization Agent and app recommendations
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_personalization_signals
-REFRESH EVERY 1 HOUR
+SCHEDULE REFRESH EVERY 1 HOUR
 AS
 WITH engagement AS (
   SELECT * FROM gold_engagement_metrics

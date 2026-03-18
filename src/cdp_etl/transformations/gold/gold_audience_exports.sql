@@ -3,7 +3,7 @@
 -- Each row is a merchant with all targeting attributes needed for activation
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_audience_exports
-REFRESH EVERY 1 HOUR
+SCHEDULE REFRESH EVERY 1 HOUR
 AS
 WITH base AS (
   SELECT

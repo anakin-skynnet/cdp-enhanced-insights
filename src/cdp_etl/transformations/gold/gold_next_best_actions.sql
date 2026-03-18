@@ -4,7 +4,7 @@
 -- Each merchant gets exactly ONE primary action and ONE secondary action.
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_next_best_actions
-REFRESH EVERY 1 HOUR
+SCHEDULE REFRESH EVERY 1 HOUR
 AS
 WITH merchant_profile AS (
   SELECT

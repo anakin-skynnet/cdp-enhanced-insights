@@ -4,7 +4,7 @@
 -- Higher score = healthier merchant.
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_health_score
-REFRESH EVERY 1 HOUR
+SCHEDULE REFRESH EVERY 1 HOUR
 AS
 WITH base AS (
   SELECT

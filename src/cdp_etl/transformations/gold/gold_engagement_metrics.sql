@@ -3,7 +3,7 @@
 -- Ticket counts joined when requester_id maps to identity graph
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_engagement_metrics
-REFRESH EVERY 1 HOUR
+SCHEDULE REFRESH EVERY 1 HOUR
 AS
 WITH txn_metrics AS (
   SELECT

@@ -3,7 +3,7 @@
 -- Referenced by: Customer Support Analytics dashboard, Support Agent
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_support_analytics
-REFRESH EVERY 1 HOUR
+SCHEDULE REFRESH EVERY 1 HOUR
 AS
 WITH ticket_metrics AS (
   SELECT
