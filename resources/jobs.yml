@@ -21,9 +21,16 @@ resources:
 
     identity_resolution:
       name: "[${bundle.target}] 03 CDP Identity Resolution"
-      description: "Customer Entity Resolution - produces gold_customer_360 golden record"
+      description: "Customer Entity Resolution - produces gold_customer_360 golden record and operational tables"
       tasks:
+        - task_key: create_operational_tables
+          sql_task:
+            file:
+              path: ../src/cdp_etl/setup/create_operational_tables.sql
+            warehouse_id: ${var.warehouse_id}
         - task_key: identity_resolution
+          depends_on:
+            - task_key: create_operational_tables
           notebook_task:
             notebook_path: ../src/cdp_etl/notebooks/identity_resolution/identity_resolution.py
             base_parameters:
