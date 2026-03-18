@@ -18,5 +18,5 @@ SELECT
   COALESCE(NumberOfEmployees, 0) AS number_of_employees,
   CreatedDate AS created_at,
   _ingested_at
-FROM stream(table(bronze_salesforce_accounts))
+FROM STREAM ${catalog}.${schema}.bronze_salesforce_accounts
 WHERE Id IS NOT NULL;

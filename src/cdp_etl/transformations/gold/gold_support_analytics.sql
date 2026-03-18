@@ -26,12 +26,12 @@ WITH ticket_metrics AS (
     COUNT(DISTINCT DATE_TRUNC('month', created_at)) AS active_ticket_months,
     COLLECT_SET(ticket_type) AS ticket_types,
     COLLECT_SET(priority) AS priority_levels
-  FROM silver_tickets
+  FROM ${catalog}.${schema}.silver_tickets
   WHERE customer_external_id IS NOT NULL
   GROUP BY customer_external_id
 ),
 identity_lookup AS (
-  SELECT source_id, golden_id FROM gold_identity_graph
+  SELECT source_id, golden_id FROM ${catalog}.${schema}.gold_identity_graph
 )
 SELECT
   COALESCE(i.golden_id, t.source_id) AS golden_id,

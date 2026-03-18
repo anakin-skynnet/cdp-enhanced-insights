@@ -24,5 +24,5 @@ SELECT
   transcript_text,
   COALESCE(wrap_up_code, '') AS wrap_up_code,
   _ingested_at
-FROM stream(table(bronze_genesys_interactions))
+FROM STREAM ${catalog}.${schema}.bronze_genesys_interactions
 WHERE conversation_id IS NOT NULL;

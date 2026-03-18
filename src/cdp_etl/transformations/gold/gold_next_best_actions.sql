@@ -23,7 +23,7 @@ WITH merchant_profile AS (
     c.email,
     COALESCE(c.merchant_name, c.first_name, '') AS merchant_name
   FROM gold_health_score h
-  JOIN gold_customer_360 c ON h.golden_id = c.golden_id
+  JOIN ${catalog}.${schema}.gold_customer_360 c ON h.golden_id = c.golden_id
 ),
 action_rules AS (
   SELECT

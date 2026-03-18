@@ -13,7 +13,7 @@ WITH baseline AS (
     STDDEV(txn_volume) AS stddev_volume_30d,
     AVG(txn_count) AS avg_txn_count_30d,
     AVG(ticket_count) AS avg_tickets_30d
-  FROM ahs_demos_catalog.cdp_360.gold_engagement_metrics
+  FROM ${catalog}.${schema}.gold_engagement_metrics
   GROUP BY golden_id
 ),
 current_state AS (
@@ -29,10 +29,10 @@ current_state AS (
     n.primary_action,
     n.urgency,
     n.estimated_revenue_impact
-  FROM ahs_demos_catalog.cdp_360.gold_engagement_metrics e
-  LEFT JOIN ahs_demos_catalog.cdp_360.gold_health_score h ON e.golden_id = h.golden_id
-  LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON e.golden_id = s.golden_id
-  LEFT JOIN ahs_demos_catalog.cdp_360.gold_next_best_actions n ON e.golden_id = n.golden_id
+  FROM ${catalog}.${schema}.gold_engagement_metrics e
+  LEFT JOIN ${catalog}.${schema}.gold_health_score h ON e.golden_id = h.golden_id
+  LEFT JOIN ${catalog}.${schema}.gold_segments s ON e.golden_id = s.golden_id
+  LEFT JOIN ${catalog}.${schema}.gold_next_best_actions n ON e.golden_id = n.golden_id
 )
 SELECT
   c.golden_id,
@@ -70,7 +70,7 @@ SELECT
 
 FROM current_state c
 JOIN baseline b ON c.golden_id = b.golden_id
-LEFT JOIN ahs_demos_catalog.cdp_360.gold_customer_360 m ON c.golden_id = m.golden_id
+LEFT JOIN ${catalog}.${schema}.gold_customer_360 m ON c.golden_id = m.golden_id
 WHERE
   (b.stddev_volume_30d > 0
    AND c.current_volume < (b.avg_volume_30d - 2 * b.stddev_volume_30d))

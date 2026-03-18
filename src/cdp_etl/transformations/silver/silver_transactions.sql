@@ -11,6 +11,6 @@ SELECT
   transaction_date,
   status,
   _ingested_at
-FROM stream(table(bronze_transactions))
+FROM STREAM ${catalog}.${schema}.bronze_transactions
 WHERE merchant_id IS NOT NULL
   AND transaction_date IS NOT NULL;

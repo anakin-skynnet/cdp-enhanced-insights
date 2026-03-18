@@ -22,7 +22,7 @@ WITH base AS (
     n.urgency,
     n.primary_channel,
     COALESCE(n.estimated_revenue_impact, 0) AS estimated_revenue_impact
-  FROM gold_customer_360 c
+  FROM ${catalog}.${schema}.gold_customer_360 c
   LEFT JOIN gold_engagement_metrics e ON c.golden_id = e.golden_id
   LEFT JOIN gold_segments s ON c.golden_id = s.golden_id
   LEFT JOIN gold_health_score h ON c.golden_id = h.golden_id

@@ -24,7 +24,7 @@ action_agg AS (
     COUNT(*) AS total_actions_received,
     COUNT(DISTINCT action_type) AS distinct_action_types,
     MAX(executed_at) AS last_action_date
-  FROM ahs_demos_catalog.cdp_360.nba_action_log
+  FROM ${catalog}.${schema}.nba_action_log
   GROUP BY golden_id
 ),
 action_last_channel AS (
@@ -32,7 +32,7 @@ action_last_channel AS (
   FROM (
     SELECT golden_id, channel,
            ROW_NUMBER() OVER (PARTITION BY golden_id ORDER BY executed_at DESC) AS rn
-    FROM ahs_demos_catalog.cdp_360.nba_action_log
+    FROM ${catalog}.${schema}.nba_action_log
   ) WHERE rn = 1
 ),
 action_history AS (
@@ -60,11 +60,11 @@ txn_patterns AS (
       WHEN MODE(HOUR(transaction_date)) BETWEEN 18 AND 21 THEN 'evening'
       ELSE 'night'
     END AS preferred_time_slot
-  FROM silver_transactions
+  FROM ${catalog}.${schema}.silver_transactions
   GROUP BY customer_external_id
 ),
 identity_lookup AS (
-  SELECT source_id, golden_id FROM gold_identity_graph
+  SELECT source_id, golden_id FROM ${catalog}.${schema}.gold_identity_graph
 )
 SELECT
   COALESCE(i.golden_id, tp.source_id) AS golden_id,

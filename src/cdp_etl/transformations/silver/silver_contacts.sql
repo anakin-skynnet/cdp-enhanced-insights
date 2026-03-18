@@ -14,6 +14,6 @@ SELECT
   AccountId AS account_id,
   CreatedDate AS created_at,
   _ingested_at
-FROM stream(table(bronze_salesforce_contacts))
+FROM STREAM ${catalog}.${schema}.bronze_salesforce_contacts
 WHERE Id IS NOT NULL
   AND (Email IS NOT NULL OR Phone IS NOT NULL);

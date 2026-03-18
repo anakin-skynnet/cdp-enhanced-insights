@@ -14,7 +14,7 @@ SELECT
   current_timestamp() AS _ingested_at,
   COALESCE(_metadata.file_path, 'lakeflow_connect') AS _source_file
 FROM STREAM read_files(
-  '/Volumes/ahs_demos_catalog/cdp_360/raw/salesforce/contacts/',
+  '/Volumes/${catalog}/${schema}/raw/salesforce/contacts/',
   format => 'json',
   schemaHints => 'Id STRING, Email STRING, Phone STRING, FirstName STRING, LastName STRING, AccountId STRING, CreatedDate TIMESTAMP',
   mode => 'PERMISSIVE'

@@ -12,7 +12,7 @@ WITH txn_metrics AS (
     SUM(amount) AS txn_volume,
     MAX(transaction_date) AS last_txn_date,
     MIN(transaction_date) AS first_txn_date
-  FROM silver_transactions
+  FROM ${catalog}.${schema}.silver_transactions
   WHERE status IN ('approved', 'APPROVED', 'completed')
   GROUP BY customer_external_id
 ),
@@ -21,12 +21,12 @@ ticket_counts AS (
     customer_external_id AS source_id,
     COUNT(*) AS ticket_count,
     MAX(created_at) AS last_ticket_at
-  FROM silver_tickets
+  FROM ${catalog}.${schema}.silver_tickets
   WHERE customer_external_id IS NOT NULL
   GROUP BY customer_external_id
 ),
 identity_lookup AS (
-  SELECT source_id, golden_id FROM gold_identity_graph
+  SELECT source_id, golden_id FROM ${catalog}.${schema}.gold_identity_graph
 )
 SELECT
   COALESCE(i.golden_id, txn.source_id) AS golden_id,

@@ -31,5 +31,5 @@ SELECT
     THEN TIMESTAMPDIFF(MINUTE, created_at, solved_at)
   END AS resolution_minutes,
   _ingested_at
-FROM stream(table(bronze_zendesk_tickets))
+FROM STREAM ${catalog}.${schema}.bronze_zendesk_tickets
 WHERE id IS NOT NULL;

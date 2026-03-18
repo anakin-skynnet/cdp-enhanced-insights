@@ -13,6 +13,8 @@ resources:
       root_path: ../src/cdp_etl
       serverless: true
       configuration:
+        catalog: ${var.catalog}
+        schema: ${var.schema}
         schema_location_base: ${var.schema_location_base}
       photon: true
       channel: current

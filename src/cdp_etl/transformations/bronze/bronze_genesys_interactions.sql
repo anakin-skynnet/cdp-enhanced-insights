@@ -14,7 +14,7 @@ SELECT
   _metadata.file_path AS _source_file,
   _metadata.file_modification_time AS _file_timestamp
 FROM STREAM read_files(
-  '/Volumes/ahs_demos_catalog/cdp_360/raw/genesys/',
+  '/Volumes/${catalog}/${schema}/raw/genesys/',
   format => 'json',
   schemaHints => 'conversation_id STRING, user_id STRING, conversation_date TIMESTAMP, interaction_type STRING',
   mode => 'PERMISSIVE'

@@ -22,7 +22,7 @@ WITH interaction_enriched AS (
     disposition,
     disconnect_type,
     wrap_up_code
-  FROM silver_interactions
+  FROM ${catalog}.${schema}.silver_interactions
   WHERE conversation_date IS NOT NULL
 ),
 agent_metrics AS (
@@ -150,4 +150,4 @@ SELECT
   NULL AS service_level_pct,
   CURRENT_TIMESTAMP() AS _refreshed_at
 FROM merchant_call_metrics m
-LEFT JOIN gold_identity_graph i ON m.source_id = i.source_id;
+LEFT JOIN ${catalog}.${schema}.gold_identity_graph i ON m.source_id = i.source_id;
