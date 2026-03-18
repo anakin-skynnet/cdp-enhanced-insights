@@ -26,9 +26,11 @@ COMMENT 'Look up a merchant by golden ID, email, or name fragment. Returns C360 
 RETURN
   SELECT
     c.golden_id,
-    COALESCE(c.first_name, '') AS merchant_name,
+    COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
     c.email,
     c.phone,
+    COALESCE(c.industry, '') AS industry,
+    COALESCE(c.country, '') AS country,
     COALESCE(s.segment, 'unassigned') AS segment,
     COALESCE(e.txn_volume, 0) AS txn_volume,
     COALESCE(e.txn_count, 0) AS txn_count,
@@ -42,7 +44,7 @@ RETURN
   LEFT JOIN ahs_demos_catalog.cdp_360.gold_segments s ON c.golden_id = s.golden_id
   WHERE c.golden_id = search_term
      OR LOWER(c.email) = LOWER(search_term)
-     OR LOWER(c.first_name) LIKE CONCAT('%', LOWER(search_term), '%')
+     OR LOWER(COALESCE(c.merchant_name, c.first_name, '')) LIKE CONCAT('%', LOWER(search_term), '%')
   LIMIT 20;
 
 -- 2. Get at-risk merchants (churn candidates)
@@ -744,7 +746,7 @@ COMMENT 'Get a unified activity timeline for a merchant including transactions, 
 RETURN
   WITH txn_events AS (
     SELECT golden_id, 'transaction' AS event_type,
-           DATE_FORMAT(updated_at, 'yyyy-MM-dd') AS event_date,
+           DATE_FORMAT(COALESCE(last_txn_date, _refreshed_at), 'yyyy-MM-dd') AS event_date,
            CONCAT('Transaction volume: $', ROUND(txn_volume, 0)) AS description,
            CONCAT(txn_count, ' transactions') AS detail,
            'engagement' AS source

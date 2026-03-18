@@ -14,7 +14,6 @@ resources:
       serverless: true
       configuration:
         schema_location_base: ${var.schema_location_base}
-      development: true
       photon: true
       channel: current
       permissions:
@@ -33,7 +32,6 @@ resources:
       configuration:
         catalog: ${var.catalog}
         schema: ${var.schema}
-      development: true
       photon: true
       channel: current
       permissions:
@@ -52,7 +50,6 @@ resources:
       configuration:
         catalog: ${var.catalog}
         schema: ${var.schema}
-      development: true
       photon: true
       channel: current
       permissions:

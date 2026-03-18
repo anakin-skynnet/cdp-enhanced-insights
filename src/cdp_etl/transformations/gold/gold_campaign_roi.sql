@@ -62,7 +62,7 @@ SELECT
   p.current_txn_volume AS pre_volume,
   COALESCE(pt.post_txn_volume, 0) AS post_30d_volume,
   COALESCE(pt.post_txn_count, 0) AS post_30d_txn_count,
-  COALESCE(pt.post_txn_volume, 0) - 0 AS revenue_lift,
+  COALESCE(pt.post_txn_volume, 0) - p.current_txn_volume AS revenue_lift,
 
   CASE WHEN pt.post_txn_count > 0 THEN 1 ELSE 0 END AS converted,
 

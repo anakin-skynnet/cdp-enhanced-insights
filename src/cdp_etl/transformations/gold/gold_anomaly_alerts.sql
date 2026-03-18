@@ -36,7 +36,7 @@ current_state AS (
 )
 SELECT
   c.golden_id,
-  COALESCE(m.first_name, '') AS merchant_name,
+  COALESCE(m.merchant_name, m.first_name, '') AS merchant_name,
   c.segment,
   c.health_score,
   c.health_tier,
@@ -51,7 +51,7 @@ SELECT
     THEN 'unexpected_inactivity'
     WHEN c.current_tickets > (b.avg_tickets_30d + 3)
     THEN 'ticket_spike'
-    WHEN c.health_score < 20 AND c.segment IN ('champions', 'loyal')
+    WHEN COALESCE(c.health_score, 0) < 20 AND c.segment IN ('champions', 'loyal')
     THEN 'health_collapse'
   END AS anomaly_type,
 
@@ -76,4 +76,4 @@ WHERE
    AND c.current_volume < (b.avg_volume_30d - 2 * b.stddev_volume_30d))
   OR (c.days_since_last_txn > 30 AND c.segment NOT IN ('hibernating'))
   OR (c.current_tickets > (b.avg_tickets_30d + 3))
-  OR (c.health_score < 20 AND c.segment IN ('champions', 'loyal'))
+  OR (COALESCE(c.health_score, 0) < 20 AND c.segment IN ('champions', 'loyal'))

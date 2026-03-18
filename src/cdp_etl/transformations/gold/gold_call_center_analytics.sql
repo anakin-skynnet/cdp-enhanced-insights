@@ -124,4 +124,30 @@ SELECT
     THEN ROUND(answered_within_30s * 100.0 / queue_volume, 1)
   END AS service_level_pct,
   CURRENT_TIMESTAMP() AS _refreshed_at
-FROM queue_metrics;
+FROM queue_metrics
+
+UNION ALL
+
+SELECT
+  'merchant' AS metric_type,
+  m.source_id AS entity_id,
+  COALESCE(i.golden_id, m.source_id) AS golden_id,
+  m.total_calls AS total_interactions,
+  m.voice_calls,
+  NULL AS chat_sessions,
+  NULL AS email_interactions,
+  m.avg_call_duration_sec AS avg_handle_time_sec,
+  NULL AS avg_talk_time_sec,
+  m.avg_hold_sec AS avg_hold_time_sec,
+  m.avg_wait_time_sec AS avg_queue_wait_sec,
+  NULL AS avg_acw_sec,
+  NULL AS resolution_rate,
+  CASE
+    WHEN m.total_calls > 0
+    THEN ROUND(m.abandoned_calls * 100.0 / m.total_calls, 1)
+  END AS abandonment_rate,
+  NULL AS queue_name,
+  NULL AS service_level_pct,
+  CURRENT_TIMESTAMP() AS _refreshed_at
+FROM merchant_call_metrics m
+LEFT JOIN gold_identity_graph i ON m.source_id = i.source_id;

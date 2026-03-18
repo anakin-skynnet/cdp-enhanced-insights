@@ -28,8 +28,8 @@ import mlflow
 
 # COMMAND ----------
 
-catalog = dbutils.widgets.get("catalog") if "catalog" in [w.name for w in dbutils.widgets.getAll()] else "main"
-schema = dbutils.widgets.get("schema") if "schema" in [w.name for w in dbutils.widgets.getAll()] else "cdp"
+catalog = dbutils.widgets.get("catalog") if "catalog" in [w.name for w in dbutils.widgets.getAll()] else "ahs_demos_catalog"
+schema = dbutils.widgets.get("schema") if "schema" in [w.name for w in dbutils.widgets.getAll()] else "cdp_360"
 
 # COMMAND ----------
 
@@ -53,8 +53,8 @@ touchpoints = (
     interactions
     .select(
         F.col("customer_external_id").alias("merchant_id"),
-        F.col("interaction_date").alias("touchpoint_time"),
-        F.col("channel").alias("channel"),
+        F.col("conversation_date").alias("touchpoint_time"),
+        F.coalesce(F.col("media_type"), F.col("queue_name"), F.lit("genesys")).alias("channel"),
         F.lit("impression").alias("interaction_type"),
     )
     .unionByName(

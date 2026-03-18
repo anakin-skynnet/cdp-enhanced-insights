@@ -3,6 +3,8 @@
 
 CREATE OR REPLACE STREAMING TABLE bronze_zendesk_tickets
 CLUSTER BY (created_at)
+CONSTRAINT valid_id EXPECT (id IS NOT NULL) ON VIOLATION DROP ROW
+CONSTRAINT valid_timestamp EXPECT (created_at IS NOT NULL)
 AS
 SELECT
   *,

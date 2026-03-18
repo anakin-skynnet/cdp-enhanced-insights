@@ -15,8 +15,8 @@
 
 # COMMAND ----------
 
-catalog = dbutils.widgets.get("catalog") if dbutils.widgets.get("catalog") else "main"
-schema = dbutils.widgets.get("schema") if dbutils.widgets.get("schema") else "cdp_dev"
+catalog = dbutils.widgets.get("catalog") if dbutils.widgets.get("catalog") else "ahs_demos_catalog"
+schema = dbutils.widgets.get("schema") if dbutils.widgets.get("schema") else "cdp_360"
 
 # COMMAND ----------
 
@@ -40,6 +40,10 @@ contacts_df = spark.table(f"{catalog}.{schema}.silver_contacts").select(
     F.col("last_name"),
     F.col("account_id"),
     F.col("created_at"),
+    F.lit(None).cast("string").alias("account_name"),
+    F.lit(None).cast("string").alias("industry"),
+    F.lit(None).cast("string").alias("billing_country"),
+    F.lit(None).cast("string").alias("billing_city"),
 )
 
 accounts_df = spark.table(f"{catalog}.{schema}.silver_accounts").select(
@@ -51,6 +55,10 @@ accounts_df = spark.table(f"{catalog}.{schema}.silver_accounts").select(
     F.lit(None).cast("string").alias("last_name"),
     F.col("external_id").alias("account_id"),
     F.col("created_at"),
+    F.col("account_name"),
+    F.col("industry"),
+    F.col("billing_country"),
+    F.col("billing_city"),
 )
 
 # Union and add hash for blocking
@@ -79,7 +87,7 @@ identity_with_block = identity_sources.withColumn(
 golden_assignments = (
     identity_with_block
     .withColumn("golden_id", F.col("block_key"))
-    .select("source_id", "source_type", "golden_id", "email", "phone", "first_name", "last_name", "account_id", "created_at")
+    .select("source_id", "source_type", "golden_id", "email", "phone", "first_name", "last_name", "account_id", "created_at", "account_name", "industry", "billing_country", "billing_city")
 )
 
 # COMMAND ----------
@@ -122,6 +130,10 @@ golden_record = (
         F.col("first_name"),
         F.col("last_name"),
         F.col("account_id"),
+        F.coalesce(F.col("account_name"), F.concat_ws(" ", F.col("first_name"), F.col("last_name"))).alias("merchant_name"),
+        F.col("industry"),
+        F.col("billing_country").alias("country"),
+        F.col("billing_city").alias("city"),
         F.col("source_id").alias("primary_source_id"),
         F.col("source_type").alias("primary_source_type"),
         F.col("created_at"),

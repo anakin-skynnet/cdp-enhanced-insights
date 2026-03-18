@@ -11,16 +11,16 @@ env:
     valueFrom: sql-warehouse
 
   - name: CDP_CATALOG
-    value: "main"
+    value: "ahs_demos_catalog"
 
   - name: CDP_SCHEMA
-    value: "cdp"
+    value: "cdp_360"
 
   - name: CDP_DATA_SOURCE
     value: "mock"
 
   - name: CDP_AGENT_ENDPOINT
-    value: "main-cdp-cdp_supervisor_agent"
+    value: "ahs_demos_catalog-cdp_360-cdp_supervisor_agent"
 
   - name: CDP_GENIE_SPACE_ID
     value: ""

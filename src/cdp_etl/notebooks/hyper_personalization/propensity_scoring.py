@@ -20,8 +20,8 @@
 
 # COMMAND ----------
 
-catalog = dbutils.widgets.get("catalog") if dbutils.widgets.get("catalog") else "main"
-schema = dbutils.widgets.get("schema") if dbutils.widgets.get("schema") else "cdp_dev"
+catalog = dbutils.widgets.get("catalog") if dbutils.widgets.get("catalog") else "ahs_demos_catalog"
+schema = dbutils.widgets.get("schema") if dbutils.widgets.get("schema") else "cdp_360"
 
 # COMMAND ----------
 

@@ -4,6 +4,9 @@
 
 CREATE OR REPLACE STREAMING TABLE bronze_transactions
 CLUSTER BY (transaction_date)
+CONSTRAINT valid_txn_id EXPECT (transaction_id IS NOT NULL) ON VIOLATION DROP ROW
+CONSTRAINT valid_merchant EXPECT (merchant_id IS NOT NULL) ON VIOLATION DROP ROW
+CONSTRAINT valid_amount EXPECT (amount >= 0)
 AS
 SELECT
   *,

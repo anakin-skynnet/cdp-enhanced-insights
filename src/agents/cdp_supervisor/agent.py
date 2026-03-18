@@ -154,16 +154,23 @@ def log_nba_action(golden_id: str, action_type: str, channel: str, notes: str = 
     """
     try:
         w = WorkspaceClient()
-        catalog = os.environ.get("CDP_CATALOG", "main")
-        schema = os.environ.get("CDP_SCHEMA", "cdp")
+        catalog = os.environ.get("CDP_CATALOG", "ahs_demos_catalog")
+        schema = os.environ.get("CDP_SCHEMA", "cdp_360")
 
         sql = f"""INSERT INTO {catalog}.{schema}.nba_action_log
                   (golden_id, action_type, channel, executed_by, notes)
-                  VALUES ('{golden_id}', '{action_type}', '{channel}', 'cdp_supervisor_agent', '{notes}')"""
+                  VALUES (:gid, :action, :channel, 'cdp_supervisor_agent', :notes)"""
 
         warehouse_id = os.environ.get("DATABRICKS_WAREHOUSE_ID", "")
         result = w.statement_execution.execute_statement(
-            warehouse_id=warehouse_id, statement=sql
+            warehouse_id=warehouse_id,
+            statement=sql,
+            parameters=[
+                {"name": "gid", "value": str(golden_id)[:100]},
+                {"name": "action", "value": str(action_type)[:100]},
+                {"name": "channel", "value": str(channel)[:100]},
+                {"name": "notes", "value": str(notes)[:500]},
+            ],
         )
         return json.dumps({"status": "logged", "golden_id": golden_id, "action": action_type, "channel": channel})
     except Exception as e:

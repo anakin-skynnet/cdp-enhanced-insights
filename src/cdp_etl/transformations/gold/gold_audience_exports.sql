@@ -8,7 +8,7 @@ AS
 WITH base AS (
   SELECT
     c.golden_id,
-    COALESCE(c.first_name, '') AS merchant_name,
+    COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
     c.email,
     c.phone,
     COALESCE(s.segment, 'unassigned') AS rfm_segment,

@@ -170,11 +170,6 @@ def get_health_distribution() -> list[dict]:
     """)
 
 
-def _sanitize(val: str) -> str:
-    """Strip characters that could break SQL string literals."""
-    return val.replace("'", "''").replace("\\", "").replace(";", "").strip()
-
-
 def get_merchants(
     search: str = "",
     segment: str = "",
@@ -184,17 +179,22 @@ def get_merchants(
     offset: int = 0,
 ) -> list[dict]:
     where = ["1=1"]
+    params: dict = {}
     if search:
-        safe = _sanitize(search.lower())
         where.append(
-            f"(LOWER(c.first_name) LIKE '%{safe}%' "
-            f"OR LOWER(c.email) LIKE '%{safe}%' "
-            f"OR c.golden_id = '{_sanitize(search)}')"
+            "(LOWER(c.first_name) LIKE :search_pat "
+            "OR LOWER(c.email) LIKE :search_pat "
+            "OR LOWER(COALESCE(c.merchant_name,'')) LIKE :search_pat "
+            "OR c.golden_id = :search_exact)"
         )
+        params["search_pat"] = f"%{search.lower().strip()}%"
+        params["search_exact"] = search.strip()
     if segment:
-        where.append(f"s.segment = '{_sanitize(segment)}'")
+        where.append("s.segment = :segment")
+        params["segment"] = segment.strip()
     if health_tier:
-        where.append(f"h.health_tier = '{_sanitize(health_tier)}'")
+        where.append("h.health_tier = :health_tier")
+        params["health_tier"] = health_tier.strip()
 
     allowed_sorts = {
         "txn_volume": "e.txn_volume DESC NULLS LAST",
@@ -208,7 +208,11 @@ def get_merchants(
 
     return query(f"""
         SELECT
-          c.golden_id, COALESCE(c.first_name,'') AS merchant_name, c.email,
+          c.golden_id,
+          COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
+          c.email,
+          COALESCE(c.industry, '') AS industry,
+          COALESCE(c.country, '') AS country,
           COALESCE(s.segment,'unassigned') AS segment,
           COALESCE(h.health_score, 0) AS health_score,
           COALESCE(h.health_tier, 'unknown') AS health_tier,
@@ -226,15 +230,18 @@ def get_merchants(
         WHERE {' AND '.join(where)}
         ORDER BY {order}
         LIMIT {limit} OFFSET {offset}
-    """)
+    """, params or None)
 
 
 def get_merchant_detail(golden_id: str) -> dict | None:
-    safe_id = _sanitize(golden_id)
     return query_one(f"""
         SELECT
-          c.golden_id, COALESCE(c.first_name,'') AS merchant_name,
+          c.golden_id,
+          COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
           c.email, c.phone,
+          COALESCE(c.industry, '') AS industry,
+          COALESCE(c.country, '') AS country,
+          COALESCE(c.city, '') AS city,
           COALESCE(s.segment,'unassigned') AS segment,
           COALESCE(h.health_score, 0) AS health_score,
           COALESCE(h.health_tier, 'unknown') AS health_tier,
@@ -260,8 +267,8 @@ def get_merchant_detail(golden_id: str) -> dict | None:
         LEFT JOIN {_t('gold_segments')} s ON c.golden_id = s.golden_id
         LEFT JOIN {_t('gold_health_score')} h ON c.golden_id = h.golden_id
         LEFT JOIN {_t('gold_next_best_actions')} n ON c.golden_id = n.golden_id
-        WHERE c.golden_id = '{safe_id}'
-    """)
+        WHERE c.golden_id = :golden_id
+    """, {"golden_id": golden_id.strip()})
 
 
 def get_nba_queue(
@@ -270,10 +277,13 @@ def get_nba_queue(
     limit: int = 50,
 ) -> list[dict]:
     where = ["1=1"]
+    params: dict = {}
     if urgency:
-        where.append(f"urgency = '{_sanitize(urgency)}'")
+        where.append("urgency = :urgency")
+        params["urgency"] = urgency.strip()
     if segment:
-        where.append(f"segment = '{_sanitize(segment)}'")
+        where.append("segment = :segment")
+        params["segment"] = segment.strip()
     return query(f"""
         SELECT golden_id, merchant_name, email, segment,
                health_score, health_tier,
@@ -284,8 +294,8 @@ def get_nba_queue(
         FROM {_t('gold_next_best_actions')}
         WHERE {' AND '.join(where)}
         ORDER BY priority_score DESC
-        LIMIT {limit}
-    """)
+        LIMIT {min(int(limit), 200)}
+    """, params or None)
 
 
 def get_nba_summary() -> list[dict]:
@@ -302,9 +312,9 @@ def get_nba_summary() -> list[dict]:
 
 
 def get_segment_merchants_for_campaign(segment: str, limit: int = 100) -> list[dict]:
-    safe_seg = _sanitize(segment)
     return query(f"""
-        SELECT c.golden_id, COALESCE(c.first_name,'') AS merchant_name,
+        SELECT c.golden_id,
+               COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
                c.email, COALESCE(e.txn_volume, 0) AS txn_volume,
                COALESCE(h.health_score, 0) AS health_score,
                n.primary_action
@@ -313,10 +323,10 @@ def get_segment_merchants_for_campaign(segment: str, limit: int = 100) -> list[d
         LEFT JOIN {_t('gold_engagement_metrics')} e ON c.golden_id = e.golden_id
         LEFT JOIN {_t('gold_health_score')} h ON c.golden_id = h.golden_id
         LEFT JOIN {_t('gold_next_best_actions')} n ON c.golden_id = n.golden_id
-        WHERE s.segment = '{safe_seg}'
+        WHERE s.segment = :segment
         ORDER BY e.txn_volume DESC NULLS LAST
         LIMIT {min(int(limit), 500)}
-    """)
+    """, {"segment": segment.strip()})
 
 
 def get_clv_summary() -> list[dict]:
@@ -332,12 +342,13 @@ def get_clv_summary() -> list[dict]:
 
 def get_clv_top_merchants(limit: int = 20) -> list[dict]:
     return query(f"""
-        SELECT l.golden_id, COALESCE(c.first_name,'') AS merchant_name,
+        SELECT l.golden_id,
+               COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
                l.clv_12m, l.clv_tier, l.p_alive,
                l.predicted_purchases_12m, l.total_amount
         FROM {_t('gold_customer_ltv')} l
         LEFT JOIN {_t('gold_customer_360')} c ON l.golden_id = c.golden_id
-        ORDER BY l.clv_12m DESC LIMIT {limit}
+        ORDER BY l.clv_12m DESC LIMIT {min(int(limit), 100)}
     """)
 
 
@@ -363,15 +374,20 @@ def get_behavioral_segments() -> list[dict]:
 
 
 def log_campaign(campaign: dict) -> None:
-    query(f"""
-        INSERT INTO {_t('nba_action_log')}
-          (golden_id, action_type, channel, executed_by, notes)
-        VALUES
-        """ + ", ".join(
-        f"('{m['golden_id']}', '{campaign['action_type']}', "
-        f"'{campaign['channel']}', 'cdp_app', '{campaign['name']}')"
-        for m in campaign["merchants"]
-    ))
+    action_type = str(campaign.get("action_type", ""))[:100]
+    channel = str(campaign.get("channel", ""))[:100]
+    name = str(campaign.get("name", ""))[:200]
+    for m in campaign.get("merchants", []):
+        query(f"""
+            INSERT INTO {_t('nba_action_log')}
+              (golden_id, action_type, channel, executed_by, notes)
+            VALUES (:gid, :action, :channel, 'cdp_app', :notes)
+        """, {
+            "gid": str(m["golden_id"]).strip(),
+            "action": action_type,
+            "channel": channel,
+            "notes": name,
+        })
 
 
 # ── Customer Support Analytics ─────────────────────────────────────
@@ -406,10 +422,13 @@ def get_support_quality_distribution() -> list[dict]:
 
 def get_support_merchants(quality: str = "", limit: int = 50) -> list[dict]:
     where = "1=1"
+    params: dict = {}
     if quality:
-        where = f"sa.support_quality_tier = '{_sanitize(quality)}'"
+        where = "sa.support_quality_tier = :quality"
+        params["quality"] = quality.strip()
     return query(f"""
-        SELECT sa.golden_id, COALESCE(c.first_name,'') AS merchant_name,
+        SELECT sa.golden_id,
+               COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
                sa.total_tickets, sa.open_tickets, sa.resolved_tickets,
                sa.avg_first_response_min, sa.avg_resolution_min,
                sa.csat_score, sa.sla_resolution_pct, sa.support_quality_tier
@@ -417,8 +436,8 @@ def get_support_merchants(quality: str = "", limit: int = 50) -> list[dict]:
         LEFT JOIN {_t('gold_customer_360')} c ON sa.golden_id = c.golden_id
         WHERE {where}
         ORDER BY sa.total_tickets DESC
-        LIMIT {limit}
-    """)
+        LIMIT {min(int(limit), 200)}
+    """, params or None)
 
 
 # ── Call Center Analytics ──────────────────────────────────────────
@@ -493,8 +512,8 @@ def get_personalization_summary() -> list[dict]:
 def get_personalization_for_merchant(golden_id: str) -> dict:
     return query_one(f"""
         SELECT * FROM {_t('gold_personalization_signals')}
-        WHERE golden_id = '{_sanitize(golden_id)}'
-    """) or {}
+        WHERE golden_id = :golden_id
+    """, {"golden_id": golden_id.strip()}) or {}
 
 
 def get_propensity_distribution() -> list[dict]:
@@ -591,8 +610,10 @@ def get_audience_list(audience_type: str, limit: int = 100) -> list[dict]:
 
 def get_anomaly_alerts(anomaly_type: str = "", limit: int = 50) -> list[dict]:
     where = "anomaly_type IS NOT NULL"
+    params: dict = {}
     if anomaly_type:
-        where += f" AND anomaly_type = '{_sanitize(anomaly_type)}'"
+        where += " AND anomaly_type = :atype"
+        params["atype"] = anomaly_type.strip()
     return query(f"""
         SELECT golden_id, merchant_name, segment, health_score, health_tier,
                current_volume, avg_volume_30d, anomaly_type, deviation_pct,
@@ -601,7 +622,7 @@ def get_anomaly_alerts(anomaly_type: str = "", limit: int = 50) -> list[dict]:
         WHERE {where}
         ORDER BY ABS(deviation_pct) DESC
         LIMIT {min(int(limit), 200)}
-    """)
+    """, params or None)
 
 
 def get_anomaly_kpis() -> dict:
@@ -626,16 +647,16 @@ def get_anomaly_kpis() -> dict:
 # ── Merchant Timeline ────────────────────────────────────────────
 
 def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
-    safe_id = _sanitize(golden_id)
+    params = {"gid": golden_id.strip()}
     return query(f"""
         WITH txn_events AS (
           SELECT golden_id, 'transaction' AS event_type,
-                 DATE_FORMAT(updated_at, 'yyyy-MM-dd') AS event_date,
+                 DATE_FORMAT(COALESCE(last_txn_date, _refreshed_at), 'yyyy-MM-dd') AS event_date,
                  CONCAT('Transaction volume: $', ROUND(txn_volume, 0)) AS description,
                  CONCAT(txn_count, ' transactions') AS detail,
                  'engagement' AS source
           FROM {_t('gold_engagement_metrics')}
-          WHERE golden_id = '{safe_id}'
+          WHERE golden_id = :gid
         ),
         ticket_events AS (
           SELECT sa.golden_id, 'support_ticket' AS event_type,
@@ -644,7 +665,7 @@ def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
                  CONCAT('CSAT: ', ROUND(sa.csat_score, 1)) AS detail,
                  'support' AS source
           FROM {_t('gold_support_analytics')} sa
-          WHERE sa.golden_id = '{safe_id}'
+          WHERE sa.golden_id = :gid
         ),
         nba_events AS (
           SELECT golden_id, 'nba_recommendation' AS event_type,
@@ -653,7 +674,7 @@ def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
                  CONCAT('Channel: ', primary_channel, ' | Urgency: ', urgency) AS detail,
                  'nba' AS source
           FROM {_t('gold_next_best_actions')}
-          WHERE golden_id = '{safe_id}'
+          WHERE golden_id = :gid
         ),
         action_events AS (
           SELECT golden_id, 'action_taken' AS event_type,
@@ -662,7 +683,7 @@ def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
                  COALESCE(notes, '') AS detail,
                  'action_log' AS source
           FROM {_t('nba_action_log')}
-          WHERE golden_id = '{safe_id}'
+          WHERE golden_id = :gid
         ),
         anomaly_events AS (
           SELECT golden_id, 'anomaly' AS event_type,
@@ -671,7 +692,7 @@ def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
                  CONCAT('Deviation: ', ROUND(deviation_pct, 1), '%') AS detail,
                  'anomaly' AS source
           FROM {_t('gold_anomaly_alerts')}
-          WHERE golden_id = '{safe_id}' AND anomaly_type IS NOT NULL
+          WHERE golden_id = :gid AND anomaly_type IS NOT NULL
         )
         SELECT * FROM txn_events
         UNION ALL SELECT * FROM ticket_events
@@ -679,8 +700,8 @@ def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
         UNION ALL SELECT * FROM action_events
         UNION ALL SELECT * FROM anomaly_events
         ORDER BY event_date DESC
-        LIMIT {limit}
-    """)
+        LIMIT {min(int(limit), 100)}
+    """, params)
 
 
 # ── Data Freshness ───────────────────────────────────────────────
@@ -727,14 +748,14 @@ def get_data_freshness() -> list[dict]:
 # ── Agent Feedback ───────────────────────────────────────────────
 
 def log_agent_feedback(feedback: dict) -> dict:
+    rating = max(1, min(5, int(feedback.get("rating", 3))))
     query(f"""
         INSERT INTO {_t('agent_feedback_log')}
           (message_content, rating, comment, created_at)
-        VALUES (
-          '{_sanitize(str(feedback.get("message_content", ""))[:500])}',
-          {int(feedback.get("rating", 3))},
-          '{_sanitize(str(feedback.get("comment", ""))[:500])}',
-          CURRENT_TIMESTAMP()
-        )
-    """)
+        VALUES (:msg, :rating, :comment, CURRENT_TIMESTAMP())
+    """, {
+        "msg": str(feedback.get("message_content", ""))[:500],
+        "rating": rating,
+        "comment": str(feedback.get("comment", ""))[:500],
+    })
     return {"status": "recorded"}

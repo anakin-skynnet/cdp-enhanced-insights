@@ -477,9 +477,9 @@
       const totalPages = Math.ceil(total / MERCHANT_PAGE_SIZE);
       const sliced = merchants.slice(page * MERCHANT_PAGE_SIZE, (page + 1) * MERCHANT_PAGE_SIZE);
       const rows = sliced.map(m => `
-        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${m.golden_id}')">
-          <td class="px-4 py-3 font-mono text-xs">${m.golden_id}</td>
-          <td class="px-4 py-3 font-medium">${m.merchant_name}</td>
+        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${esc(m.golden_id)}')">
+          <td class="px-4 py-3 font-mono text-xs">${esc(m.golden_id)}</td>
+          <td class="px-4 py-3 font-medium">${esc(m.merchant_name)}</td>
           <td class="px-4 py-3">${segmentBadge(m.segment)}</td>
           <td class="px-4 py-3">${healthBadge(m.health_tier)}</td>
           <td class="px-4 py-3 text-right font-mono">${m.health_score}</td>
@@ -526,8 +526,9 @@
       content.innerHTML = `
         <div class="space-y-6">
           <div>
-            <h3 class="text-xl font-bold">${m.merchant_name}</h3>
-            <p class="text-sm text-muted-foreground font-mono">${m.golden_id}</p>
+            <h3 class="text-xl font-bold">${esc(m.merchant_name)}</h3>
+            <p class="text-sm text-muted-foreground font-mono">${esc(m.golden_id)}</p>
+            ${m.industry ? `<p class="text-xs text-muted-foreground">${esc(m.industry)} · ${esc(m.country || '')} ${esc(m.city || '')}</p>` : ''}
           </div>
           <div class="flex flex-wrap gap-2">${segmentBadge(m.segment)} ${healthBadge(m.health_tier)} ${m.urgency ? urgencyBadge(m.urgency) : ''}</div>
           <div class="grid grid-cols-2 gap-3">
@@ -547,14 +548,14 @@
           ${m.primary_action ? `
           <div class="rounded-lg border border-border p-4 space-y-2">
             <h4 class="font-semibold text-sm">Next Best Action</h4>
-            <div class="text-sm"><span class="text-muted-foreground">Primary:</span> ${m.primary_action.replace(/_/g, ' ')}</div>
-            <div class="text-sm"><span class="text-muted-foreground">Channel:</span> ${(m.primary_channel || '-').replace(/_/g, ' ')}</div>
+            <div class="text-sm"><span class="text-muted-foreground">Primary:</span> ${esc(m.primary_action).replace(/_/g, ' ')}</div>
+            <div class="text-sm"><span class="text-muted-foreground">Channel:</span> ${esc(m.primary_channel || '-').replace(/_/g, ' ')}</div>
             <div class="text-sm"><span class="text-muted-foreground">Revenue Impact:</span> ${fmtCurrency(m.estimated_revenue_impact)}</div>
           </div>` : ''}
           <div class="rounded-lg border border-border p-4 space-y-2">
             <h4 class="font-semibold text-sm">Contact</h4>
-            <div class="text-sm">${m.email || '-'}</div>
-            <div class="text-sm">${m.phone || '-'}</div>
+            <div class="text-sm">${esc(m.email || '-')}</div>
+            <div class="text-sm">${esc(m.phone || '-')}</div>
           </div>
           <div class="rounded-lg border border-border p-4">
             <h4 class="font-semibold text-sm mb-3">Activity Timeline</h4>
@@ -582,12 +583,12 @@
            <div class="flex gap-2 mt-2">${badge(s.immediate + ' immediate', 'red')} ${badge(s.this_week + ' this week', 'yellow')}</div>`)
       ).join('') : '';
       const rows = (queue || []).map(m => `
-        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${m.golden_id}')">
-          <td class="px-4 py-3 font-medium">${m.merchant_name || m.golden_id}</td>
+        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${esc(m.golden_id)}')">
+          <td class="px-4 py-3 font-medium">${esc(m.merchant_name || m.golden_id)}</td>
           <td class="px-4 py-3">${segmentBadge(m.segment)}</td>
           <td class="px-4 py-3">${urgencyBadge(m.urgency)}</td>
-          <td class="px-4 py-3">${m.primary_action.replace(/_/g, ' ')}</td>
-          <td class="px-4 py-3">${(m.primary_channel || '-').replace(/_/g, ' ')}</td>
+          <td class="px-4 py-3">${esc(m.primary_action || '').replace(/_/g, ' ')}</td>
+          <td class="px-4 py-3">${esc(m.primary_channel || '-').replace(/_/g, ' ')}</td>
           <td class="px-4 py-3 text-right font-mono">${m.priority_score?.toFixed(0)}</td>
           <td class="px-4 py-3 text-right font-mono">${fmtCurrency(m.estimated_revenue_impact)}</td>
         </tr>`).join('');
@@ -634,7 +635,7 @@
       if (merchants) {
         const rows = merchants.map(m => `
           <tr class="border-b border-border hover:bg-muted/50">
-            <td class="px-4 py-2 font-medium text-sm">${m.merchant_name || m.golden_id}</td>
+            <td class="px-4 py-2 font-medium text-sm">${esc(m.merchant_name || m.golden_id)}</td>
             <td class="px-4 py-2 text-right">${m.total_tickets}</td>
             <td class="px-4 py-2 text-right">${m.avg_resolution_min?.toFixed(0) || '-'}m</td>
             <td class="px-4 py-2 text-right">${m.csat_score?.toFixed(1) || '-'}</td>
@@ -802,9 +803,9 @@
       const el = document.getElementById('audience-detail');
       if (!list || !list.length) { el.innerHTML = card(label, '<p class="text-muted-foreground text-sm">No merchants in this audience.</p>'); return; }
       const rows = list.map(m => `
-        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer" onclick="openMerchant('${m.golden_id}')">
-          <td class="px-4 py-2 font-mono text-xs">${m.golden_id}</td>
-          <td class="px-4 py-2">${m.merchant_name}</td>
+        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer" onclick="openMerchant('${esc(m.golden_id)}')">
+          <td class="px-4 py-2 font-mono text-xs">${esc(m.golden_id)}</td>
+          <td class="px-4 py-2">${esc(m.merchant_name)}</td>
           <td class="px-4 py-2">${segmentBadge(m.rfm_segment)}</td>
           <td class="px-4 py-2 text-right">${m.health_score}</td>
           <td class="px-4 py-2 text-right font-mono">${fmtCurrency(m.txn_volume)}</td>
@@ -932,9 +933,9 @@
       }
       if (top) {
         const rows = top.map(m => `
-          <tr class="border-b border-border hover:bg-muted/50 cursor-pointer" onclick="openMerchant('${m.golden_id}')">
-            <td class="px-4 py-2">${m.merchant_name || m.golden_id}</td>
-            <td class="px-4 py-2">${badge(m.clv_tier.replace(/_/g, ' '), m.clv_tier === 'very_high' ? 'green' : m.clv_tier === 'high' ? 'blue' : 'gray')}</td>
+          <tr class="border-b border-border hover:bg-muted/50 cursor-pointer" onclick="openMerchant('${esc(m.golden_id)}')">
+            <td class="px-4 py-2">${esc(m.merchant_name || m.golden_id)}</td>
+            <td class="px-4 py-2">${badge(esc(m.clv_tier || '').replace(/_/g, ' '), m.clv_tier === 'very_high' ? 'green' : m.clv_tier === 'high' ? 'blue' : 'gray')}</td>
             <td class="px-4 py-2 text-right font-mono">${fmtCurrency(m.clv_12m)}</td>
             <td class="px-4 py-2 text-right">${(m.p_alive * 100).toFixed(1)}%</td>
             <td class="px-4 py-2 text-right">${m.predicted_purchases_12m?.toFixed(1) || '-'}</td>
@@ -1712,13 +1713,13 @@
       const el = document.getElementById('chat-messages');
       let html = '';
       if (data.error) {
-        html = `<div class="text-red-400 text-sm">${data.error}</div>`;
+        html = `<div class="text-red-400 text-sm">${esc(data.error)}</div>`;
       } else if (data.rows && data.rows.length) {
         const cols = data.columns || Object.keys(data.rows[0]);
-        const rows = data.rows.map(r => `<tr class="border-b border-border">${cols.map(c => `<td class="px-2 py-1 text-xs">${r[c] ?? '-'}</td>`).join('')}</tr>`).join('');
-        html = `<div class="text-xs text-muted-foreground mb-1">${data.row_count} rows</div>
+        const rows = data.rows.map(r => `<tr class="border-b border-border">${cols.map(c => `<td class="px-2 py-1 text-xs">${esc(r[c] ?? '-')}</td>`).join('')}</tr>`).join('');
+        html = `<div class="text-xs text-muted-foreground mb-1">${esc(data.row_count)} rows</div>
                 <div class="overflow-x-auto rounded border border-border">
-                  <table class="w-full text-xs"><thead><tr class="bg-muted/50">${cols.map(c => `<th class="px-2 py-1 text-left font-medium">${c}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
+                  <table class="w-full text-xs"><thead><tr class="bg-muted/50">${cols.map(c => `<th class="px-2 py-1 text-left font-medium">${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
                 </div>`;
       } else {
         html = '<div class="text-muted-foreground text-sm">No results returned.</div>';
@@ -1775,6 +1776,7 @@
     function escapeHtml(s) {
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
+    const esc = (v) => escapeHtml(String(v ?? ''));
 
     function renderMd(md) {
       return md

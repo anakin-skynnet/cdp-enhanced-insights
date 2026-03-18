@@ -21,7 +21,7 @@ WITH merchant_profile AS (
     h.ticket_count,
     h.tenure_days,
     c.email,
-    COALESCE(c.first_name, '') AS merchant_name
+    COALESCE(c.merchant_name, c.first_name, '') AS merchant_name
   FROM gold_health_score h
   JOIN gold_customer_360 c ON h.golden_id = c.golden_id
 ),

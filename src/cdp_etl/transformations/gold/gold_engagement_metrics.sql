@@ -37,6 +37,7 @@ SELECT
   txn.last_txn_date,
   txn.first_txn_date,
   DATEDIFF(CURRENT_DATE(), txn.last_txn_date) AS days_since_last_txn,
+  GREATEST(0, DATEDIFF(txn.last_txn_date, txn.first_txn_date)) AS tenure_days,
   CURRENT_TIMESTAMP() AS _refreshed_at
 FROM txn_metrics txn
 LEFT JOIN identity_lookup i ON txn.source_id = i.source_id

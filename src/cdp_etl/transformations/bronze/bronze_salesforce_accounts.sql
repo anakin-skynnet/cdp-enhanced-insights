@@ -3,6 +3,7 @@
 
 CREATE OR REPLACE STREAMING TABLE bronze_salesforce_accounts
 CLUSTER BY (Id)
+CONSTRAINT valid_id EXPECT (Id IS NOT NULL) ON VIOLATION DROP ROW
 AS
 SELECT
   *,
@@ -11,6 +12,6 @@ SELECT
 FROM STREAM read_files(
   '/Volumes/ahs_demos_catalog/cdp_360/raw/salesforce/accounts/',
   format => 'json',
-  schemaHints => 'Id STRING, Name STRING, Phone STRING, BillingStreet STRING, BillingCity STRING, CreatedDate TIMESTAMP',
+  schemaHints => 'Id STRING, Name STRING, Phone STRING, BillingStreet STRING, BillingCity STRING, BillingCountry STRING, Industry STRING, Type STRING, AnnualRevenue DOUBLE, NumberOfEmployees LONG, CreatedDate TIMESTAMP',
   mode => 'PERMISSIVE'
 );
