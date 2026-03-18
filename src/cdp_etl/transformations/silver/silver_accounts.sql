@@ -1,7 +1,7 @@
 -- Silver: Cleaned accounts (merchants) from Salesforce
 -- Business entity for merchant 360 view
 
-CREATE OR REPLACE STREAMING TABLE silver_accounts
+CREATE OR REFRESH STREAMING TABLE silver_accounts
 CLUSTER BY (Id)
 AS
 SELECT

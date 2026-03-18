@@ -1,7 +1,7 @@
 -- Silver: Cleaned contacts from Salesforce
 -- Deduplication, type casting, identity keys for entity resolution
 
-CREATE OR REPLACE STREAMING TABLE silver_contacts
+CREATE OR REFRESH STREAMING TABLE silver_contacts
 CLUSTER BY (Id)
 AS
 SELECT

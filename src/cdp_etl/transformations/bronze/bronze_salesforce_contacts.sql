@@ -3,10 +3,11 @@
 -- If file landing: reads from Volume
 -- Uses coalesce to support both patterns - configure source_path for file-based
 
-CREATE OR REPLACE STREAMING TABLE bronze_salesforce_contacts
+CREATE OR REFRESH STREAMING TABLE bronze_salesforce_contacts (
+  CONSTRAINT valid_id EXPECT (Id IS NOT NULL) ON VIOLATION DROP ROW,
+  CONSTRAINT valid_identity EXPECT (Email IS NOT NULL OR Phone IS NOT NULL)
+)
 CLUSTER BY (Id)
-CONSTRAINT valid_id EXPECT (Id IS NOT NULL) ON VIOLATION DROP ROW
-CONSTRAINT valid_identity EXPECT (Email IS NOT NULL OR Phone IS NOT NULL)
 AS
 SELECT
   *,

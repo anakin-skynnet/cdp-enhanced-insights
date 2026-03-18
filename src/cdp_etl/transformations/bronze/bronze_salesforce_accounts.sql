@@ -1,9 +1,10 @@
 -- Bronze: Salesforce Accounts (merchant/account data)
 -- Source: Lakeflow Connect Salesforce connector
 
-CREATE OR REPLACE STREAMING TABLE bronze_salesforce_accounts
+CREATE OR REFRESH STREAMING TABLE bronze_salesforce_accounts (
+  CONSTRAINT valid_id EXPECT (Id IS NOT NULL) ON VIOLATION DROP ROW
+)
 CLUSTER BY (Id)
-CONSTRAINT valid_id EXPECT (Id IS NOT NULL) ON VIOLATION DROP ROW
 AS
 SELECT
   *,

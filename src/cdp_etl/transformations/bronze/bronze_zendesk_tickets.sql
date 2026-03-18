@@ -1,10 +1,11 @@
 -- Bronze: Zendesk support tickets (Lakeflow Connect or file landing)
 -- Source: Lakeflow Connect Zendesk connector or Volume
 
-CREATE OR REPLACE STREAMING TABLE bronze_zendesk_tickets
+CREATE OR REFRESH STREAMING TABLE bronze_zendesk_tickets (
+  CONSTRAINT valid_id EXPECT (id IS NOT NULL) ON VIOLATION DROP ROW,
+  CONSTRAINT valid_timestamp EXPECT (created_at IS NOT NULL)
+)
 CLUSTER BY (created_at)
-CONSTRAINT valid_id EXPECT (id IS NOT NULL) ON VIOLATION DROP ROW
-CONSTRAINT valid_timestamp EXPECT (created_at IS NOT NULL)
 AS
 SELECT
   *,

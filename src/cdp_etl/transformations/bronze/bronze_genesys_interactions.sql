@@ -2,10 +2,11 @@
 -- Source: Airbyte/Fivetran sync to Volume
 -- Path: /Volumes/{catalog}/{schema}/raw/genesys/
 
-CREATE OR REPLACE STREAMING TABLE bronze_genesys_interactions
+CREATE OR REFRESH STREAMING TABLE bronze_genesys_interactions (
+  CONSTRAINT valid_conv_id EXPECT (conversation_id IS NOT NULL) ON VIOLATION DROP ROW,
+  CONSTRAINT valid_date EXPECT (conversation_date IS NOT NULL)
+)
 CLUSTER BY (conversation_date)
-CONSTRAINT valid_conv_id EXPECT (conversation_id IS NOT NULL) ON VIOLATION DROP ROW
-CONSTRAINT valid_date EXPECT (conversation_date IS NOT NULL)
 AS
 SELECT
   *,

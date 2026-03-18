@@ -1,7 +1,7 @@
 -- Silver: Cleaned transactional data (Getnet payment volume)
 -- Merchant-level payment metrics for RFM and churn
 
-CREATE OR REPLACE STREAMING TABLE silver_transactions
+CREATE OR REFRESH STREAMING TABLE silver_transactions
 CLUSTER BY (merchant_id, transaction_date)
 AS
 SELECT

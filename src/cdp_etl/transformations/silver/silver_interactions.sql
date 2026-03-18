@@ -1,7 +1,7 @@
 -- Silver: Cleaned Genesys contact center interactions
 -- Captures call metrics for Call Center Analytics (duration, queue, sentiment)
 
-CREATE OR REPLACE STREAMING TABLE silver_interactions
+CREATE OR REFRESH STREAMING TABLE silver_interactions
 CLUSTER BY (conversation_date)
 AS
 SELECT

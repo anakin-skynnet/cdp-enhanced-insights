@@ -2,7 +2,7 @@
 -- Links to merchant/customer via requester_id
 -- Captures resolution lifecycle metrics for Support Analytics
 
-CREATE OR REPLACE STREAMING TABLE silver_tickets
+CREATE OR REFRESH STREAMING TABLE silver_tickets
 CLUSTER BY (created_at)
 AS
 SELECT

@@ -1,12 +1,13 @@
 -- Bronze: Payment/transactional data (Getnet acquiring)
--- Source: Databricks transactional tables or Event Hub → Volume
+-- Source: Databricks transactional tables or Event Hub -> Volume
 -- Path: /Volumes/{catalog}/{schema}/raw/transactions/
 
-CREATE OR REPLACE STREAMING TABLE bronze_transactions
+CREATE OR REFRESH STREAMING TABLE bronze_transactions (
+  CONSTRAINT valid_txn_id EXPECT (transaction_id IS NOT NULL) ON VIOLATION DROP ROW,
+  CONSTRAINT valid_merchant EXPECT (merchant_id IS NOT NULL) ON VIOLATION DROP ROW,
+  CONSTRAINT valid_amount EXPECT (amount >= 0)
+)
 CLUSTER BY (transaction_date)
-CONSTRAINT valid_txn_id EXPECT (transaction_id IS NOT NULL) ON VIOLATION DROP ROW
-CONSTRAINT valid_merchant EXPECT (merchant_id IS NOT NULL) ON VIOLATION DROP ROW
-CONSTRAINT valid_amount EXPECT (amount >= 0)
 AS
 SELECT
   *,
