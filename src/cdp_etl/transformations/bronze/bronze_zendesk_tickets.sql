@@ -9,7 +9,7 @@ SELECT
   current_timestamp() AS _ingested_at,
   COALESCE(_metadata.file_path, 'lakeflow_connect') AS _source_file
 FROM STREAM read_files(
-  '/Volumes/main/cdp_dev/raw/zendesk/tickets/',
+  '/Volumes/ahs_demos_catalog/cdp_360/raw/zendesk/tickets/',
   format => 'json',
   schemaHints => 'id STRING, subject STRING, status STRING, requester_id STRING, assignee_id STRING, created_at TIMESTAMP, updated_at TIMESTAMP',
   mode => 'PERMISSIVE'

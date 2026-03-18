@@ -119,11 +119,11 @@ cdp-enhanced-insights/
 
 Ensure data lands in:
 
-- `/Volumes/main/cdp_dev/raw/salesforce/contacts/`
-- `/Volumes/main/cdp_dev/raw/salesforce/accounts/`
-- `/Volumes/main/cdp_dev/raw/zendesk/tickets/`
-- `/Volumes/main/cdp_dev/raw/genesys/`
-- `/Volumes/main/cdp_dev/raw/transactions/`
+- `/Volumes/ahs_demos_catalog/cdp_360/raw/salesforce/contacts/`
+- `/Volumes/ahs_demos_catalog/cdp_360/raw/salesforce/accounts/`
+- `/Volumes/ahs_demos_catalog/cdp_360/raw/zendesk/tickets/`
+- `/Volumes/ahs_demos_catalog/cdp_360/raw/genesys/`
+- `/Volumes/ahs_demos_catalog/cdp_360/raw/transactions/`
 
 ### 3. Deploy and Run
 

@@ -23,12 +23,12 @@ Third-party connectors for Genesys, Apian, Oracle Siebel, and Qualtrics. Data la
 
 Bronze pipeline expects Genesys data at:
 - **Table:** `bronze_genesys_interactions` (from Airbyte/Fivetran sync)
-- **Or Volume:** `/Volumes/main/cdp_dev/raw/genesys/`
+- **Or Volume:** `/Volumes/ahs_demos_catalog/cdp_360/raw/genesys/`
 
 ## Apian (Post-MVP)
 
 - API-based connector or custom REST job
-- Land in `/Volumes/main/cdp_dev/raw/apian/`
+- Land in `/Volumes/ahs_demos_catalog/cdp_360/raw/apian/`
 
 ## Oracle Siebel (Chile - Post-MVP)
 

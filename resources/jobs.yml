@@ -1,8 +1,30 @@
-# PagoNxt Getnet CDP - Jobs for ML, Identity Resolution, and AI Agents
-# Execution order: 04-14 (pipelines 01-03 must complete first)
+# PagoNxt Getnet CDP - Jobs for Data Generation, ML, Identity Resolution, and AI Agents
+# Execution order: 00 (data gen), then pipelines 01-03, then jobs 04-14
 
 resources:
   jobs:
+    generate_source_data:
+      name: "[${bundle.target}] 00 CDP Generate Synthetic Source Data"
+      description: "Generates realistic synthetic data for all 5 source systems (Salesforce, Zendesk, Getnet, Genesys) into Unity Catalog Volumes"
+      tasks:
+        - task_key: generate_data
+          notebook_task:
+            notebook_path: ../src/cdp_etl/notebooks/data_generation/generate_source_data.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              num_merchants: "150"
+          job_cluster_key: cdpmain
+      job_clusters:
+        - job_cluster_key: cdpmain
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 1
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"
+
     identity_resolution:
       name: "[${bundle.target}] 04 CDP Identity Resolution"
       description: "Customer Entity Resolution - produces gold_customer_360 golden record"

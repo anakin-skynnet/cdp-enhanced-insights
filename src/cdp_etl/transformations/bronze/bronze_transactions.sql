@@ -11,7 +11,7 @@ SELECT
   _metadata.file_path AS _source_file,
   _metadata.file_modification_time AS _file_timestamp
 FROM STREAM read_files(
-  '/Volumes/main/cdp_dev/raw/transactions/',
+  '/Volumes/ahs_demos_catalog/cdp_360/raw/transactions/',
   format => 'parquet',
   schemaHints => 'transaction_id STRING, merchant_id STRING, amount DECIMAL(18,2), transaction_date DATE, status STRING',
   mode => 'PERMISSIVE'
