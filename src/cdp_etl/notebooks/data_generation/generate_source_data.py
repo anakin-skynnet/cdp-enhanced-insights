@@ -99,6 +99,8 @@ STREETS = [
     "Rua das Flores", "Av. Atlântica", "Rua do Comércio", "Av. Brasil",
 ]
 
+PHONE_PREFIXES = {"BR": "55", "MX": "52", "AR": "54", "CL": "56"}
+
 merchants = []
 for i in range(num_merchants):
     country = random.choice(COUNTRIES)
@@ -106,6 +108,7 @@ for i in range(num_merchants):
     biz = random.choice(BUSINESS_TYPES)
     first = random.choice(FIRST_NAMES)
     last = random.choice(LAST_NAMES)
+    prefix = PHONE_PREFIXES.get(country["code"], "55")
     merchant = {
         "sf_account_id": f"001{uuid.uuid4().hex[:12].upper()}",
         "sf_contact_id": f"003{uuid.uuid4().hex[:12].upper()}",
@@ -114,7 +117,7 @@ for i in range(num_merchants):
         "contact_first": first,
         "contact_last": last,
         "email": f"{first.lower()}.{last.lower()}@{biz.lower().replace(' ', '').replace('&', '')}.com",
-        "phone": f"+55{random.randint(11,99)}{random.randint(900000000, 999999999)}",
+        "phone": f"+{prefix}{random.randint(11,99)}{random.randint(900000000, 999999999)}",
         "city": city,
         "country": country["code"],
         "street": f"{random.choice(STREETS)}, {random.randint(1, 9999)}",
@@ -182,7 +185,7 @@ for m in merchants:
         sf_contacts.append({
             "Id": f"003{uuid.uuid4().hex[:12].upper()}",
             "Email": f"{extra_first.lower()}.{extra_last.lower()}@{m['name'].lower().replace(' ', '')}.com",
-            "Phone": f"+55{random.randint(11,99)}{random.randint(900000000, 999999999)}",
+            "Phone": f"+{PHONE_PREFIXES.get(m['country'], '55')}{random.randint(11,99)}{random.randint(900000000, 999999999)}",
             "FirstName": extra_first,
             "LastName": extra_last,
             "AccountId": m["sf_account_id"],
@@ -206,6 +209,8 @@ print(f"Wrote {len(sf_contacts)} Salesforce contacts to {path}")
 
 # COMMAND ----------
 
+from pyspark.sql.types import StructType, StructField, StringType, DecimalType, DateType, IntegerType
+
 txns = []
 today = date.today()
 STATUSES = ["approved", "approved", "approved", "approved", "declined", "refunded", "chargeback"]
@@ -220,21 +225,34 @@ for m in merchants:
         count = int(monthly_txn_count * seasonal_factor * random.uniform(0.7, 1.3))
         for _ in range(count):
             txn_day = txn_date_base - timedelta(days=random.randint(0, 29))
-            txns.append({
-                "transaction_id": f"TXN-{uuid.uuid4().hex[:16].upper()}",
-                "merchant_id": m["merchant_id"],
-                "amount": round(random.uniform(5.0, vol / monthly_txn_count * 3), 2),
-                "transaction_date": txn_day.isoformat(),
-                "status": random.choice(STATUSES),
-                "payment_method": random.choice(PAYMENT_METHODS),
-                "currency": "BRL" if m["country"] == "BR" else "MXN" if m["country"] == "MX" else "ARS" if m["country"] == "AR" else "CLP",
-                "card_brand": random.choice(["Visa", "Mastercard", "Elo", "Amex", "Hipercard"]),
-                "installments": random.choice([1, 1, 1, 2, 3, 6, 12]),
-                "terminal_id": f"POS-{m['merchant_id'][-6:]}-{random.randint(1,5)}",
-            })
+            txns.append((
+                f"TXN-{uuid.uuid4().hex[:16].upper()}",
+                m["sf_account_id"],
+                Decimal(str(round(random.uniform(5.0, vol / monthly_txn_count * 3), 2))),
+                txn_day,
+                random.choice(STATUSES),
+                random.choice(PAYMENT_METHODS),
+                "BRL" if m["country"] == "BR" else "MXN" if m["country"] == "MX" else "ARS" if m["country"] == "AR" else "CLP",
+                random.choice(["Visa", "Mastercard", "Elo", "Amex", "Hipercard"]),
+                random.choice([1, 1, 1, 2, 3, 6, 12]),
+                f"POS-{m['merchant_id'][-6:]}-{random.randint(1,5)}",
+            ))
+
+txn_schema = StructType([
+    StructField("transaction_id", StringType(), False),
+    StructField("merchant_id", StringType(), False),
+    StructField("amount", DecimalType(18, 2), False),
+    StructField("transaction_date", DateType(), False),
+    StructField("status", StringType(), False),
+    StructField("payment_method", StringType(), True),
+    StructField("currency", StringType(), True),
+    StructField("card_brand", StringType(), True),
+    StructField("installments", IntegerType(), True),
+    StructField("terminal_id", StringType(), True),
+])
 
 path = f"{VOLUME_BASE}/transactions/"
-spark.createDataFrame(txns).coalesce(4).write.mode("overwrite").parquet(path)
+spark.createDataFrame(txns, schema=txn_schema).coalesce(4).write.mode("overwrite").parquet(path)
 print(f"Wrote {len(txns)} transactions to {path}")
 
 # COMMAND ----------
@@ -346,7 +364,7 @@ for m in merchants:
             "conversation_id": f"CONV-{uuid.uuid4().hex[:14].upper()}",
             "user_id": random.choice(AGENT_IDS),
             "customer_id": m["sf_contact_id"],
-            "external_contact_id": m["merchant_id"],
+            "external_contact_id": m["sf_account_id"],
             "conversation_date": conv_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "interaction_type": random.choice(INTERACTION_TYPES),
             "media_type": random.choice(MEDIA_TYPES),
