@@ -45,14 +45,13 @@ resources:
 
     segmentation_refresh:
       name: "[${bundle.target}] 05 CDP Segmentation Refresh"
-      description: "Refresh merchant segments (RFM, clustering)"
+      description: "Refresh merchant segments (RFM, clustering) via SQL warehouse"
       tasks:
         - task_key: segmentation
-          notebook_task:
-            notebook_path: ../src/cdp_etl/notebooks/segmentation/segmentation_refresh.py
-            base_parameters:
-              catalog: ${var.catalog}
-              schema: ${var.schema}
+          sql_task:
+            file:
+              path: ../src/cdp_etl/setup/refresh_segmentation.sql
+            warehouse_id: ${var.warehouse_id}
       schedule:
         quartz_cron_expression: "0 0 3 * * ?"
         timezone_id: "America/Buenos_Aires"

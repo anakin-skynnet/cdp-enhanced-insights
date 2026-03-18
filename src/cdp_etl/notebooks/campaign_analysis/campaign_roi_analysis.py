@@ -28,16 +28,7 @@ schema = dbutils.widgets.get("schema") if dbutils.widgets.get("schema") else "cd
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Refresh Campaign ROI Materialized View
-
-# COMMAND ----------
-
-spark.sql(f"REFRESH MATERIALIZED VIEW {catalog}.{schema}.gold_campaign_roi")
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## 3. Campaign Performance Summary
+# MAGIC ## 2. Campaign Performance Summary
 
 # COMMAND ----------
 
