@@ -468,10 +468,19 @@
     let merchantPage = 0;
     const MERCHANT_PAGE_SIZE = 25;
 
+    let merchantFilters = { search: '', segment: '', health_tier: '' };
+    const SEGMENTS = ['champions','loyal','potential','promising','new','needs_attention','about_to_sleep','at_risk','cant_lose','hibernating'];
+    const HEALTH_TIERS = ['excellent','good','fair','poor','critical'];
+
     async function loadMerchants(search = '', page = 0) {
       merchantPage = page;
+      merchantFilters.search = search;
       const c = document.getElementById('page-container');
-      const merchants = await api(`/api/merchants?search=${encodeURIComponent(search)}&limit=200`);
+      const params = new URLSearchParams({ limit: '200' });
+      if (merchantFilters.search) params.set('search', merchantFilters.search);
+      if (merchantFilters.segment) params.set('segment', merchantFilters.segment);
+      if (merchantFilters.health_tier) params.set('health_tier', merchantFilters.health_tier);
+      const merchants = await api(`/api/merchants?${params}`);
       if (!merchants) { c.innerHTML = card('Error', '<p class="text-muted-foreground">Failed to load merchants.</p>'); return; }
       const total = merchants.length;
       const totalPages = Math.ceil(total / MERCHANT_PAGE_SIZE);
@@ -488,14 +497,24 @@
           <td class="px-4 py-3 text-right">${m.ticket_count}</td>
         </tr>`).join('');
       const paginationBtns = totalPages > 1 ? Array.from({length: totalPages}, (_, i) =>
-        `<button onclick="loadMerchants('${search.replace(/'/g,"\\'")}', ${i})" class="w-8 h-8 rounded text-xs ${i === page ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'} transition-colors">${i + 1}</button>`
+        `<button onclick="loadMerchants('${merchantFilters.search.replace(/'/g,"\\'")}', ${i})" class="w-8 h-8 rounded text-xs ${i === page ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'} transition-colors">${i + 1}</button>`
       ).join('') : '';
+      const segOpts = SEGMENTS.map(s => `<option value="${s}" ${merchantFilters.segment === s ? 'selected' : ''}>${s.replace(/_/g,' ')}</option>`).join('');
+      const htOpts = HEALTH_TIERS.map(t => `<option value="${t}" ${merchantFilters.health_tier === t ? 'selected' : ''}>${t}</option>`).join('');
       c.innerHTML = `
         <div class="space-y-4">
-          <div class="flex items-center gap-3">
-            <input type="text" value="${search}" placeholder="Filter merchants..."
-              class="h-9 w-72 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          <div class="flex items-center gap-3 flex-wrap">
+            <input type="text" value="${esc(merchantFilters.search)}" placeholder="Search merchants..."
+              class="h-9 w-56 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               oninput="debounceMerchantSearch(this.value)" />
+            <select onchange="merchantFilters.segment = this.value; loadMerchants(merchantFilters.search, 0)" aria-label="Filter by segment"
+              class="h-9 rounded-md border border-input bg-background px-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="">All Segments</option>${segOpts}
+            </select>
+            <select onchange="merchantFilters.health_tier = this.value; loadMerchants(merchantFilters.search, 0)" aria-label="Filter by health tier"
+              class="h-9 rounded-md border border-input bg-background px-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+              <option value="">All Health Tiers</option>${htOpts}
+            </select>
             <span class="text-sm text-muted-foreground">${total} merchants${totalPages > 1 ? ` · page ${page + 1}/${totalPages}` : ''}</span>
             <a href="/api/export/merchants?limit=500" class="ml-auto text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors" aria-label="Export merchants as CSV">Export CSV</a>
           </div>
