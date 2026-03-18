@@ -1,5 +1,6 @@
 # PagoNxt Getnet CDP - Jobs for Data Generation, ML, Identity Resolution, and AI Agents
 # Execution order: 00 (data gen), then pipelines 01-03, then jobs 04-14
+# All jobs use serverless compute for faster startup and no cluster management.
 
 resources:
   jobs:
@@ -14,13 +15,6 @@ resources:
               catalog: ${var.catalog}
               schema: ${var.schema}
               num_merchants: "150"
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 1
       permissions:
         - level: CAN_VIEW
           group_name: "users"
@@ -35,13 +29,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
       schedule:
         quartz_cron_expression: "0 0 2 * * ?"
         timezone_id: "America/Buenos_Aires"
@@ -59,13 +46,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
       schedule:
         quartz_cron_expression: "0 0 3 * * ?"
         timezone_id: "America/Buenos_Aires"
@@ -83,13 +63,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
       schedule:
         quartz_cron_expression: "0 30 3 * * ?"
         timezone_id: "America/Buenos_Aires"
@@ -107,13 +80,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
       schedule:
         quartz_cron_expression: "0 0 4 * * ?"
         timezone_id: "America/Buenos_Aires"
@@ -131,13 +97,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
       schedule:
         quartz_cron_expression: "0 0 5 * * ?"
         timezone_id: "America/Buenos_Aires"
@@ -155,13 +114,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
       schedule:
         quartz_cron_expression: "0 0 6 * * ?"
         timezone_id: "America/Buenos_Aires"
@@ -179,13 +131,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
       schedule:
         quartz_cron_expression: "0 30 6 * * ?"
         timezone_id: "America/Buenos_Aires"
@@ -203,13 +148,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
       schedule:
         quartz_cron_expression: "0 0 5 30 * ?"
         timezone_id: "America/Buenos_Aires"
@@ -227,13 +165,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 1
       schedule:
         quartz_cron_expression: "0 0 7 * * ?"
         timezone_id: "America/Buenos_Aires"
@@ -251,13 +182,6 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 1
       schedule:
         quartz_cron_expression: "0 30 7 1,15 * ?"
         timezone_id: "America/Buenos_Aires"
@@ -279,13 +203,6 @@ resources:
             - task_key: setup_uc_functions
           notebook_task:
             notebook_path: ../src/agents/deploy_agents.py
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 1
       permissions:
         - level: CAN_VIEW
           group_name: "users"
