@@ -17,10 +17,16 @@ env:
     value: "cdp"
 
   - name: CDP_DATA_SOURCE
-    value: "databricks"
+    value: "mock"
 
   - name: CDP_AGENT_ENDPOINT
     value: "main-cdp-cdp_supervisor_agent"
 
   - name: CDP_GENIE_SPACE_ID
     value: ""
+
+resources:
+  - name: sql-warehouse
+    sql_warehouse:
+      id: c60fc6392746d138
+      permission: CAN_USE

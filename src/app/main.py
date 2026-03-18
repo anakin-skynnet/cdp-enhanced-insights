@@ -45,6 +45,11 @@ async def root():
     return FileResponse(os.path.join(_static_dir, "index.html"))
 
 
+@app.get("/metrics")
+async def metrics():
+    return {"status": "healthy", "data_source": DATA_SOURCE}
+
+
 # ── Data Source Config ────────────────────────────────────────────
 
 @app.get("/api/config", response_model=M.DataSourceConfig)
