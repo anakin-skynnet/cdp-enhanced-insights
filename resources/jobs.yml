@@ -1,10 +1,10 @@
 # PagoNxt Getnet CDP - Jobs for ML, Identity Resolution, and AI Agents
-# Churn model, segmentation, identity resolution, agent deployment
+# Execution order: 04-14 (pipelines 01-03 must complete first)
 
 resources:
   jobs:
     identity_resolution:
-      name: "[${bundle.target}] CDP Identity Resolution"
+      name: "[${bundle.target}] 04 CDP Identity Resolution"
       description: "Customer Entity Resolution - produces gold_customer_360 golden record"
       tasks:
         - task_key: identity_resolution
@@ -27,32 +27,8 @@ resources:
         - level: CAN_VIEW
           group_name: "users"
 
-    churn_model_training:
-      name: "[${bundle.target}] CDP Churn Model Training"
-      description: "Train and register merchant churn prediction model"
-      tasks:
-        - task_key: churn_training
-          notebook_task:
-            notebook_path: ../src/cdp_etl/notebooks/churn_model/churn_training.py
-            base_parameters:
-              catalog: ${var.catalog}
-              schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
-      schedule:
-        quartz_cron_expression: "0 0 4 * * ?"
-        timezone_id: "America/Buenos_Aires"
-      permissions:
-        - level: CAN_VIEW
-          group_name: "users"
-
     segmentation_refresh:
-      name: "[${bundle.target}] CDP Segmentation Refresh"
+      name: "[${bundle.target}] 05 CDP Segmentation Refresh"
       description: "Refresh merchant segments (RFM, clustering)"
       tasks:
         - task_key: segmentation
@@ -75,8 +51,56 @@ resources:
         - level: CAN_VIEW
           group_name: "users"
 
+    call_center_nlp:
+      name: "[${bundle.target}] 06 CDP Call Center NLP Enrichment"
+      description: "Speech-to-text and sentiment analysis on call center interactions using Foundation Model API"
+      tasks:
+        - task_key: call_center_nlp
+          notebook_task:
+            notebook_path: ../src/cdp_etl/notebooks/call_center_analytics/call_center_nlp.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          job_cluster_key: cdpmain
+      job_clusters:
+        - job_cluster_key: cdpmain
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 2
+      schedule:
+        quartz_cron_expression: "0 0 3 * * ?"
+        timezone_id: "America/Buenos_Aires"
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"
+
+    churn_model_training:
+      name: "[${bundle.target}] 07 CDP Churn Model Training"
+      description: "Train and register merchant churn prediction model"
+      tasks:
+        - task_key: churn_training
+          notebook_task:
+            notebook_path: ../src/cdp_etl/notebooks/churn_model/churn_training.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          job_cluster_key: cdpmain
+      job_clusters:
+        - job_cluster_key: cdpmain
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 2
+      schedule:
+        quartz_cron_expression: "0 0 4 * * ?"
+        timezone_id: "America/Buenos_Aires"
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"
+
     clv_training:
-      name: "[${bundle.target}] CDP Customer Lifetime Value"
+      name: "[${bundle.target}] 08 CDP Customer Lifetime Value"
       description: "Train BG/NBD + Gamma-Gamma CLV models (Databricks Solution Accelerator)"
       tasks:
         - task_key: clv_training
@@ -100,7 +124,7 @@ resources:
           group_name: "users"
 
     multi_touch_attribution:
-      name: "[${bundle.target}] CDP Multi-Touch Attribution"
+      name: "[${bundle.target}] 09 CDP Multi-Touch Attribution"
       description: "Markov Chain channel attribution (Databricks Solution Accelerator)"
       tasks:
         - task_key: attribution
@@ -123,56 +147,8 @@ resources:
         - level: CAN_VIEW
           group_name: "users"
 
-    behavioral_segmentation:
-      name: "[${bundle.target}] CDP Behavioral Segmentation"
-      description: "K-Means behavioral clustering (Databricks Solution Accelerator)"
-      tasks:
-        - task_key: clustering
-          notebook_task:
-            notebook_path: ../src/cdp_etl/notebooks/advanced_segmentation/behavioral_clustering.py
-            base_parameters:
-              catalog: ${var.catalog}
-              schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
-      schedule:
-        quartz_cron_expression: "0 0 5 30 * ?"
-        timezone_id: "America/Buenos_Aires"
-      permissions:
-        - level: CAN_VIEW
-          group_name: "users"
-
-    call_center_nlp:
-      name: "[${bundle.target}] CDP Call Center NLP Enrichment"
-      description: "Speech-to-text and sentiment analysis on call center interactions using Foundation Model API"
-      tasks:
-        - task_key: call_center_nlp
-          notebook_task:
-            notebook_path: ../src/cdp_etl/notebooks/call_center_analytics/call_center_nlp.py
-            base_parameters:
-              catalog: ${var.catalog}
-              schema: ${var.schema}
-          job_cluster_key: cdpmain
-      job_clusters:
-        - job_cluster_key: cdpmain
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
-            node_type_id: "Standard_DS3_v2"
-            num_workers: 2
-      schedule:
-        quartz_cron_expression: "0 0 3 * * ?"
-        timezone_id: "America/Buenos_Aires"
-      permissions:
-        - level: CAN_VIEW
-          group_name: "users"
-
     propensity_scoring:
-      name: "[${bundle.target}] CDP Hyper-Personalization Propensity"
+      name: "[${bundle.target}] 10 CDP Hyper-Personalization Propensity"
       description: "Train churn/upsell/activation propensity models for hyper-personalization"
       tasks:
         - task_key: propensity
@@ -195,13 +171,13 @@ resources:
         - level: CAN_VIEW
           group_name: "users"
 
-    ad_creative_generation:
-      name: "[${bundle.target}] CDP AI Ad Creative Generation"
-      description: "Generate personalized marketing content per segment using Foundation Model API"
+    behavioral_segmentation:
+      name: "[${bundle.target}] 11 CDP Behavioral Segmentation"
+      description: "K-Means behavioral clustering (Databricks Solution Accelerator)"
       tasks:
-        - task_key: ad_creative
+        - task_key: clustering
           notebook_task:
-            notebook_path: ../src/cdp_etl/notebooks/ad_creative/ad_creative_generation.py
+            notebook_path: ../src/cdp_etl/notebooks/advanced_segmentation/behavioral_clustering.py
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
@@ -211,16 +187,16 @@ resources:
           new_cluster:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
-            num_workers: 1
+            num_workers: 2
       schedule:
-        quartz_cron_expression: "0 0 7 1,15 * ?"
+        quartz_cron_expression: "0 0 5 30 * ?"
         timezone_id: "America/Buenos_Aires"
       permissions:
         - level: CAN_VIEW
           group_name: "users"
 
     campaign_roi_analysis:
-      name: "[${bundle.target}] CDP Campaign ROI Analysis"
+      name: "[${bundle.target}] 12 CDP Campaign ROI Analysis"
       description: "Analyze campaign conversion, revenue lift, and reactivation metrics"
       tasks:
         - task_key: campaign_roi
@@ -243,8 +219,32 @@ resources:
         - level: CAN_VIEW
           group_name: "users"
 
+    ad_creative_generation:
+      name: "[${bundle.target}] 13 CDP AI Ad Creative Generation"
+      description: "Generate personalized marketing content per segment using Foundation Model API"
+      tasks:
+        - task_key: ad_creative
+          notebook_task:
+            notebook_path: ../src/cdp_etl/notebooks/ad_creative/ad_creative_generation.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+          job_cluster_key: cdpmain
+      job_clusters:
+        - job_cluster_key: cdpmain
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 1
+      schedule:
+        quartz_cron_expression: "0 0 7 1,15 * ?"
+        timezone_id: "America/Buenos_Aires"
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"
+
     deploy_agents:
-      name: "[${bundle.target}] CDP Deploy AI Agents"
+      name: "[${bundle.target}] 14 CDP Deploy AI Agents"
       description: "Log and deploy CDP Supervisor + 3 specialist agents to Model Serving"
       tasks:
         - task_key: setup_uc_functions

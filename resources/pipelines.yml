@@ -4,7 +4,7 @@
 resources:
   pipelines:
     cdp_ingestion:
-      name: "[${bundle.target}] CDP Bronze Ingestion"
+      name: "[${bundle.target}] 01 CDP Bronze Ingestion"
       catalog: ${var.catalog}
       target: ${var.schema}
       libraries:
@@ -22,7 +22,7 @@ resources:
           group_name: "users"
 
     cdp_silver:
-      name: "[${bundle.target}] CDP Silver Transformations"
+      name: "[${bundle.target}] 02 CDP Silver Transformations"
       catalog: ${var.catalog}
       target: ${var.schema}
       libraries:
@@ -41,7 +41,7 @@ resources:
           group_name: "users"
 
     cdp_gold_identity:
-      name: "[${bundle.target}] CDP Gold Golden Record"
+      name: "[${bundle.target}] 03 CDP Gold Golden Record"
       catalog: ${var.catalog}
       target: ${var.schema}
       libraries:
