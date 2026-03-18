@@ -19,7 +19,7 @@ WITH base AS (
     COALESCE(s.f_score, 1) AS f_score,
     COALESCE(s.m_score, 1) AS m_score,
     COALESCE(s.segment, 'unassigned') AS segment,
-    GREATEST(0, DATEDIFF(e.last_txn_date, e.first_txn_date)) AS tenure_days
+    COALESCE(e.tenure_days, 0) AS tenure_days
   FROM gold_engagement_metrics e
   LEFT JOIN gold_segments s ON e.golden_id = s.golden_id
 ),

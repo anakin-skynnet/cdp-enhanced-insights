@@ -73,7 +73,7 @@ import mlflow
 import mlflow.sklearn
 import xgboost as xgb
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
 from sklearn.metrics import roc_auc_score, f1_score
 from sklearn.preprocessing import StandardScaler
 
@@ -97,8 +97,9 @@ for label_col, model_name in [
     ("label_activation", "activation_propensity"),
 ]:
     y = pdf[label_col].fillna(0)
+    stratify_param = y if y.sum() > 5 and (y == 0).sum() > 5 else None
     X_train, X_test, y_train, y_test = train_test_split(
-        X_scaled, y, test_size=0.2, random_state=42, stratify=y if y.sum() > 5 else None
+        X_scaled, y, test_size=0.2, random_state=42, stratify=stratify_param
     )
 
     with mlflow.start_run(run_name=model_name):
@@ -107,6 +108,10 @@ for label_col, model_name in [
             random_state=42, eval_metric="logloss",
             scale_pos_weight=max(1, (y == 0).sum() / max((y == 1).sum(), 1)),
         )
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring="roc_auc")
+        mlflow.log_metric("cv_auc_mean", round(float(np.mean(cv_scores)), 4))
+        mlflow.log_metric("cv_auc_std", round(float(np.std(cv_scores)), 4))
         model.fit(X_train, y_train)
         preds_proba = model.predict_proba(X_test)[:, 1]
 
@@ -117,6 +122,7 @@ for label_col, model_name in [
         mlflow.log_metric("roc_auc", auc)
         mlflow.log_metric("f1_score", f1)
         mlflow.log_metric("positive_rate", float(y.mean()))
+        mlflow.sklearn.log_model(scaler, "scaler")
         mlflow.sklearn.log_model(model, "model", registered_model_name=f"getnet_{model_name}")
 
         pdf[f"{model_name}_score"] = model.predict_proba(X_scaled)[:, 1]

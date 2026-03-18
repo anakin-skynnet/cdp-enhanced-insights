@@ -18,15 +18,27 @@ health AS (
 nba AS (
   SELECT * FROM gold_next_best_actions
 ),
-action_history AS (
+action_agg AS (
   SELECT
     golden_id,
     COUNT(*) AS total_actions_received,
     COUNT(DISTINCT action_type) AS distinct_action_types,
-    MAX(executed_at) AS last_action_date,
-    FIRST_VALUE(channel) OVER (PARTITION BY golden_id ORDER BY executed_at DESC) AS last_channel_used
+    MAX(executed_at) AS last_action_date
   FROM ahs_demos_catalog.cdp_360.nba_action_log
   GROUP BY golden_id
+),
+action_last_channel AS (
+  SELECT golden_id, channel AS last_channel_used
+  FROM (
+    SELECT golden_id, channel,
+           ROW_NUMBER() OVER (PARTITION BY golden_id ORDER BY executed_at DESC) AS rn
+    FROM ahs_demos_catalog.cdp_360.nba_action_log
+  ) WHERE rn = 1
+),
+action_history AS (
+  SELECT a.*, COALESCE(lc.last_channel_used, 'unknown') AS last_channel_used
+  FROM action_agg a
+  LEFT JOIN action_last_channel lc ON a.golden_id = lc.golden_id
 ),
 txn_patterns AS (
   SELECT

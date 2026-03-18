@@ -8,6 +8,7 @@ Set CDP_DATA_SOURCE=databricks (default) for live warehouse data.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
 import os
@@ -28,6 +29,15 @@ if DATA_SOURCE == "mock":
     from . import mock_data as ds
 else:
     from . import db as ds  # type: ignore[no-redef]
+
+_USE_THREADS = DATA_SOURCE != "mock"
+
+
+async def _run(fn, *args, **kwargs):
+    """Run sync datasource calls in a thread pool to avoid blocking the event loop."""
+    if _USE_THREADS:
+        return await asyncio.to_thread(fn, *args, **kwargs)
+    return fn(*args, **kwargs)
 
 app = FastAPI(
     title="Getnet CDP - Customer 360",
@@ -62,8 +72,8 @@ async def get_config():
             connected = False
     return M.DataSourceConfig(
         source=DATA_SOURCE,
-        catalog=os.environ.get("CDP_CATALOG", "main"),
-        schema=os.environ.get("CDP_SCHEMA", "cdp"),
+        catalog=os.environ.get("CDP_CATALOG", "ahs_demos_catalog"),
+        schema=os.environ.get("CDP_SCHEMA", "cdp_360"),
         warehouse_connected=connected,
     )
 
@@ -83,17 +93,17 @@ async def toggle_data_source():
 
 @app.get("/api/dashboard/kpis", response_model=M.DashboardKPIs)
 async def dashboard_kpis():
-    return ds.get_dashboard_kpis()
+    return await _run(ds.get_dashboard_kpis)
 
 
 @app.get("/api/dashboard/segments", response_model=list[M.SegmentDistribution])
 async def dashboard_segments():
-    return ds.get_segment_distribution()
+    return await _run(ds.get_segment_distribution)
 
 
 @app.get("/api/dashboard/health", response_model=list[M.HealthDistribution])
 async def dashboard_health():
-    return ds.get_health_distribution()
+    return await _run(ds.get_health_distribution)
 
 
 # ── Merchants ────────────────────────────────────────────────────
@@ -107,12 +117,12 @@ async def list_merchants(
     limit: int = Query(default=50, le=200),
     offset: int = 0,
 ):
-    return ds.get_merchants(search, segment, health_tier, sort, limit, offset)
+    return await _run(ds.get_merchants, search, segment, health_tier, sort, limit, offset)
 
 
 @app.get("/api/merchants/{golden_id}", response_model=M.MerchantDetail)
 async def get_merchant(golden_id: str):
-    merchant = ds.get_merchant_detail(golden_id)
+    merchant = await _run(ds.get_merchant_detail, golden_id)
     if not merchant:
         raise HTTPException(status_code=404, detail="Merchant not found")
     return merchant
@@ -126,12 +136,12 @@ async def nba_queue(
     segment: str = "",
     limit: int = Query(default=50, le=200),
 ):
-    return ds.get_nba_queue(urgency, segment, limit)
+    return await _run(ds.get_nba_queue, urgency, segment, limit)
 
 
 @app.get("/api/nba/summary", response_model=list[M.NBASummaryItem])
 async def nba_summary():
-    return ds.get_nba_summary()
+    return await _run(ds.get_nba_summary)
 
 
 # ── Campaigns ────────────────────────────────────────────────────
@@ -141,13 +151,13 @@ async def campaign_audience(
     segment: str = Query(..., description="Target segment"),
     limit: int = Query(default=100, le=500),
 ):
-    return ds.get_segment_merchants_for_campaign(segment, limit)
+    return await _run(ds.get_segment_merchants_for_campaign, segment, limit)
 
 
 @app.post("/api/campaigns/execute", response_model=M.CampaignResponse)
 async def execute_campaign(campaign: M.CampaignRequest):
     merchants = [{"golden_id": mid} for mid in campaign.merchant_ids]
-    ds.log_campaign({
+    await _run(ds.log_campaign, {
         "name": campaign.name,
         "action_type": campaign.action_type,
         "channel": campaign.channel,
@@ -166,116 +176,116 @@ async def execute_campaign(campaign: M.CampaignRequest):
 
 @app.get("/api/clv/summary", response_model=list[M.CLVTierSummary])
 async def clv_summary():
-    return ds.get_clv_summary()
+    return await _run(ds.get_clv_summary)
 
 
 @app.get("/api/clv/top", response_model=list[M.CLVMerchant])
 async def clv_top(limit: int = Query(default=20, le=100)):
-    return ds.get_clv_top_merchants(limit)
+    return await _run(ds.get_clv_top_merchants, limit)
 
 
 @app.get("/api/attribution", response_model=list[M.ChannelAttribution])
 async def channel_attribution():
-    return ds.get_channel_attribution()
+    return await _run(ds.get_channel_attribution)
 
 
 @app.get("/api/behavioral-segments", response_model=list[M.BehavioralSegment])
 async def behavioral_segments():
-    return ds.get_behavioral_segments()
+    return await _run(ds.get_behavioral_segments)
 
 
 # ── Customer Support Analytics ────────────────────────────────────
 
 @app.get("/api/support/kpis", response_model=M.SupportKPIs)
 async def support_kpis():
-    return ds.get_support_kpis()
+    return await _run(ds.get_support_kpis)
 
 
 @app.get("/api/support/quality", response_model=list[M.SupportQualityDistribution])
 async def support_quality():
-    return ds.get_support_quality_distribution()
+    return await _run(ds.get_support_quality_distribution)
 
 
 @app.get("/api/support/merchants", response_model=list[M.SupportMerchant])
 async def support_merchants(quality: str = "", limit: int = Query(default=50, le=200)):
-    return ds.get_support_merchants(quality, limit)
+    return await _run(ds.get_support_merchants, quality, limit)
 
 
 # ── Call Center Analytics ─────────────────────────────────────────
 
 @app.get("/api/call-center/kpis", response_model=M.CallCenterKPIs)
 async def call_center_kpis():
-    return ds.get_call_center_kpis()
+    return await _run(ds.get_call_center_kpis)
 
 
 @app.get("/api/call-center/agents", response_model=list[M.CallCenterAgent])
 async def call_center_agents(limit: int = Query(default=20, le=100)):
-    return ds.get_call_center_agents(limit)
+    return await _run(ds.get_call_center_agents, limit)
 
 
 @app.get("/api/call-center/queues", response_model=list[M.CallCenterQueue])
 async def call_center_queues():
-    return ds.get_call_center_queues()
+    return await _run(ds.get_call_center_queues)
 
 
 @app.get("/api/call-center/sentiment", response_model=list[M.SentimentByTopic])
 async def call_center_sentiment():
-    return ds.get_call_center_sentiment()
+    return await _run(ds.get_call_center_sentiment)
 
 
 # ── Hyper-Personalization ─────────────────────────────────────────
 
 @app.get("/api/personalization/summary", response_model=list[M.PersonalizationSummary])
 async def personalization_summary():
-    return ds.get_personalization_summary()
+    return await _run(ds.get_personalization_summary)
 
 
 @app.get("/api/personalization/{golden_id}")
 async def personalization_signals(golden_id: str):
-    return ds.get_personalization_for_merchant(golden_id)
+    return await _run(ds.get_personalization_for_merchant, golden_id)
 
 
 @app.get("/api/propensity", response_model=list[M.PropensityDistribution])
 async def propensity_distribution():
-    return ds.get_propensity_distribution()
+    return await _run(ds.get_propensity_distribution)
 
 
 # ── Ad Creative ───────────────────────────────────────────────────
 
 @app.get("/api/ad-creative", response_model=list[M.AdCreativeItem])
 async def ad_creative():
-    return ds.get_ad_creative_library()
+    return await _run(ds.get_ad_creative_library)
 
 
 # ── Campaign ROI ──────────────────────────────────────────────────
 
 @app.get("/api/campaign-roi", response_model=list[M.CampaignROISummary])
 async def campaign_roi():
-    return ds.get_campaign_roi_summary()
+    return await _run(ds.get_campaign_roi_summary)
 
 
 @app.get("/api/campaign-roi/outcomes", response_model=list[M.CampaignOutcome])
 async def campaign_roi_outcomes():
-    return ds.get_campaign_outcome_distribution()
+    return await _run(ds.get_campaign_outcome_distribution)
 
 
 # ── Audience Activation ───────────────────────────────────────────
 
 @app.get("/api/audiences/summary", response_model=list[M.AudienceSummary])
 async def audience_summary():
-    return ds.get_audience_summary()
+    return await _run(ds.get_audience_summary)
 
 
 @app.get("/api/audiences/{audience_type}", response_model=list[M.AudienceMember])
 async def audience_list(audience_type: str, limit: int = Query(default=100, le=500)):
-    return ds.get_audience_list(audience_type, limit)
+    return await _run(ds.get_audience_list, audience_type, limit)
 
 
 # ── Anomaly Alerts ────────────────────────────────────────────────
 
 @app.get("/api/anomaly-alerts/kpis", response_model=M.AnomalyKPIs)
 async def anomaly_kpis():
-    return ds.get_anomaly_kpis()
+    return await _run(ds.get_anomaly_kpis)
 
 
 @app.get("/api/anomaly-alerts", response_model=list[M.AnomalyAlert])
@@ -283,21 +293,21 @@ async def anomaly_alerts(
     anomaly_type: str = "",
     limit: int = Query(default=50, le=200),
 ):
-    return ds.get_anomaly_alerts(anomaly_type, limit)
+    return await _run(ds.get_anomaly_alerts, anomaly_type, limit)
 
 
 # ── Merchant Timeline ─────────────────────────────────────────────
 
 @app.get("/api/merchants/{golden_id}/timeline", response_model=list[M.TimelineEvent])
 async def merchant_timeline(golden_id: str, limit: int = Query(default=30, le=100)):
-    return ds.get_merchant_timeline(golden_id, limit)
+    return await _run(ds.get_merchant_timeline, golden_id, limit)
 
 
 # ── Data Freshness ────────────────────────────────────────────────
 
 @app.get("/api/data-freshness", response_model=list[M.TableFreshness])
 async def data_freshness():
-    return ds.get_data_freshness()
+    return await _run(ds.get_data_freshness)
 
 
 # ── CSV Export ────────────────────────────────────────────────────
@@ -310,15 +320,15 @@ async def export_csv(
 ):
     """Export audience lists, merchants, or NBA queue as downloadable CSV."""
     if resource_type == "audience":
-        rows = ds.get_audience_list(audience_type, limit)
+        rows = await _run(ds.get_audience_list, audience_type, limit)
     elif resource_type == "merchants":
-        rows = ds.get_merchants(limit=limit)
+        rows = await _run(ds.get_merchants, limit=limit)
     elif resource_type == "nba":
-        rows = ds.get_nba_queue(limit=limit)
+        rows = await _run(ds.get_nba_queue, limit=limit)
     elif resource_type == "anomaly-alerts":
-        rows = ds.get_anomaly_alerts(limit=limit)
+        rows = await _run(ds.get_anomaly_alerts, limit=limit)
     elif resource_type == "support":
-        rows = ds.get_support_merchants(limit=limit)
+        rows = await _run(ds.get_support_merchants, limit=limit)
     else:
         raise HTTPException(status_code=400, detail="Supported: audience, merchants, nba, anomaly-alerts, support")
     if not rows:
@@ -340,7 +350,7 @@ async def export_csv(
 @app.post("/api/agent/feedback")
 async def agent_feedback(feedback: M.AgentFeedback):
     """Record user rating / comment on an AI agent response."""
-    result = ds.log_agent_feedback(feedback.model_dump())
+    result = await _run(ds.log_agent_feedback, feedback.model_dump())
     return result
 
 
@@ -348,7 +358,7 @@ async def agent_feedback(feedback: M.AgentFeedback):
 # AI Agent Chat + Genie
 # ═══════════════════════════════════════════════════════════════
 
-AGENT_ENDPOINT = os.environ.get("CDP_AGENT_ENDPOINT", "main-cdp-cdp_supervisor_agent")
+AGENT_ENDPOINT = os.environ.get("CDP_AGENT_ENDPOINT", "ahs_demos_catalog-cdp_360-cdp_supervisor_agent")
 GENIE_SPACE_ID = os.environ.get("CDP_GENIE_SPACE_ID", "")
 
 

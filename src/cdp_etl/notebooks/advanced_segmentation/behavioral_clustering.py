@@ -31,6 +31,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 import pyspark.sql.functions as F
 import mlflow
+import mlflow.sklearn
 
 # COMMAND ----------
 
@@ -211,5 +212,7 @@ with mlflow.start_run(run_name="behavioral_segmentation_kmeans"):
         label = subset["behavioral_segment"].iloc[0]
         mlflow.log_metric(f"cluster_{cid}_size", len(subset))
         mlflow.log_metric(f"cluster_{cid}_avg_health", float(subset["health_score"].mean()))
+    mlflow.sklearn.log_model(final_km, "kmeans_model")
+    mlflow.sklearn.log_model(scaler, "scaler")
 
 print("Behavioral segmentation complete.")

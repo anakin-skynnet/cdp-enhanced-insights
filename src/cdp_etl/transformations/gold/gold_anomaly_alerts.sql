@@ -4,7 +4,7 @@
 
 CREATE OR REPLACE MATERIALIZED VIEW gold_anomaly_alerts
 COMMENT 'Real-time anomaly alerts for merchant activity deviations'
-SCHEDULE CRON '0 */2 * * *'
+REFRESH EVERY 2 HOURS
 AS
 WITH baseline AS (
   SELECT

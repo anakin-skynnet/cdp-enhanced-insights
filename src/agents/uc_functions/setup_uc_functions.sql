@@ -12,6 +12,8 @@ RETURNS TABLE(
   merchant_name STRING,
   email STRING,
   phone STRING,
+  industry STRING,
+  country STRING,
   segment STRING,
   txn_volume DOUBLE,
   txn_count BIGINT,

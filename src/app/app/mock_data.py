@@ -91,11 +91,17 @@ def _build_merchants() -> list[dict]:
         email = _email(name)
         action_idx = random.randint(0, len(ACTIONS) - 1)
 
+        industries = ["Retail", "Food & Beverage", "E-commerce", "Healthcare", "Travel", "Entertainment", "Technology", "Financial Services"]
+        countries = ["Brazil", "Mexico", "Argentina", "Chile", "Colombia"]
+        cities = ["São Paulo", "Mexico City", "Buenos Aires", "Santiago", "Bogotá", "Rio de Janeiro", "Monterrey", "Córdoba"]
         merchants.append({
             "golden_id": _gid(i),
             "merchant_name": name,
             "email": email,
             "phone": _phone(),
+            "industry": random.choice(industries),
+            "country": random.choice(countries),
+            "city": random.choice(cities),
             "segment": seg,
             "health_score": health["score"],
             "health_tier": health["tier"],

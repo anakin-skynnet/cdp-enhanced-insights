@@ -194,6 +194,10 @@ print(f"Saved {clv_with_golden.count():,} rows to {catalog}.{schema}.gold_custom
 
 # COMMAND ----------
 
+import pickle
+import tempfile
+import os
+
 with mlflow.start_run(run_name="clv_bgnbd_gammagamma"):
     mlflow.log_params({
         "model_type": "BG/NBD + Gamma-Gamma",
@@ -210,5 +214,15 @@ with mlflow.start_run(run_name="clv_bgnbd_gammagamma"):
         "median_clv_12m": float(rfm_pd["clv_12m"].median()),
         "total_projected_clv": float(rfm_pd["clv_12m"].sum()),
     })
+    with tempfile.NamedTemporaryFile(suffix='.pkl', delete=False) as f:
+        pickle.dump(bgf, f)
+        bgf_path = f.name
+    mlflow.log_artifact(bgf_path, "models")
+    os.unlink(bgf_path)
+    with tempfile.NamedTemporaryFile(suffix='.pkl', delete=False) as f:
+        pickle.dump(ggf, f)
+        ggf_path = f.name
+    mlflow.log_artifact(ggf_path, "models")
+    os.unlink(ggf_path)
 
 print("CLV model training complete.")

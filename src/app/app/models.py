@@ -40,6 +40,8 @@ class MerchantSummary(BaseModel):
     golden_id: str
     merchant_name: str = ""
     email: Optional[str] = None
+    industry: str = ""
+    country: str = ""
     segment: str = "unassigned"
     health_score: int = 0
     health_tier: str = "unknown"
@@ -54,6 +56,7 @@ class MerchantSummary(BaseModel):
 
 class MerchantDetail(MerchantSummary):
     phone: Optional[str] = None
+    city: str = ""
     recency_score: int = 0
     frequency_score: int = 0
     monetary_score: int = 0
