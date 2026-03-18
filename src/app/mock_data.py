@@ -339,17 +339,20 @@ def get_support_merchants(quality="", limit=50) -> list[dict]:
     ms = _build_merchants()[:limit]
     result = []
     for m in ms:
-        tier = random.choice(["excellent", "good", "fair", "poor"])
+        csat = round(random.uniform(30, 100), 1)
+        tier = ("excellent" if csat >= 85 else "good" if csat >= 70
+                else "fair" if csat >= 50 else "poor")
         if quality and tier != quality:
             continue
+        avg_res = round(random.uniform(60, 600) if csat >= 70 else random.uniform(400, 2500), 1)
         result.append({
             "golden_id": m["golden_id"], "merchant_name": m["merchant_name"],
             "total_tickets": random.randint(1, 40), "open_tickets": random.randint(0, 5),
             "resolved_tickets": random.randint(1, 35),
-            "avg_first_response_min": round(random.uniform(10, 120), 1),
-            "avg_resolution_min": round(random.uniform(60, 2500), 1),
-            "csat_score": round(random.uniform(30, 100), 1),
-            "sla_resolution_pct": round(random.uniform(40, 100), 1),
+            "avg_first_response_min": round(random.uniform(10, 60) if csat >= 70 else random.uniform(40, 120), 1),
+            "avg_resolution_min": avg_res,
+            "csat_score": csat,
+            "sla_resolution_pct": round(random.uniform(75, 100) if csat >= 70 else random.uniform(40, 75), 1),
             "support_quality_tier": tier,
         })
     return result[:limit]
@@ -618,8 +621,8 @@ def get_data_freshness() -> list[dict]:
     ]
     result = []
     now = datetime.now()
-    for t in tables:
-        hrs = random.randint(0, 6)
+    for i, t in enumerate(tables):
+        hrs = random.randint(0, 2) if random.random() > 0.12 else random.randint(4, 8)
         result.append({
             "table_name": t,
             "last_updated": (now - timedelta(hours=hrs)).strftime("%Y-%m-%d %H:%M"),

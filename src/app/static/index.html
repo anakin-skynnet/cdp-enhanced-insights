@@ -195,9 +195,9 @@
         <h1 id="page-title" class="text-lg font-semibold">Dashboard</h1>
       </div>
       <div class="flex items-center gap-3">
-        <button id="freshness-btn" onclick="navigateTo('freshness')" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-md text-xs hover:bg-accent transition-colors" title="Data freshness">
-          <div id="freshness-dot" class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-          <span id="freshness-label" class="text-muted-foreground">Data: Fresh</span>
+        <button id="freshness-btn" onclick="navigateTo('freshness')" class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs hover:bg-accent transition-colors" title="Data freshness">
+          <div id="freshness-dot" class="w-1.5 h-1.5 rounded-full bg-muted-foreground animate-pulse-dot"></div>
+          <span id="freshness-label" class="text-muted-foreground">Checking...</span>
         </button>
         <div class="relative">
           <input id="global-search" type="text" placeholder="Search merchants..."
@@ -376,6 +376,12 @@
       }, 400);
     }
 
+    let merchantSearchTimeout;
+    function debounceMerchantSearch(val) {
+      clearTimeout(merchantSearchTimeout);
+      merchantSearchTimeout = setTimeout(() => loadMerchants(val), 300);
+    }
+
     // ═══════════════════════════════════════════════════════════
     // Page Router
     // ═══════════════════════════════════════════════════════════
@@ -398,7 +404,10 @@
         freshness: loadFreshness,
       };
       container.innerHTML = `<div class="space-y-6">${skeletonKpis()}<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">${card('', skeleton('h-64'))}${card('', skeleton('h-64'))}</div></div>`;
-      if (loaders[page]) await loaders[page]();
+      if (loaders[page]) {
+        try { await loaders[page](); }
+        catch(e) { container.innerHTML = card('Error', `<p class="text-red-400">${e.message || 'Failed to load page data. Please try again.'}</p>`); }
+      }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -469,8 +478,9 @@
           <div class="flex items-center gap-3">
             <input type="text" value="${search}" placeholder="Filter merchants..."
               class="h-9 w-72 rounded-md border border-input bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              oninput="loadMerchants(this.value)" />
+              oninput="debounceMerchantSearch(this.value)" />
             <span class="text-sm text-muted-foreground">${merchants.length} merchants</span>
+            <a href="/api/export/merchants?limit=500" class="ml-auto text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">Export CSV</a>
           </div>
           ${tableWrap(['ID', 'Name', 'Segment', 'Health', 'Score', 'Volume', 'Recency', 'Tickets'], rows)}
         </div>`;
@@ -528,11 +538,12 @@
             <div class="text-sm">${m.email || '-'}</div>
             <div class="text-sm">${m.phone || '-'}</div>
           </div>
-          ${timelineHtml ? `
           <div class="rounded-lg border border-border p-4">
             <h4 class="font-semibold text-sm mb-3">Activity Timeline</h4>
-            <div class="space-y-1 max-h-64 overflow-y-auto scrollbar-thin">${timelineHtml}</div>
-          </div>` : ''}
+            ${timelineHtml
+              ? `<div class="space-y-1 max-h-64 overflow-y-auto scrollbar-thin">${timelineHtml}</div>`
+              : '<p class="text-sm text-muted-foreground">No activity recorded yet.</p>'}
+          </div>
         </div>`;
     }
 
@@ -565,6 +576,10 @@
       c.innerHTML = `
         <div class="space-y-6">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${summaryCards}</div>
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold">Action Queue</h3>
+            <a href="/api/export/nba?limit=500" class="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">Export CSV</a>
+          </div>
           ${tableWrap(['Merchant', 'Segment', 'Urgency', 'Action', 'Channel', 'Priority', 'Revenue Impact'], rows)}
         </div>`;
     }
@@ -1098,14 +1113,15 @@
     }
 
     async function loadFreshnessIndicator() {
-      const data = await api('/api/data-freshness');
-      if (!data) return;
-      const stale = data.filter(t => t.status !== 'healthy').length;
-      const btn = document.getElementById('freshness-btn');
       const dot = document.getElementById('freshness-dot');
       const label = document.getElementById('freshness-label');
-      btn.classList.remove('hidden');
-      btn.classList.add('flex');
+      const data = await api('/api/data-freshness');
+      if (!data) {
+        dot.className = 'w-1.5 h-1.5 rounded-full bg-muted-foreground';
+        label.textContent = 'Freshness unavailable';
+        return;
+      }
+      const stale = data.filter(t => t.status !== 'healthy').length;
       if (stale === 0) {
         dot.className = 'w-1.5 h-1.5 rounded-full bg-green-500';
         label.textContent = 'Data: Fresh';

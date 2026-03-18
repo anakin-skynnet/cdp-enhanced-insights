@@ -324,7 +324,7 @@ async def export_csv(
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename={resource_type}_{audience_type}.csv"},
+        headers={"Content-Disposition": f"attachment; filename=cdp_{resource_type}{'_' + audience_type if resource_type == 'audience' else ''}.csv"},
     )
 
 
