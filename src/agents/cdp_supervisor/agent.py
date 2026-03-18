@@ -158,8 +158,8 @@ def log_nba_action(golden_id: str, action_type: str, channel: str, notes: str = 
         schema = os.environ.get("CDP_SCHEMA", "cdp_360")
 
         sql = f"""INSERT INTO {catalog}.{schema}.nba_action_log
-                  (golden_id, action_type, channel, executed_by, notes)
-                  VALUES (:gid, :action, :channel, 'cdp_supervisor_agent', :notes)"""
+                  (action_id, golden_id, action_type, channel, executed_by, notes, executed_at)
+                  VALUES (uuid(), :gid, :action, :channel, 'cdp_supervisor_agent', :notes, CURRENT_TIMESTAMP())"""
 
         warehouse_id = os.environ.get("DATABRICKS_WAREHOUSE_ID", "")
         result = w.statement_execution.execute_statement(

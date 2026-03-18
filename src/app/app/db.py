@@ -380,8 +380,8 @@ def log_campaign(campaign: dict) -> None:
     for m in campaign.get("merchants", []):
         query(f"""
             INSERT INTO {_t('nba_action_log')}
-              (golden_id, action_type, channel, executed_by, notes)
-            VALUES (:gid, :action, :channel, 'cdp_app', :notes)
+              (action_id, golden_id, action_type, channel, executed_by, notes, executed_at)
+            VALUES (uuid(), :gid, :action, :channel, 'cdp_app', :notes, CURRENT_TIMESTAMP())
         """, {
             "gid": str(m["golden_id"]).strip(),
             "action": action_type,
@@ -751,8 +751,8 @@ def log_agent_feedback(feedback: dict) -> dict:
     rating = max(1, min(5, int(feedback.get("rating", 3))))
     query(f"""
         INSERT INTO {_t('agent_feedback_log')}
-          (message_content, rating, comment, created_at)
-        VALUES (:msg, :rating, :comment, CURRENT_TIMESTAMP())
+          (feedback_id, message_content, rating, comment, created_at)
+        VALUES (uuid(), :msg, :rating, :comment, CURRENT_TIMESTAMP())
     """, {
         "msg": str(feedback.get("message_content", ""))[:500],
         "rating": rating,

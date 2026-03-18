@@ -3,19 +3,19 @@
 -- gold_personalization_signals reference nba_action_log.
 
 CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.nba_action_log (
-  action_id STRING DEFAULT uuid(),
+  action_id STRING,
   golden_id STRING NOT NULL,
   action_type STRING NOT NULL,
   channel STRING,
   executed_by STRING,
   notes STRING,
-  executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
+  executed_at TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.agent_feedback_log (
-  feedback_id STRING DEFAULT uuid(),
+  feedback_id STRING,
   message_content STRING,
   rating INT,
   comment STRING,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP()
+  created_at TIMESTAMP
 );
