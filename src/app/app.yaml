@@ -8,7 +8,7 @@ command:
 
 env:
   - name: DATABRICKS_WAREHOUSE_ID
-    value: "c60fc6392746d138"
+    valueFrom: sql-warehouse
 
   - name: CDP_CATALOG
     value: "main"

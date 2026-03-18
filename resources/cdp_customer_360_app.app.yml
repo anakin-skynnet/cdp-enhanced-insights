@@ -1,0 +1,17 @@
+# PagoNxt Getnet CDP - Databricks App (DABs managed)
+# Customer 360 full-stack application
+
+resources:
+  apps:
+    cdp_customer_360_app:
+      name: getnet-financial-closure
+      description: "PagoNxt Getnet Customer 360 — Enhanced Customer Intelligence Platform. 13 analytics pages, AI chat (Supervisor Agent + Genie), anomaly detection, and full merchant 360 view."
+      source_code_path: ../src/app
+      resources:
+        - name: sql-warehouse
+          sql_warehouse:
+            id: ${var.warehouse_id}
+            permission: CAN_USE
+      permissions:
+        - level: CAN_USE
+          group_name: "users"
