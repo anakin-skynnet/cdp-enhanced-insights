@@ -200,6 +200,8 @@ ALL_UC_FUNCTIONS = [
     "ahs_demos_catalog.cdp_360.get_ad_creative",
     "ahs_demos_catalog.cdp_360.get_campaign_roi",
     "ahs_demos_catalog.cdp_360.get_audience",
+    "ahs_demos_catalog.cdp_360.get_anomaly_alerts",
+    "ahs_demos_catalog.cdp_360.get_merchant_timeline",
 ]
 
 

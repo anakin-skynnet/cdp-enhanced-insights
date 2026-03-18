@@ -76,4 +76,4 @@ WHERE
    AND c.current_volume < (b.avg_volume_30d - 2 * b.stddev_volume_30d))
   OR (c.days_since_last_txn > 30 AND c.segment NOT IN ('hibernating'))
   OR (c.current_tickets > (b.avg_tickets_30d + 3))
-  OR (COALESCE(c.health_score, 0) < 20 AND c.segment IN ('champions', 'loyal'))
+  OR (COALESCE(c.health_score, 0) < 20 AND c.segment IN ('champions', 'loyal'));

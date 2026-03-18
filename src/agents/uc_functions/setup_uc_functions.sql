@@ -747,7 +747,7 @@ LANGUAGE SQL
 COMMENT 'Get a unified activity timeline for a merchant including transactions, support tickets, NBA recommendations, executed actions, and anomaly alerts.'
 RETURN
   WITH txn_events AS (
-    SELECT golden_id, 'transaction' AS event_type,
+    SELECT 'transaction' AS event_type,
            DATE_FORMAT(COALESCE(last_txn_date, _refreshed_at), 'yyyy-MM-dd') AS event_date,
            CONCAT('Transaction volume: $', ROUND(txn_volume, 0)) AS description,
            CONCAT(txn_count, ' transactions') AS detail,
@@ -756,7 +756,7 @@ RETURN
     WHERE golden_id = merchant_id
   ),
   nba_events AS (
-    SELECT golden_id, 'nba_recommendation' AS event_type,
+    SELECT 'nba_recommendation' AS event_type,
            DATE_FORMAT(CURRENT_DATE(), 'yyyy-MM-dd') AS event_date,
            CONCAT('Action: ', primary_action) AS description,
            CONCAT('Channel: ', primary_channel, ' | Urgency: ', urgency) AS detail,
@@ -765,7 +765,7 @@ RETURN
     WHERE golden_id = merchant_id
   ),
   action_events AS (
-    SELECT golden_id, 'action_taken' AS event_type,
+    SELECT 'action_taken' AS event_type,
            DATE_FORMAT(executed_at, 'yyyy-MM-dd') AS event_date,
            CONCAT('Executed: ', action_type, ' via ', channel) AS description,
            COALESCE(notes, '') AS detail,
@@ -774,7 +774,7 @@ RETURN
     WHERE golden_id = merchant_id
   ),
   anomaly_events AS (
-    SELECT golden_id, 'anomaly' AS event_type,
+    SELECT 'anomaly' AS event_type,
            DATE_FORMAT(detected_at, 'yyyy-MM-dd') AS event_date,
            CONCAT('Anomaly: ', anomaly_type) AS description,
            CONCAT('Deviation: ', ROUND(deviation_pct, 1), '%') AS detail,
