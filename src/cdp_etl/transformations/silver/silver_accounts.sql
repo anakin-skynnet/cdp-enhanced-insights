@@ -2,7 +2,7 @@
 -- Business entity for merchant 360 view
 
 CREATE OR REFRESH STREAMING TABLE silver_accounts
-CLUSTER BY (Id)
+CLUSTER BY (external_id)
 AS
 SELECT
   Id AS external_id,

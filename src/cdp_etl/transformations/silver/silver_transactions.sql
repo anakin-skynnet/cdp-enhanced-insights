@@ -2,7 +2,7 @@
 -- Merchant-level payment metrics for RFM and churn
 
 CREATE OR REFRESH STREAMING TABLE silver_transactions
-CLUSTER BY (merchant_id, transaction_date)
+CLUSTER BY (customer_external_id, transaction_date)
 AS
 SELECT
   transaction_id,

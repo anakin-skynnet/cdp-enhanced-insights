@@ -2,7 +2,7 @@
 -- Deduplication, type casting, identity keys for entity resolution
 
 CREATE OR REFRESH STREAMING TABLE silver_contacts
-CLUSTER BY (Id)
+CLUSTER BY (external_id)
 AS
 SELECT
   Id AS external_id,
