@@ -69,6 +69,7 @@ display(features_df.describe())
 
 # COMMAND ----------
 
+import pandas as pd
 import mlflow
 import mlflow.sklearn
 import xgboost as xgb
@@ -84,7 +85,7 @@ feature_cols = [
     "tenure_days", "health_score", "r_score", "f_score", "m_score",
 ]
 
-X = pdf[feature_cols].fillna(0)
+X = pdf[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
@@ -96,7 +97,7 @@ for label_col, model_name in [
     ("label_upsell", "upsell_propensity"),
     ("label_activation", "activation_propensity"),
 ]:
-    y = pdf[label_col].fillna(0)
+    y = pd.to_numeric(pdf[label_col], errors="coerce").fillna(0).astype(int)
     stratify_param = y if y.sum() > 5 and (y == 0).sum() > 5 else None
     X_train, X_test, y_train, y_test = train_test_split(
         X_scaled, y, test_size=0.2, random_state=42, stratify=stratify_param

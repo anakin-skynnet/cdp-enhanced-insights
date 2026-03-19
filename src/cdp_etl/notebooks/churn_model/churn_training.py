@@ -68,6 +68,7 @@ feature_cols = [
 
 # COMMAND ----------
 
+import pandas as pd
 import mlflow
 import mlflow.sklearn
 import numpy as np
@@ -80,8 +81,8 @@ for c in feature_cols:
     if c not in pdf.columns:
         pdf[c] = 0
 
-X = pdf[feature_cols].fillna(0)
-y = pdf["churn_label"]
+X = pdf[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
+y = pdf["churn_label"].astype(int)
 
 churn_rate = y.mean()
 scale_pos = (1 - churn_rate) / max(churn_rate, 0.01)
