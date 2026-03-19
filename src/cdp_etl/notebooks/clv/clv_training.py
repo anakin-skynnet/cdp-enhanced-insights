@@ -12,7 +12,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install btyd==0.1a1 mlflow
+# MAGIC %pip install btyd mlflow
 # MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------

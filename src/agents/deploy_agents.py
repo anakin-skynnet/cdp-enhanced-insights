@@ -10,7 +10,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install mlflow==3.6.0 databricks-langchain langgraph==0.3.4 databricks-agents pydantic
+# MAGIC %pip install mlflow databricks-langchain langgraph databricks-agents pydantic
 # MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
@@ -77,9 +77,9 @@ ALL_UC_FUNCTIONS = [
 ]
 
 pip_requirements = [
-    "mlflow==3.6.0",
+    "mlflow",
     "databricks-langchain",
-    "langgraph==0.3.4",
+    "langgraph",
 ]
 
 # COMMAND ----------

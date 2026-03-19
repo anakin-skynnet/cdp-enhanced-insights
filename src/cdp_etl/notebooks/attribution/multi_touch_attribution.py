@@ -13,7 +13,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install pymc3==3.11.5 mlflow
+# MAGIC %pip install mlflow
 # MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
