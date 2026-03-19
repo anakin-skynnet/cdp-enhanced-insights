@@ -32,6 +32,7 @@ from sklearn.metrics import silhouette_score
 import pyspark.sql.functions as F
 import mlflow
 import mlflow.sklearn
+from mlflow.models import infer_signature
 
 # COMMAND ----------
 
@@ -133,17 +134,6 @@ features_pd["cluster_id"] = final_km.fit_predict(X_scaled)
 cluster_profiles = features_pd.groupby("cluster_id")[feature_cols].mean().round(2)
 cluster_sizes = features_pd["cluster_id"].value_counts().sort_index()
 
-CLUSTER_LABELS = {
-    0: "high_value_active",
-    1: "growth_potential",
-    2: "stable_mid_tier",
-    3: "new_low_engagement",
-    4: "at_risk_declining",
-    5: "dormant",
-    6: "support_heavy",
-    7: "premium_loyal",
-    8: "occasional",
-}
 
 def label_cluster(row):
     """Assign a descriptive label based on cluster centroid characteristics."""
@@ -219,7 +209,9 @@ with mlflow.start_run(run_name="behavioral_segmentation_kmeans"):
         label = subset["behavioral_segment"].iloc[0]
         mlflow.log_metric(f"cluster_{cid}_size", len(subset))
         mlflow.log_metric(f"cluster_{cid}_avg_health", float(subset["health_score"].mean()))
-    mlflow.sklearn.log_model(final_km, "kmeans_model")
-    mlflow.sklearn.log_model(scaler, "scaler")
+    km_sig = infer_signature(X_scaled, final_km.predict(X_scaled))
+    mlflow.sklearn.log_model(final_km, "kmeans_model", signature=km_sig)
+    scaler_sig = infer_signature(X, scaler.transform(X))
+    mlflow.sklearn.log_model(scaler, "scaler", signature=scaler_sig)
 
 print("Behavioral segmentation complete.")

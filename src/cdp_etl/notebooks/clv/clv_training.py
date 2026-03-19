@@ -168,7 +168,8 @@ print(f"Top-10 CLV merchants account for: {rfm_pd.nlargest(10, 'clv_12m')['clv_1
 # COMMAND ----------
 
 rfm_pd["clv_tier"] = pd.qcut(
-    rfm_pd["clv_12m"], q=5, labels=["very_low", "low", "medium", "high", "very_high"]
+    rfm_pd["clv_12m"], q=5, labels=["very_low", "low", "medium", "high", "very_high"],
+    duplicates="drop",
 ).astype(str)
 
 clv_spark = spark.createDataFrame(

@@ -27,7 +27,11 @@ def _get_connection():
         if _pool:
             conn = _pool.pop()
             try:
-                conn.cursor().execute("SELECT 1").close()
+                c = conn.cursor()
+                try:
+                    c.execute("SELECT 1")
+                finally:
+                    c.close()
                 return conn
             except Exception:
                 try:

@@ -26,7 +26,7 @@ def _widget(name, default):
 
 catalog = _widget("catalog", "ahs_demos_catalog")
 schema = _widget("schema", "cdp_360")
-model_name = "getnet_merchant_churn"
+model_name = f"{catalog}.{schema}.getnet_merchant_churn"
 CHURN_THRESHOLD_DAYS = 90
 
 # COMMAND ----------

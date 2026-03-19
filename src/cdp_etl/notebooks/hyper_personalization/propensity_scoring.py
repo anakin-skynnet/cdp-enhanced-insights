@@ -156,7 +156,7 @@ for label_col, model_name in [
         mlflow.log_metric("positive_rate", float(y.mean()))
         mlflow.sklearn.log_model(scaler, "scaler")
         sig = infer_signature(X_train, model.predict(X_train))
-        mlflow.sklearn.log_model(model, "model", signature=sig, registered_model_name=f"getnet_{model_name}")
+        mlflow.sklearn.log_model(model, "model", signature=sig, registered_model_name=f"{catalog}.{schema}.getnet_{model_name}")
 
         pdf[f"{model_name}_score"] = model.predict_proba(X_scaled)[:, 1]
         propensity_results[model_name] = {"auc": auc, "f1": f1}

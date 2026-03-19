@@ -11,17 +11,18 @@ from __future__ import annotations
 import asyncio
 import csv
 import io
+import logging
 import os
-import json
+
 import httpx
-from typing import Union
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel
 
 from . import models as M
+
+logger = logging.getLogger(__name__)
 
 DATA_SOURCE = os.environ.get("CDP_DATA_SOURCE", "mock").lower()
 
@@ -53,6 +54,13 @@ app.mount("/static", StaticFiles(directory=_static_dir), name="static")
 @app.get("/")
 async def root():
     return FileResponse(os.path.join(_static_dir, "index.html"))
+
+
+@app.get("/api/v1/healthcheck")
+async def healthcheck():
+    """Standard healthcheck for Databricks Apps OAuth2 token auth."""
+    from datetime import datetime, timezone
+    return {"status": "OK", "timestamp": datetime.now(timezone.utc).isoformat(), "data_source": DATA_SOURCE}
 
 
 @app.get("/metrics")
@@ -375,7 +383,8 @@ async def agent_chat(req: M.ChatRequest):
         from databricks.sdk import WorkspaceClient
         w = WorkspaceClient()
         host = w.config.host
-        token = w.config.authenticate()
+        header_factory = w.config.authenticate()
+        auth_headers = header_factory() if callable(header_factory) else header_factory
 
         payload = {
             "input": [{"role": m.role, "content": m.content} for m in req.messages]
@@ -383,12 +392,13 @@ async def agent_chat(req: M.ChatRequest):
         async with httpx.AsyncClient(timeout=120) as client:
             resp = await client.post(
                 f"{host}/serving-endpoints/{AGENT_ENDPOINT}/invocations",
-                headers={"Authorization": f"Bearer {token}"},
+                headers=auth_headers,
                 json=payload,
             )
             resp.raise_for_status()
             return resp.json()
     except Exception as e:
+        logger.exception("Agent chat error")
         return {"output": [{"type": "message", "content": [{"type": "output_text", "text": f"Agent error: {str(e)}. Ensure the CDP Supervisor Agent is deployed."}]}]}
 
 

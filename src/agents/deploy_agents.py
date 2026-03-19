@@ -20,60 +20,74 @@ from mlflow.models.resources import DatabricksServingEndpoint, DatabricksFunctio
 
 mlflow.set_registry_uri("databricks-uc")
 
+def _widget(name, default):
+    try:
+        v = dbutils.widgets.get(name)
+        return v if v else default
+    except Exception:
+        return default
+
+catalog = _widget("catalog", "ahs_demos_catalog")
+schema = _widget("schema", "cdp_360")
+UC_PREFIX = f"{catalog}.{schema}"
+
 LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+
+def _ucf(name: str) -> DatabricksFunction:
+    return DatabricksFunction(function_name=f"{UC_PREFIX}.{name}")
 
 base_resources = [
     DatabricksServingEndpoint(endpoint_name=LLM_ENDPOINT),
 ]
 
 uc_functions_churn = [
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_churn_kpis"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_at_risk_merchants"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.lookup_merchant"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_summary"),
+    _ucf("get_churn_kpis"),
+    _ucf("get_at_risk_merchants"),
+    _ucf("lookup_merchant"),
+    _ucf("get_segment_summary"),
 ]
 
 uc_functions_campaign = [
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_summary"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_merchants"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.lookup_merchant"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_churn_kpis"),
+    _ucf("get_segment_summary"),
+    _ucf("get_segment_merchants"),
+    _ucf("lookup_merchant"),
+    _ucf("get_churn_kpis"),
 ]
 
 uc_functions_nba = [
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_next_best_actions"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_nba_summary"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_health_scores"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.lookup_merchant"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_action_history"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_action_log_summary"),
+    _ucf("get_next_best_actions"),
+    _ucf("get_nba_summary"),
+    _ucf("get_health_scores"),
+    _ucf("lookup_merchant"),
+    _ucf("get_action_history"),
+    _ucf("get_action_log_summary"),
 ]
 
 ALL_UC_FUNCTIONS = [
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.lookup_merchant"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_at_risk_merchants"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_summary"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_segment_merchants"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_next_best_actions"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_nba_summary"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_health_scores"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_action_history"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_action_log_summary"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_churn_kpis"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_clv_rankings"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_clv_summary"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_channel_attribution"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_behavioral_segments"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_support_analytics"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_support_kpis"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_call_center_agents"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_call_center_sentiment"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_personalization_signals"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_ad_creative"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_campaign_roi"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_audience"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_anomaly_alerts"),
-    DatabricksFunction(function_name="ahs_demos_catalog.cdp_360.get_merchant_timeline"),
+    _ucf("lookup_merchant"),
+    _ucf("get_at_risk_merchants"),
+    _ucf("get_segment_summary"),
+    _ucf("get_segment_merchants"),
+    _ucf("get_next_best_actions"),
+    _ucf("get_nba_summary"),
+    _ucf("get_health_scores"),
+    _ucf("get_action_history"),
+    _ucf("get_action_log_summary"),
+    _ucf("get_churn_kpis"),
+    _ucf("get_clv_rankings"),
+    _ucf("get_clv_summary"),
+    _ucf("get_channel_attribution"),
+    _ucf("get_behavioral_segments"),
+    _ucf("get_support_analytics"),
+    _ucf("get_support_kpis"),
+    _ucf("get_call_center_agents"),
+    _ucf("get_call_center_sentiment"),
+    _ucf("get_personalization_signals"),
+    _ucf("get_ad_creative"),
+    _ucf("get_campaign_roi"),
+    _ucf("get_audience"),
+    _ucf("get_anomaly_alerts"),
+    _ucf("get_merchant_timeline"),
 ]
 
 pip_requirements = [
@@ -98,7 +112,7 @@ with mlflow.start_run(run_name="churn_prevention_agent"):
         input_example={
             "input": [{"role": "user", "content": "Show me the top at-risk merchants by revenue"}]
         },
-        registered_model_name="ahs_demos_catalog.cdp_360.churn_prevention_agent",
+        registered_model_name=f"{UC_PREFIX}.churn_prevention_agent",
     )
     print(f"Churn agent logged: {model_info.model_uri}")
 
@@ -118,7 +132,7 @@ with mlflow.start_run(run_name="segment_campaign_agent"):
         input_example={
             "input": [{"role": "user", "content": "Design a campaign to re-engage hibernating merchants"}]
         },
-        registered_model_name="ahs_demos_catalog.cdp_360.segment_campaign_agent",
+        registered_model_name=f"{UC_PREFIX}.segment_campaign_agent",
     )
     print(f"Campaign agent logged: {model_info.model_uri}")
 
@@ -138,7 +152,7 @@ with mlflow.start_run(run_name="next_best_action_agent"):
         input_example={
             "input": [{"role": "user", "content": "What are the top priority actions for this week?"}]
         },
-        registered_model_name="ahs_demos_catalog.cdp_360.next_best_action_agent",
+        registered_model_name=f"{UC_PREFIX}.next_best_action_agent",
     )
     print(f"NBA agent logged: {model_info.model_uri}")
 
@@ -163,7 +177,7 @@ with mlflow.start_run(run_name="cdp_supervisor_agent"):
         input_example={
             "input": [{"role": "user", "content": "Give me a complete overview of our merchant health and top priorities this week"}]
         },
-        registered_model_name="ahs_demos_catalog.cdp_360.cdp_supervisor_agent",
+        registered_model_name=f"{UC_PREFIX}.cdp_supervisor_agent",
     )
     print(f"Supervisor agent logged: {model_info.model_uri}")
 
@@ -184,10 +198,10 @@ def _latest_version(model_name: str) -> str:
     return str(versions[0].version) if versions else "1"
 
 _AGENT_MODELS = [
-    ("ahs_demos_catalog.cdp_360.cdp_supervisor_agent", {"use_case": "cdp_supervisor", "cdp": "getnet", "role": "primary"}),
-    ("ahs_demos_catalog.cdp_360.churn_prevention_agent", {"use_case": "churn_prevention", "cdp": "getnet"}),
-    ("ahs_demos_catalog.cdp_360.segment_campaign_agent", {"use_case": "segment_campaigns", "cdp": "getnet"}),
-    ("ahs_demos_catalog.cdp_360.next_best_action_agent", {"use_case": "next_best_action", "cdp": "getnet"}),
+    (f"{UC_PREFIX}.cdp_supervisor_agent", {"use_case": "cdp_supervisor", "cdp": "getnet", "role": "primary"}),
+    (f"{UC_PREFIX}.churn_prevention_agent", {"use_case": "churn_prevention", "cdp": "getnet"}),
+    (f"{UC_PREFIX}.segment_campaign_agent", {"use_case": "segment_campaigns", "cdp": "getnet"}),
+    (f"{UC_PREFIX}.next_best_action_agent", {"use_case": "next_best_action", "cdp": "getnet"}),
 ]
 
 for model_name, tags in _AGENT_MODELS:

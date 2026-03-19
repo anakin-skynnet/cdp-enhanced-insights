@@ -38,7 +38,7 @@ agent_metrics AS (
     ROUND(AVG(queue_wait_seconds), 0) AS avg_queue_wait_sec,
     ROUND(AVG(after_call_work_seconds), 0) AS avg_acw_sec,
     COUNT(CASE WHEN disposition = 'completed' THEN 1 END) AS completed_count,
-    COUNT(CASE WHEN disposition IN ('abandoned', 'disconnected') THEN 1 END) AS abandoned_count,
+    COUNT(CASE WHEN disposition IN ('abandoned', 'voicemail') THEN 1 END) AS abandoned_count,
     COUNT(CASE WHEN disconnect_type = 'customer' THEN 1 END) AS customer_disconnect_count,
     MIN(conversation_date) AS first_interaction,
     MAX(conversation_date) AS last_interaction
@@ -53,7 +53,7 @@ queue_metrics AS (
     ROUND(PERCENTILE_CONT(0.9) WITHIN GROUP (ORDER BY queue_wait_seconds), 0) AS p90_wait_sec,
     COUNT(CASE WHEN queue_wait_seconds <= 30 THEN 1 END) AS answered_within_30s,
     ROUND(AVG(duration_seconds), 0) AS avg_handle_time_sec,
-    COUNT(CASE WHEN disposition IN ('abandoned', 'disconnected') THEN 1 END) AS abandoned
+    COUNT(CASE WHEN disposition IN ('abandoned', 'voicemail') THEN 1 END) AS abandoned
   FROM interaction_enriched
   GROUP BY queue_name
 ),
@@ -66,7 +66,7 @@ merchant_call_metrics AS (
     ROUND(AVG(queue_wait_seconds), 0) AS avg_wait_time_sec,
     ROUND(AVG(hold_time_seconds), 0) AS avg_hold_sec,
     MAX(conversation_date) AS last_contact_date,
-    COUNT(CASE WHEN disposition IN ('abandoned', 'disconnected') THEN 1 END) AS abandoned_calls,
+    COUNT(CASE WHEN disposition IN ('abandoned', 'voicemail') THEN 1 END) AS abandoned_calls,
     COUNT(DISTINCT agent_id) AS unique_agents
   FROM interaction_enriched
   WHERE customer_external_id IS NOT NULL

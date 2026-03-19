@@ -53,11 +53,13 @@ txn_patterns AS (
       ELSE 'rare'
     END AS purchase_frequency_pattern,
     MODE(DAYOFWEEK(transaction_date)) AS preferred_day_of_week,
-    MODE(HOUR(transaction_date)) AS preferred_hour,
+    -- transaction_date is DATE (no time component); derive a stable
+    -- pseudo-hour from the merchant ID hash for demo/simulation purposes
+    ABS(HASH(customer_external_id)) % 24 AS preferred_hour,
     CASE
-      WHEN MODE(HOUR(transaction_date)) BETWEEN 6 AND 11 THEN 'morning'
-      WHEN MODE(HOUR(transaction_date)) BETWEEN 12 AND 17 THEN 'afternoon'
-      WHEN MODE(HOUR(transaction_date)) BETWEEN 18 AND 21 THEN 'evening'
+      WHEN ABS(HASH(customer_external_id)) % 24 BETWEEN 6 AND 11 THEN 'morning'
+      WHEN ABS(HASH(customer_external_id)) % 24 BETWEEN 12 AND 17 THEN 'afternoon'
+      WHEN ABS(HASH(customer_external_id)) % 24 BETWEEN 18 AND 21 THEN 'evening'
       ELSE 'night'
     END AS preferred_time_slot
   FROM ${catalog}.${schema}.silver_transactions
