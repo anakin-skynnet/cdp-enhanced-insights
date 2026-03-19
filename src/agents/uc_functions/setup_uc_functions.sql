@@ -69,7 +69,7 @@ COMMENT 'Get merchants at risk of churn. Filter by risk level: high (>90d inacti
 RETURN
   SELECT
     c.golden_id,
-    COALESCE(c.first_name, '') AS merchant_name,
+    COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
     c.email,
     COALESCE(s.segment, 'unassigned') AS segment,
     COALESCE(e.txn_volume, 0) AS txn_volume,
@@ -139,7 +139,7 @@ COMMENT 'Get merchants in a specific RFM segment for campaign targeting. Returns
 RETURN
   SELECT
     c.golden_id,
-    COALESCE(c.first_name, '') AS merchant_name,
+    COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
     c.email,
     COALESCE(e.txn_volume, 0) AS txn_volume,
     COALESCE(e.txn_count, 0) AS txn_count,

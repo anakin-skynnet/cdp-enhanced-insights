@@ -8,6 +8,7 @@
 # COMMAND ----------
 
 # MAGIC %pip install xgboost mlflow scikit-learn
+# MAGIC dbutils.library.restartPython()
 
 # COMMAND ----------
 
@@ -153,7 +154,7 @@ with mlflow.start_run(run_name="xgb_churn_optimized"):
 
 # COMMAND ----------
 
-pdf["churn_probability"] = model.predict_proba(X[feature_cols].fillna(0))[:, 1]
+pdf["churn_probability"] = model.predict_proba(X)[:, 1]
 scored_df = spark.createDataFrame(pdf[["golden_id", "churn_probability"]])
 scored_df.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_churn_scores")
 print(f"Scored {scored_df.count()} merchants -> {catalog}.{schema}.gold_churn_scores")

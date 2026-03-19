@@ -28,16 +28,8 @@ targets:
     mode: development
     workspace:
       profile: DEFAULT
-    variables:
-      catalog: "ahs_demos_catalog"
-      schema: "cdp_360"
-      schema_location_base: "/Volumes/ahs_demos_catalog/cdp_360/cdp_metadata/schemas"
 
   prod:
     mode: production
     workspace:
       profile: DEFAULT
-    variables:
-      catalog: "ahs_demos_catalog"
-      schema: "cdp_360"
-      schema_location_base: "/Volumes/ahs_demos_catalog/cdp_360/cdp_metadata/schemas"

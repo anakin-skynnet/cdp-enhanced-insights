@@ -46,19 +46,20 @@ contacts_df = spark.table(f"{catalog}.{schema}.silver_contacts").select(
     F.lit(None).cast("string").alias("billing_city"),
 )
 
-accounts_df = spark.table(f"{catalog}.{schema}.silver_accounts").select(
-    F.col("external_id").alias("source_id"),
+_sa = spark.table(f"{catalog}.{schema}.silver_accounts")
+accounts_df = _sa.select(
+    _sa["external_id"].alias("source_id"),
     F.lit("salesforce_account").alias("source_type"),
     F.lit(None).cast("string").alias("email"),
-    F.col("phone_normalized").alias("phone"),
-    F.col("account_name").alias("first_name"),
+    _sa["phone_normalized"].alias("phone"),
+    _sa["account_name"].alias("first_name"),
     F.lit(None).cast("string").alias("last_name"),
-    F.col("external_id").alias("account_id"),
-    F.col("created_at"),
-    F.col("account_name"),
-    F.col("industry"),
-    F.col("billing_country"),
-    F.col("billing_city"),
+    _sa["external_id"].alias("account_id"),
+    _sa["created_at"],
+    _sa["account_name"],
+    _sa["industry"],
+    _sa["billing_country"],
+    _sa["billing_city"],
 )
 
 # Union and add hash for blocking

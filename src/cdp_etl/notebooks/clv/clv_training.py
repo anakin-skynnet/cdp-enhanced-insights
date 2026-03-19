@@ -27,7 +27,6 @@ from datetime import timedelta
 from btyd.fitters.beta_geo_fitter import BetaGeoFitter
 from btyd import GammaGammaFitter
 import pyspark.sql.functions as F
-from pyspark.sql.types import DoubleType, IntegerType
 import mlflow
 
 # COMMAND ----------

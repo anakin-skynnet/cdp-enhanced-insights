@@ -95,7 +95,7 @@ print(f"Feature matrix: {features_pd.shape[0]:,} merchants x {features_pd.shape[
 # COMMAND ----------
 
 feature_cols = [c for c in features_pd.columns if c != "golden_id"]
-X = features_pd[feature_cols].fillna(0).values
+X = features_pd[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0).values
 
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)

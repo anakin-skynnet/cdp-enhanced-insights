@@ -175,29 +175,24 @@ with mlflow.start_run(run_name="cdp_supervisor_agent"):
 # COMMAND ----------
 
 from databricks import agents
+from mlflow import MlflowClient
 
-agents.deploy(
-    "ahs_demos_catalog.cdp_360.cdp_supervisor_agent",
-    version="1",
-    tags={"use_case": "cdp_supervisor", "cdp": "getnet", "role": "primary"},
-)
+client = MlflowClient()
 
-agents.deploy(
-    "ahs_demos_catalog.cdp_360.churn_prevention_agent",
-    version="1",
-    tags={"use_case": "churn_prevention", "cdp": "getnet"},
-)
+def _latest_version(model_name: str) -> str:
+    versions = client.search_model_versions(f"name='{model_name}'", order_by=["version_number DESC"], max_results=1)
+    return str(versions[0].version) if versions else "1"
 
-agents.deploy(
-    "ahs_demos_catalog.cdp_360.segment_campaign_agent",
-    version="1",
-    tags={"use_case": "segment_campaigns", "cdp": "getnet"},
-)
+_AGENT_MODELS = [
+    ("ahs_demos_catalog.cdp_360.cdp_supervisor_agent", {"use_case": "cdp_supervisor", "cdp": "getnet", "role": "primary"}),
+    ("ahs_demos_catalog.cdp_360.churn_prevention_agent", {"use_case": "churn_prevention", "cdp": "getnet"}),
+    ("ahs_demos_catalog.cdp_360.segment_campaign_agent", {"use_case": "segment_campaigns", "cdp": "getnet"}),
+    ("ahs_demos_catalog.cdp_360.next_best_action_agent", {"use_case": "next_best_action", "cdp": "getnet"}),
+]
 
-agents.deploy(
-    "ahs_demos_catalog.cdp_360.next_best_action_agent",
-    version="1",
-    tags={"use_case": "next_best_action", "cdp": "getnet"},
-)
+for model_name, tags in _AGENT_MODELS:
+    ver = _latest_version(model_name)
+    print(f"Deploying {model_name} v{ver}")
+    agents.deploy(model_name, version=ver, tags=tags)
 
 print("All four agents deployed. Supervisor is the primary entry point.")

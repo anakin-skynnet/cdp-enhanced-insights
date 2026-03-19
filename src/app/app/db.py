@@ -727,19 +727,16 @@ def get_data_freshness() -> list[dict]:
     rows = query(f"""
         WITH tables AS ({union})
         SELECT t.table_name,
-               i.last_modified AS last_updated,
-               i.num_rows AS row_count
+               COALESCE(i.last_altered, i.created) AS last_updated
         FROM tables t
-        LEFT JOIN information_schema.tables i
+        LEFT JOIN {CATALOG}.information_schema.tables i
           ON i.table_catalog = '{CATALOG}'
           AND i.table_schema = '{SCHEMA}'
           AND i.table_name = t.table_name
     """)
     result = []
     for r in rows:
-        status = "healthy"
-        if r.get("row_count", 0) == 0:
-            status = "empty"
+        status = "healthy" if r.get("last_updated") else "unknown"
         result.append({**r, "status": status})
     _set_cache("data_freshness", result)
     return result
