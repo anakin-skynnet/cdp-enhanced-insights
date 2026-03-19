@@ -34,6 +34,7 @@ resources:
       configuration:
         catalog: ${var.catalog}
         schema: ${var.schema}
+        spark.databricks.delta.streaming.unsafeIgnoreDeletes.enabled: "true"
       photon: true
       channel: current
       permissions:
