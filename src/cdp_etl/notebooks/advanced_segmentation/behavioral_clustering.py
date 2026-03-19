@@ -35,8 +35,15 @@ import mlflow.sklearn
 
 # COMMAND ----------
 
-catalog = dbutils.widgets.get("catalog") if "catalog" in [w.name for w in dbutils.widgets.getAll()] else "ahs_demos_catalog"
-schema = dbutils.widgets.get("schema") if "schema" in [w.name for w in dbutils.widgets.getAll()] else "cdp_360"
+def _widget(name, default):
+    try:
+        v = dbutils.widgets.get(name)
+        return v if v else default
+    except Exception:
+        return default
+
+catalog = _widget("catalog", "ahs_demos_catalog")
+schema = _widget("schema", "cdp_360")
 
 # COMMAND ----------
 

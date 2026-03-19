@@ -468,9 +468,16 @@
     let merchantPage = 0;
     const MERCHANT_PAGE_SIZE = 25;
 
-    let merchantFilters = { search: '', segment: '', health_tier: '' };
+    let merchantFilters = { search: '', segment: '', health_tier: '', sort: 'txn_volume' };
     const SEGMENTS = ['champions','loyal','potential','promising','new','needs_attention','about_to_sleep','at_risk','cant_lose','hibernating'];
     const HEALTH_TIERS = ['excellent','good','fair','poor','critical'];
+    const SORT_OPTIONS = [
+      { value: 'txn_volume', label: 'Volume (high→low)' },
+      { value: 'health_score', label: 'Health Score' },
+      { value: 'days_since_last_txn', label: 'Recency' },
+      { value: 'ticket_count', label: 'Tickets' },
+      { value: 'txn_count', label: 'Txn Count' },
+    ];
 
     async function loadMerchants(search = '', page = 0) {
       merchantPage = page;
@@ -480,6 +487,7 @@
       if (merchantFilters.search) params.set('search', merchantFilters.search);
       if (merchantFilters.segment) params.set('segment', merchantFilters.segment);
       if (merchantFilters.health_tier) params.set('health_tier', merchantFilters.health_tier);
+      if (merchantFilters.sort) params.set('sort', merchantFilters.sort);
       const merchants = await api(`/api/merchants?${params}`);
       if (!merchants) { c.innerHTML = card('Error', '<p class="text-muted-foreground">Failed to load merchants.</p>'); return; }
       const total = merchants.length;
@@ -514,6 +522,10 @@
             <select onchange="merchantFilters.health_tier = this.value; loadMerchants(merchantFilters.search, 0)" aria-label="Filter by health tier"
               class="h-9 rounded-md border border-input bg-background px-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring">
               <option value="">All Health Tiers</option>${htOpts}
+            </select>
+            <select onchange="merchantFilters.sort = this.value; loadMerchants(merchantFilters.search, 0)" aria-label="Sort by"
+              class="h-9 rounded-md border border-input bg-background px-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+              ${SORT_OPTIONS.map(o => `<option value="${o.value}" ${merchantFilters.sort === o.value ? 'selected' : ''}>${o.label}</option>`).join('')}
             </select>
             <span class="text-sm text-muted-foreground">${total} merchants${totalPages > 1 ? ` · page ${page + 1}/${totalPages}` : ''}</span>
             <a href="/api/export/merchants?limit=500" class="ml-auto text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors" aria-label="Export merchants as CSV">Export CSV</a>
@@ -989,6 +1001,7 @@
             { label: 'First Touch', data: data.map(d => d.first_touch_value), backgroundColor: CHART_COLORS[1], borderRadius: 4 },
             { label: 'Last Touch', data: data.map(d => d.last_touch_value), backgroundColor: CHART_COLORS[2], borderRadius: 4 },
             { label: 'Linear', data: data.map(d => d.linear_value), backgroundColor: CHART_COLORS[3], borderRadius: 4 },
+            { label: 'Time Decay', data: data.map(d => d.time_decay_value), backgroundColor: CHART_COLORS[4], borderRadius: 4 },
           ]
         });
         const rows = data.map(d => `
@@ -999,8 +1012,9 @@
             <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.first_touch_value)}</td>
             <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.last_touch_value)}</td>
             <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.linear_value)}</td>
+            <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.time_decay_value)}</td>
           </tr>`).join('');
-        document.getElementById('attr-table').innerHTML = tableWrap(['Channel', 'Markov Value', 'Share', 'First Touch', 'Last Touch', 'Linear'], rows);
+        document.getElementById('attr-table').innerHTML = tableWrap(['Channel', 'Markov Value', 'Share', 'First Touch', 'Last Touch', 'Linear', 'Time Decay'], rows);
       }
     }
 
@@ -1772,7 +1786,7 @@
         if (result) appendGenieResult(result);
         else appendBotMessage('Genie request failed. Please try again.');
       } else {
-        const result = await apiPost('/api/agent/chat', { messages: chatHistory.filter(m => m.role === 'user').map(m => ({ role: 'user', content: m.content })) });
+        const result = await apiPost('/api/agent/chat', { messages: chatHistory.map(m => ({ role: m.role, content: m.content })) });
         removeLoading();
         if (result?.output) {
           const texts = result.output

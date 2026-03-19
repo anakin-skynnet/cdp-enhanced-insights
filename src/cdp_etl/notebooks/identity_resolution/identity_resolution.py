@@ -15,8 +15,15 @@
 
 # COMMAND ----------
 
-catalog = dbutils.widgets.get("catalog") if dbutils.widgets.get("catalog") else "ahs_demos_catalog"
-schema = dbutils.widgets.get("schema") if dbutils.widgets.get("schema") else "cdp_360"
+def _widget(name, default):
+    try:
+        v = dbutils.widgets.get(name)
+        return v if v else default
+    except Exception:
+        return default
+
+catalog = _widget("catalog", "ahs_demos_catalog")
+schema = _widget("schema", "cdp_360")
 
 # COMMAND ----------
 
