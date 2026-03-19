@@ -72,6 +72,7 @@ display(features_df.describe())
 import pandas as pd
 import mlflow
 import mlflow.sklearn
+from mlflow.models import infer_signature
 import xgboost as xgb
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
@@ -124,7 +125,8 @@ for label_col, model_name in [
         mlflow.log_metric("f1_score", f1)
         mlflow.log_metric("positive_rate", float(y.mean()))
         mlflow.sklearn.log_model(scaler, "scaler")
-        mlflow.sklearn.log_model(model, "model", registered_model_name=f"getnet_{model_name}")
+        sig = infer_signature(X_train, model.predict(X_train))
+        mlflow.sklearn.log_model(model, "model", signature=sig, registered_model_name=f"getnet_{model_name}")
 
         pdf[f"{model_name}_score"] = model.predict_proba(X_scaled)[:, 1]
         propensity_results[model_name] = {"auc": auc, "f1": f1}

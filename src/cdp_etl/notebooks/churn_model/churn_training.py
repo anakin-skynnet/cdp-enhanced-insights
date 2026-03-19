@@ -72,6 +72,7 @@ feature_cols = [
 import pandas as pd
 import mlflow
 import mlflow.sklearn
+from mlflow.models import infer_signature
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
 from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, classification_report
@@ -141,7 +142,8 @@ with mlflow.start_run(run_name="xgb_churn_optimized"):
     for feat, imp in importance.items():
         mlflow.log_metric(f"fi_{feat}", round(imp, 4))
 
-    mlflow.sklearn.log_model(model, "model", registered_model_name=model_name)
+    signature = infer_signature(X_train, model.predict(X_train))
+    mlflow.sklearn.log_model(model, "model", signature=signature, registered_model_name=model_name)
 
     print(f"AUC: {auc:.4f} | F1: {f1:.4f} | CV AUC: {np.mean(cv_scores):.4f} +/- {np.std(cv_scores):.4f}")
     print(f"Feature importance: {importance}")
