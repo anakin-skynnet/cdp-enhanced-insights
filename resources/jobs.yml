@@ -1,5 +1,5 @@
 # PagoNxt Getnet CDP - Jobs for Data Generation, ML, Identity Resolution, and AI Agents
-# Execution order: 00 (data gen), pipelines 01-02, job 03 (identity resolution), pipeline 04 (gold), then jobs 05-15
+# Execution order: 00 (data gen), pipelines 01-02, job 03 (identity resolution), pipeline 04 (gold), then jobs 05-14
 # All jobs use serverless compute for faster startup and no cluster management.
 
 resources:
@@ -207,6 +207,9 @@ resources:
             - task_key: setup_uc_functions
           notebook_task:
             notebook_path: ../src/agents/deploy_agents.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
       permissions:
         - level: CAN_VIEW
           group_name: "users"
