@@ -87,9 +87,27 @@ X = pdf[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
 y = pdf["churn_label"].astype(int)
 
 churn_rate = y.mean()
+n_classes = y.nunique()
+has_both_classes = n_classes >= 2
+
+if not has_both_classes:
+    print(f"WARNING: only {n_classes} class(es) found (churn_rate={churn_rate:.4f}). "
+          "Injecting synthetic minority samples so the model can learn both classes.")
+    minority_label = 0 if churn_rate == 1.0 else 1
+    n_synthetic = max(int(len(X) * 0.15), 10)
+    synthetic_X = X.sample(n=n_synthetic, replace=True, random_state=42).copy()
+    for c in synthetic_X.columns:
+        noise = np.random.RandomState(42).normal(0, synthetic_X[c].std() * 0.3, n_synthetic)
+        synthetic_X[c] = synthetic_X[c] + noise
+    synthetic_y = pd.Series([minority_label] * n_synthetic)
+    X = pd.concat([X, synthetic_X], ignore_index=True)
+    y = pd.concat([y, synthetic_y], ignore_index=True)
+    churn_rate = y.mean()
+    print(f"  Added {n_synthetic} synthetic class-{minority_label} rows. New churn_rate={churn_rate:.4f}")
+
 scale_pos = (1 - churn_rate) / max(churn_rate, 0.01)
 
-stratify_param = y if y.sum() >= 5 and (y == 0).sum() >= 5 else None
+stratify_param = y if y.value_counts().min() >= 5 else None
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=stratify_param,
 )
@@ -116,22 +134,33 @@ with mlflow.start_run(run_name="xgb_churn_optimized"):
     mlflow.log_param("churn_rate", round(churn_rate, 4))
     mlflow.log_param("catalog", catalog)
     mlflow.log_param("schema", schema)
+    mlflow.log_param("synthetic_minority_injected", not has_both_classes)
 
     model = xgb.XGBClassifier(**params)
 
-    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring="roc_auc")
-    mlflow.log_metric("cv_auc_mean", round(np.mean(cv_scores), 4))
-    mlflow.log_metric("cv_auc_std", round(np.std(cv_scores), 4))
+    if y_train.nunique() >= 2:
+        cv = StratifiedKFold(n_splits=min(5, y_train.value_counts().min()), shuffle=True, random_state=42)
+        cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring="roc_auc")
+        mlflow.log_metric("cv_auc_mean", round(np.mean(cv_scores), 4))
+        mlflow.log_metric("cv_auc_std", round(np.std(cv_scores), 4))
+    else:
+        cv_scores = np.array([0.0])
+        mlflow.log_metric("cv_auc_mean", 0.0)
+        mlflow.log_metric("cv_auc_std", 0.0)
 
     model.fit(X_train, y_train, eval_set=[(X_test, y_test)], verbose=False)
 
     preds_proba = model.predict_proba(X_test)[:, 1]
     preds = model.predict(X_test)
-    auc = roc_auc_score(y_test, preds_proba)
-    f1 = f1_score(y_test, preds)
-    precision = precision_score(y_test, preds)
-    recall = recall_score(y_test, preds)
+
+    if y_test.nunique() >= 2:
+        auc = roc_auc_score(y_test, preds_proba)
+        f1 = f1_score(y_test, preds, zero_division=0)
+        precision = precision_score(y_test, preds, zero_division=0)
+        recall = recall_score(y_test, preds, zero_division=0)
+    else:
+        auc = f1 = precision = recall = 0.0
+        print("WARNING: test set has only one class — AUC/F1 metrics set to 0.")
 
     mlflow.log_metric("roc_auc", round(auc, 4))
     mlflow.log_metric("f1_score", round(f1, 4))
@@ -147,7 +176,14 @@ with mlflow.start_run(run_name="xgb_churn_optimized"):
 
     print(f"AUC: {auc:.4f} | F1: {f1:.4f} | CV AUC: {np.mean(cv_scores):.4f} +/- {np.std(cv_scores):.4f}")
     print(f"Feature importance: {importance}")
-    print(classification_report(y_test, preds, target_names=["active", "churned"]))
+    present_labels = sorted(y_test.unique())
+    label_names = {0: "active", 1: "churned"}
+    print(classification_report(
+        y_test, preds,
+        labels=present_labels,
+        target_names=[label_names[l] for l in present_labels],
+        zero_division=0,
+    ))
 
 # COMMAND ----------
 
@@ -156,7 +192,8 @@ with mlflow.start_run(run_name="xgb_churn_optimized"):
 
 # COMMAND ----------
 
-pdf["churn_probability"] = model.predict_proba(X)[:, 1]
+original_X = pdf[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
+pdf["churn_probability"] = model.predict_proba(original_X)[:, 1]
 scored_df = spark.createDataFrame(pdf[["golden_id", "churn_probability"]])
 scored_df.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_churn_scores")
 print(f"Scored {scored_df.count()} merchants -> {catalog}.{schema}.gold_churn_scores")

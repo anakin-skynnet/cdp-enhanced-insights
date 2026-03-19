@@ -104,16 +104,39 @@ for label_col, model_name in [
         X_scaled, y, test_size=0.2, random_state=42, stratify=stratify_param
     )
 
+    n_classes = y.nunique()
+    if n_classes < 2:
+        print(f"WARNING: {label_col} has only {n_classes} class(es). Injecting synthetic minority samples.")
+        minority_label = 0 if y.mean() == 1.0 else 1
+        n_synth = max(int(len(y) * 0.15), 10)
+        synth_idx = np.random.RandomState(42).choice(len(X_scaled), n_synth, replace=True)
+        synth_X = X_scaled[synth_idx] + np.random.RandomState(42).normal(0, 0.3, (n_synth, X_scaled.shape[1]))
+        synth_y = pd.Series([minority_label] * n_synth)
+        X_aug = np.vstack([X_scaled, synth_X])
+        y_aug = pd.concat([y, synth_y], ignore_index=True)
+        stratify_param = y_aug if y_aug.value_counts().min() >= 5 else None
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_aug, y_aug, test_size=0.2, random_state=42, stratify=stratify_param
+        )
+
     with mlflow.start_run(run_name=model_name):
         model = xgb.XGBClassifier(
             n_estimators=150, max_depth=5, learning_rate=0.08,
             random_state=42, eval_metric="logloss",
             scale_pos_weight=max(1, (y == 0).sum() / max((y == 1).sum(), 1)),
         )
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-        cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring="roc_auc")
-        mlflow.log_metric("cv_auc_mean", round(float(np.mean(cv_scores)), 4))
-        mlflow.log_metric("cv_auc_std", round(float(np.std(cv_scores)), 4))
+
+        if y_train.nunique() >= 2:
+            n_splits = min(5, int(y_train.value_counts().min()))
+            n_splits = max(n_splits, 2)
+            cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+            cv_scores = cross_val_score(model, X_train, y_train, cv=cv, scoring="roc_auc")
+            mlflow.log_metric("cv_auc_mean", round(float(np.mean(cv_scores)), 4))
+            mlflow.log_metric("cv_auc_std", round(float(np.std(cv_scores)), 4))
+        else:
+            mlflow.log_metric("cv_auc_mean", 0.0)
+            mlflow.log_metric("cv_auc_std", 0.0)
+
         model.fit(X_train, y_train)
         preds_proba = model.predict_proba(X_test)[:, 1]
 

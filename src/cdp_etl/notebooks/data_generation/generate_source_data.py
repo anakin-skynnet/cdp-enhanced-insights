@@ -216,13 +216,23 @@ today = date.today()
 STATUSES = ["approved", "approved", "approved", "approved", "declined", "refunded", "chargeback"]
 PAYMENT_METHODS = ["credit_card", "debit_card", "pix", "boleto"]
 
-for m in merchants:
+churned_pct = 0.18
+for idx, m in enumerate(merchants):
     vol = m["monthly_volume_avg"]
     monthly_txn_count = max(10, vol // random.randint(80, 300))
-    for month_offset in range(12):
+
+    is_churned = idx < int(len(merchants) * churned_pct)
+    if is_churned:
+        inactive_months = random.randint(4, 10)
+    else:
+        inactive_months = 0
+
+    for month_offset in range(inactive_months, 12):
         txn_date_base = today - timedelta(days=30 * month_offset)
         seasonal_factor = 1.0 + 0.3 * (1 if txn_date_base.month in [11, 12, 1] else 0)
         count = int(monthly_txn_count * seasonal_factor * random.uniform(0.7, 1.3))
+        if is_churned:
+            count = int(count * random.uniform(0.3, 0.7))
         for _ in range(count):
             txn_day = txn_date_base - timedelta(days=random.randint(0, 29))
             txns.append((
@@ -237,6 +247,8 @@ for m in merchants:
                 random.choice([1, 1, 1, 2, 3, 6, 12]),
                 f"POS-{m['merchant_id'][-6:]}-{random.randint(1,5)}",
             ))
+
+print(f"Churned merchants: {int(len(merchants) * churned_pct)} ({churned_pct*100:.0f}%)")
 
 txn_schema = StructType([
     StructField("transaction_id", StringType(), False),
