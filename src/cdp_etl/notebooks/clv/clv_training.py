@@ -21,8 +21,11 @@ import inspect
 if not hasattr(inspect, "getargspec"):
     inspect.getargspec = inspect.getfullargspec
 
-import pandas as pd
 import numpy as np
+if not hasattr(np, "msort"):
+    np.msort = lambda a: np.sort(a, axis=0)
+
+import pandas as pd
 from datetime import timedelta
 from btyd.fitters.beta_geo_fitter import BetaGeoFitter
 from btyd import GammaGammaFitter
