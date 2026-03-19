@@ -7,6 +7,10 @@
 
 # COMMAND ----------
 
+# MAGIC %pip install xgboost mlflow scikit-learn
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## 1. Configuration
 
