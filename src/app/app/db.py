@@ -11,7 +11,6 @@ import threading
 from contextlib import contextmanager
 from functools import wraps
 from databricks import sql as dbsql
-from databricks.sdk.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +37,15 @@ def _get_connection():
                     conn.close()
                 except Exception:
                     pass
-    config = Config()
+    from databricks.sdk import WorkspaceClient
+    w = WorkspaceClient()
+    hostname = w.config.host.replace("https://", "").replace("http://", "")
     warehouse_id = os.environ.get("DATABRICKS_WAREHOUSE_ID", "")
+    logger.info("Connecting to warehouse %s on %s", warehouse_id, hostname)
     return dbsql.connect(
-        server_hostname=config.host,
+        server_hostname=hostname,
         http_path=f"/sql/1.0/warehouses/{warehouse_id}",
-        credentials_provider=lambda: config.authenticate,
+        credentials_provider=w.config.authenticate,
     )
 
 

@@ -394,9 +394,9 @@ async def agent_chat(req: M.ChatRequest):
     try:
         from databricks.sdk import WorkspaceClient
         w = WorkspaceClient()
-        host = w.config.host
-        header_factory = w.config.authenticate()
-        auth_headers = header_factory() if callable(header_factory) else header_factory
+        host = w.config.host.rstrip("/")
+        headers_fn = w.config.authenticate
+        auth_headers = headers_fn()
 
         payload = {
             "input": [{"role": m.role, "content": m.content} for m in req.messages]
@@ -428,12 +428,12 @@ async def genie_ask(req: M.GenieRequest):
     try:
         from databricks.sdk import WorkspaceClient
         w = WorkspaceClient()
-        from databricks.sdk.service.dashboards import GenieAPI
-        genie = GenieAPI(w.api_client)
 
-        conversation = genie.start_conversation(GENIE_SPACE_ID, content=req.question)
-        result = genie.get_message_query_result(
-            GENIE_SPACE_ID, conversation.conversation_id, conversation.message_id
+        conversation = w.genie.start_conversation(space_id=GENIE_SPACE_ID, content=req.question)
+        result = w.genie.get_message_query_result(
+            space_id=GENIE_SPACE_ID,
+            conversation_id=conversation.conversation_id,
+            message_id=conversation.message_id,
         )
 
         columns = [col.name for col in (result.statement_response.manifest.schema.columns or [])]
@@ -445,6 +445,7 @@ async def genie_ask(req: M.GenieRequest):
 
         return {"question": req.question, "columns": columns, "rows": rows, "row_count": len(rows)}
     except Exception as e:
+        logger.exception("Genie ask error")
         return {"question": req.question, "error": str(e)}
 
 
