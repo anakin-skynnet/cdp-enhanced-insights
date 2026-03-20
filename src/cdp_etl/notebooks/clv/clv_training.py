@@ -6,29 +6,17 @@
 # MAGIC adapted for PagoNxt Getnet's merchant payment data.
 # MAGIC
 # MAGIC **Method**: BG/NBD model (purchase probability) + Gamma-Gamma model (monetary value)
-# MAGIC from the `btyd` library, following the *Buy 'til You Die* (BTYD) framework.
+# MAGIC implemented natively with scipy (no external BTYD dependency for serverless compatibility).
 # MAGIC
 # MAGIC **Output**: `gold_customer_ltv` table with 12-month projected CLV per merchant.
 
 # COMMAND ----------
 
-# MAGIC %pip install btyd mlflow
-# MAGIC dbutils.library.restartPython()
-
-# COMMAND ----------
-
-import inspect
-if not hasattr(inspect, "getargspec"):
-    inspect.getargspec = inspect.getfullargspec
-
 import numpy as np
-if not hasattr(np, "msort"):
-    np.msort = lambda a: np.sort(a, axis=0)
-
 import pandas as pd
 from datetime import timedelta
-from btyd.fitters.beta_geo_fitter import BetaGeoFitter
-from btyd import GammaGammaFitter
+from scipy.optimize import minimize
+from scipy.special import gammaln, betaln, hyp2f1
 import pyspark.sql.functions as F
 import mlflow
 
@@ -48,12 +36,6 @@ schema = _widget("schema", "cdp_360")
 
 # MAGIC %md
 # MAGIC ## Step 1: Prepare RFM summary from transaction data
-# MAGIC
-# MAGIC The BG/NBD model requires per-customer summary:
-# MAGIC - **frequency**: number of repeat purchases (total purchases - 1)
-# MAGIC - **recency**: time between first and last purchase (in days)
-# MAGIC - **T**: customer age = time between first purchase and analysis date (in days)
-# MAGIC - **monetary_value**: average transaction value (excluding first purchase)
 
 # COMMAND ----------
 
@@ -90,38 +72,78 @@ rfm_spark = (
 )
 
 rfm_pd = rfm_spark.toPandas()
+for col in ["frequency", "recency", "T", "monetary_value", "total_amount"]:
+    rfm_pd[col] = pd.to_numeric(rfm_pd[col], errors="coerce").astype(float)
+
+rfm_pd["T"] = rfm_pd["T"].clip(lower=1)
+rfm_pd["recency"] = rfm_pd["recency"].clip(lower=0)
+rfm_pd["frequency"] = rfm_pd["frequency"].clip(lower=1)
+rfm_pd["monetary_value"] = rfm_pd["monetary_value"].clip(lower=0.01)
+
 print(f"Merchants with repeat purchases: {len(rfm_pd):,}")
 rfm_pd.describe()
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 2: Fit BG/NBD Model (Purchase Probability)
+# MAGIC ## Step 2: BG/NBD Model (Purchase Probability)
 # MAGIC
-# MAGIC The BG/NBD model estimates:
-# MAGIC - Probability that a merchant is still "alive" (active)
-# MAGIC - Expected number of future transactions in a given period
+# MAGIC Native scipy implementation of the BG/NBD model for serverless compatibility.
 
 # COMMAND ----------
 
-bgf = BetaGeoFitter(penalizer_coef=0.001)
-bgf.fit(rfm_pd["frequency"], rfm_pd["recency"], rfm_pd["T"])
-print(bgf.summary)
+def _bgnbd_ll(params, x, t_x, T):
+    """Closed-form BG/NBD log-likelihood (Fader et al. 2005, Eq. 7)."""
+    r, alpha, a, b = np.abs(params) + 1e-7
+    ln_A = (
+        gammaln(r + x) - gammaln(r)
+        + r * np.log(alpha) - (r + x) * np.log(alpha + T)
+        + betaln(a, b + x) - betaln(a, b)
+    )
+    delta = np.where(
+        x > 0,
+        np.log(a) - np.log(b + x - 1) + (r + x) * (np.log(alpha + T) - np.log(alpha + t_x)),
+        0,
+    )
+    ll = np.where(
+        x > 0,
+        np.logaddexp(ln_A, ln_A + delta),
+        ln_A,
+    )
+    return -np.sum(ll[np.isfinite(ll)])
 
-# COMMAND ----------
+
+def _bgnbd_p_alive(params, x, t_x, T):
+    r, alpha, a, b = np.abs(params) + 1e-7
+    A = (a / np.maximum(b + x - 1, 1e-7)) * ((alpha + T) / (alpha + t_x)) ** (r + x)
+    A = np.where(np.isfinite(A), A, 0)
+    return 1.0 / (1.0 + A)
+
+
+def _bgnbd_expected(params, t, x, t_x, T):
+    p = _bgnbd_p_alive(params, x, t_x, T)
+    r, alpha, a, b = np.abs(params) + 1e-7
+    ratio = (a + b + x - 1) / np.maximum(a - 1, 0.01)
+    hyp = 1 - ((alpha + T) / (alpha + T + t)) ** (r + x)
+    return np.where(a > 1, ratio * hyp * p, (x / np.maximum(T, 1)) * t * p)
+
+freq_arr = rfm_pd["frequency"].values
+rec_arr = rfm_pd["recency"].values
+T_arr = rfm_pd["T"].values
+
+result = minimize(
+    _bgnbd_ll, x0=[0.5, 5.0, 0.5, 5.0],
+    args=(freq_arr, rec_arr, T_arr),
+    method="L-BFGS-B",
+    bounds=[(1e-5, 100)] * 4,
+    options={"maxiter": 200},
+)
+bgnbd_params = np.abs(result.x)
+print(f"BG/NBD params (r, alpha, a, b): {bgnbd_params}")
 
 PROJECTION_DAYS = 365
-
-rfm_pd["p_alive"] = bgf.conditional_probability_alive(
-    rfm_pd["frequency"], rfm_pd["recency"], rfm_pd["T"]
-)
-
-rfm_pd["predicted_purchases_12m"] = bgf.conditional_expected_number_of_purchases_up_to_time(
-    PROJECTION_DAYS,
-    rfm_pd["frequency"],
-    rfm_pd["recency"],
-    rfm_pd["T"],
-)
+rfm_pd["p_alive"] = _bgnbd_p_alive(bgnbd_params, freq_arr, rec_arr, T_arr).clip(0, 1)
+rfm_pd["predicted_purchases_12m"] = _bgnbd_expected(bgnbd_params, PROJECTION_DAYS, freq_arr, rec_arr, T_arr).clip(0)
 
 print(f"Avg P(alive): {rfm_pd['p_alive'].mean():.3f}")
 print(f"Avg predicted purchases (12m): {rfm_pd['predicted_purchases_12m'].mean():.2f}")
@@ -129,32 +151,45 @@ print(f"Avg predicted purchases (12m): {rfm_pd['predicted_purchases_12m'].mean()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Step 3: Fit Gamma-Gamma Model (Monetary Value)
-# MAGIC
-# MAGIC The Gamma-Gamma model estimates the expected average transaction value per merchant.
-# MAGIC Combined with BG/NBD predicted purchases, it gives projected CLV.
+# MAGIC ## Step 3: Gamma-Gamma Model (Monetary Value)
 
 # COMMAND ----------
 
-ggf = GammaGammaFitter(penalizer_coef=0.001)
-ggf.fit(rfm_pd["frequency"], rfm_pd["monetary_value"])
-print(ggf.summary)
+def _gg_log_likelihood(params, freq, monetary):
+    p, q, v = params
+    p, q, v = max(p, 1e-5), max(q, 1e-5), max(v, 1e-5)
+    x = freq
+    m = monetary
+    ll = (
+        gammaln(p * x + q) - gammaln(p * x) - gammaln(q)
+        + q * np.log(v) + (p * x - 1) * np.log(m)
+        + (p * x) * np.log(x) - (p * x + q) * np.log(x * m + v)
+    )
+    return -np.sum(ll)
 
-# COMMAND ----------
 
-rfm_pd["predicted_monetary"] = ggf.conditional_expected_average_profit(
-    rfm_pd["frequency"], rfm_pd["monetary_value"]
+def _gg_expected_profit(params, freq, monetary):
+    p, q, v = params
+    return (q - 1) / (p * freq + q - 1) * v + p * freq / (p * freq + q - 1) * monetary
+
+monetary_arr = rfm_pd["monetary_value"].values
+
+gg_result = minimize(
+    _gg_log_likelihood, x0=[1.0, 1.0, 10.0],
+    args=(freq_arr, monetary_arr),
+    method="Nelder-Mead",
+    options={"maxiter": 5000, "xatol": 1e-5, "fatol": 1e-5},
 )
+gg_params = np.abs(gg_result.x)
+print(f"Gamma-Gamma params (p, q, v): {gg_params}")
 
-rfm_pd["clv_12m"] = ggf.customer_lifetime_value(
-    bgf,
-    rfm_pd["frequency"],
-    rfm_pd["recency"],
-    rfm_pd["T"],
-    rfm_pd["monetary_value"],
-    time=12,  # months
-    discount_rate=0.01,  # monthly discount rate
-)
+rfm_pd["predicted_monetary"] = _gg_expected_profit(gg_params, freq_arr, monetary_arr)
+rfm_pd["predicted_monetary"] = rfm_pd["predicted_monetary"].clip(lower=0.01)
+
+MONTHLY_DISCOUNT = 0.01
+rfm_pd["clv_12m"] = rfm_pd["predicted_monetary"] * rfm_pd["predicted_purchases_12m"]
+discount_factor = sum(1 / (1 + MONTHLY_DISCOUNT) ** m for m in range(1, 13)) / 12
+rfm_pd["clv_12m"] = rfm_pd["clv_12m"] * discount_factor
 
 print(f"Avg CLV (12m): {rfm_pd['clv_12m'].mean():,.2f}")
 print(f"Median CLV (12m): {rfm_pd['clv_12m'].median():,.2f}")
@@ -208,17 +243,17 @@ print(f"Saved {clv_with_golden.count():,} rows to {catalog}.{schema}.gold_custom
 
 # COMMAND ----------
 
-import pickle
+import json
 import tempfile
 import os
 
 with mlflow.start_run(run_name="clv_bgnbd_gammagamma"):
     mlflow.log_params({
-        "model_type": "BG/NBD + Gamma-Gamma",
+        "model_type": "BG/NBD + Gamma-Gamma (native scipy)",
         "projection_months": 12,
         "discount_rate": 0.01,
-        "bgf_penalizer": 0.001,
-        "ggf_penalizer": 0.001,
+        "bgnbd_params": str(bgnbd_params.tolist()),
+        "gg_params": str(gg_params.tolist()),
         "merchant_count": len(rfm_pd),
     })
     mlflow.log_metrics({
@@ -228,15 +263,14 @@ with mlflow.start_run(run_name="clv_bgnbd_gammagamma"):
         "median_clv_12m": float(rfm_pd["clv_12m"].median()),
         "total_projected_clv": float(rfm_pd["clv_12m"].sum()),
     })
-    with tempfile.NamedTemporaryFile(suffix='.pkl', delete=False) as f:
-        pickle.dump(bgf, f)
-        bgf_path = f.name
-    mlflow.log_artifact(bgf_path, "models")
-    os.unlink(bgf_path)
-    with tempfile.NamedTemporaryFile(suffix='.pkl', delete=False) as f:
-        pickle.dump(ggf, f)
-        ggf_path = f.name
-    mlflow.log_artifact(ggf_path, "models")
-    os.unlink(ggf_path)
+    params_payload = {
+        "bgnbd": bgnbd_params.tolist(),
+        "gamma_gamma": gg_params.tolist(),
+    }
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+        json.dump(params_payload, f)
+        params_path = f.name
+    mlflow.log_artifact(params_path, "models")
+    os.unlink(params_path)
 
 print("CLV model training complete.")

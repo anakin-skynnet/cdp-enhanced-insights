@@ -10,8 +10,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install xgboost mlflow scikit-learn
-# MAGIC dbutils.library.restartPython()
+# MAGIC %pip install xgboost
 
 # COMMAND ----------
 

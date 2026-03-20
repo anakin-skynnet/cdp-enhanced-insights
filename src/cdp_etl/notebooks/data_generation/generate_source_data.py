@@ -6,13 +6,14 @@
 # MAGIC them as files to Unity Catalog Volumes, exactly where the Bronze Auto Loader
 # MAGIC ingestion layer expects them.
 # MAGIC
-# MAGIC | Source | Format | Volume Path |
+# MAGIC | Source | Format | Destination |
 # MAGIC |--------|--------|-------------|
 # MAGIC | Salesforce Contacts | JSON | `/Volumes/{catalog}/{schema}/raw/salesforce/contacts/` |
 # MAGIC | Salesforce Accounts | JSON | `/Volumes/{catalog}/{schema}/raw/salesforce/accounts/` |
 # MAGIC | Zendesk Tickets | JSON | `/Volumes/{catalog}/{schema}/raw/zendesk/tickets/` |
 # MAGIC | Getnet Transactions | Parquet | `/Volumes/{catalog}/{schema}/raw/transactions/` |
 # MAGIC | Genesys Interactions | JSON | `/Volumes/{catalog}/{schema}/raw/genesys/` |
+# MAGIC | NBA Action Log | Delta Table | `{catalog}.{schema}.nba_action_log` |
 # MAGIC
 # MAGIC **Run this once** to seed the lakehouse, then let the pipelines and jobs
 # MAGIC propagate data through Bronze → Silver → Gold → ML → Agents.
@@ -69,8 +70,9 @@ print("Volume directories ready.")
 import random
 import uuid
 import json
+import hashlib
+import re
 from datetime import datetime, timedelta, date
-from decimal import Decimal
 
 random.seed(42)
 
@@ -216,7 +218,7 @@ print(f"Wrote {len(sf_contacts)} Salesforce contacts to {path}")
 
 # COMMAND ----------
 
-from pyspark.sql.types import StructType, StructField, StringType, DecimalType, DateType, IntegerType
+from pyspark.sql.types import StructType, StructField, StringType, DoubleType, DateType, IntegerType
 
 txns = []
 today = date.today()
@@ -245,7 +247,7 @@ for idx, m in enumerate(merchants):
             txns.append((
                 f"TXN-{uuid.uuid4().hex[:16].upper()}",
                 m["sf_account_id"],
-                Decimal(str(round(random.uniform(5.0, vol / monthly_txn_count * 3), 2))),
+                round(random.uniform(5.0, vol / monthly_txn_count * 3), 2),
                 txn_day,
                 random.choice(STATUSES),
                 random.choice(PAYMENT_METHODS),
@@ -260,7 +262,7 @@ print(f"Churned merchants: {int(len(merchants) * churned_pct)} ({churned_pct*100
 txn_schema = StructType([
     StructField("transaction_id", StringType(), False),
     StructField("merchant_id", StringType(), False),
-    StructField("amount", DecimalType(18, 2), False),
+    StructField("amount", DoubleType(), False),
     StructField("transaction_date", DateType(), False),
     StructField("status", StringType(), False),
     StructField("payment_method", StringType(), True),
@@ -314,7 +316,7 @@ for m in merchants:
             "status": status,
             "priority": priority,
             "type": random.choice(TICKET_TYPES),
-            "requester_id": m["sf_contact_id"],
+            "requester_id": m["sf_account_id"],
             "assignee_id": f"AGT-{random.randint(1000,1050)}",
             "group_id": f"GRP-{random.choice(['billing','support','tech','onboarding'])}",
             "tags": random.sample(TAGS_POOL, k=random.randint(1, 3)),
@@ -382,7 +384,7 @@ for m in merchants:
         interactions.append({
             "conversation_id": f"CONV-{uuid.uuid4().hex[:14].upper()}",
             "user_id": random.choice(AGENT_IDS),
-            "customer_id": m["sf_contact_id"],
+            "customer_id": m["sf_account_id"],
             "external_contact_id": m["sf_account_id"],
             "conversation_date": conv_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "interaction_type": random.choice(INTERACTION_TYPES),
@@ -407,7 +409,86 @@ print(f"Wrote {len(interactions)} Genesys interactions to {path}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 9. Summary
+# MAGIC ## 9. NBA Action Log (Campaign Seed Data)
+# MAGIC
+# MAGIC Generates realistic campaign / next-best-action execution records so that
+# MAGIC `gold_campaign_roi` and `gold_personalization_signals` have data to work with.
+# MAGIC The `golden_id` is pre-computed as `sha256(phone)` to match the identity
+# MAGIC resolution blocking key for account records.
+
+# COMMAND ----------
+
+NBA_ACTION_TYPES = [
+    "loyalty_reward", "win_back_campaign", "premium_win_back",
+    "upsell_premium_plan", "cross_sell_products", "activation_incentive",
+    "product_education", "growth_acceleration", "onboarding_nurture",
+    "referral_program", "proactive_checkin", "reengagement_offer",
+]
+NBA_CHANNELS = [
+    "sfmc_email", "sfmc_email", "sfmc_email", "zender_sms", "zender_sms",
+    "phone", "phone_sfmc", "getnet_app_push", "sfmc_journey",
+]
+CAMPAIGN_NAMES = [
+    "Q4 Win-Back Blitz", "Holiday Loyalty Bonus", "New Year Activation",
+    "Terminal Upgrade Promo", "Premium Plan Upsell", "Referral Reward Program",
+    "Spring Reengagement", "Cross-Sell Payments Suite", "Product Education Series",
+    "Growth Accelerator Q1", "Proactive Health Check", "Onboarding Welcome Journey",
+    "Summer Re-Activation", "Year-End Review Campaign", "Merchant Success Outreach",
+]
+
+spark.sql(f"""
+  CREATE TABLE IF NOT EXISTS {catalog}.{schema}.nba_action_log (
+    action_id STRING,
+    golden_id STRING NOT NULL,
+    action_type STRING NOT NULL,
+    channel STRING,
+    executed_by STRING,
+    notes STRING,
+    executed_at TIMESTAMP
+  )
+""")
+spark.sql(f"""
+  CREATE TABLE IF NOT EXISTS {catalog}.{schema}.agent_feedback_log (
+    feedback_id STRING,
+    message_content STRING,
+    rating INT,
+    comment STRING,
+    created_at TIMESTAMP
+  )
+""")
+
+targeted = random.sample(merchants, k=int(len(merchants) * 0.65))
+nba_rows = []
+for m in targeted:
+    phone_normalized = re.sub(r"[^0-9]", "", m["phone"])
+    golden_id = hashlib.sha256(phone_normalized.encode("utf-8")).hexdigest()
+    for _ in range(random.randint(1, 5)):
+        action_dt = datetime.now() - timedelta(
+            days=random.randint(30, 270),
+            hours=random.randint(0, 23),
+        )
+        nba_rows.append({
+            "action_id": f"ACT-{uuid.uuid4().hex[:12].upper()}",
+            "golden_id": golden_id,
+            "action_type": random.choice(NBA_ACTION_TYPES),
+            "channel": random.choice(NBA_CHANNELS),
+            "executed_by": random.choice([
+                "cdp_app", "campaign_manager", "retention_team", "growth_team",
+            ]),
+            "notes": random.choice(CAMPAIGN_NAMES),
+            "executed_at": action_dt,
+        })
+
+nba_df = spark.createDataFrame(nba_rows)
+nba_df.write.format("delta").mode("overwrite").saveAsTable(
+    f"{catalog}.{schema}.nba_action_log"
+)
+print(f"Wrote {len(nba_rows)} NBA action log entries for {len(targeted)} merchants")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 10. Summary
 
 # COMMAND ----------
 
@@ -420,6 +501,7 @@ print(f"  SF Contacts:       {len(sf_contacts)}")
 print(f"  Transactions:      {len(txns)}")
 print(f"  Zendesk Tickets:   {len(tickets)}")
 print(f"  Genesys Calls:     {len(interactions)}")
+print(f"  NBA Actions:       {len(nba_rows)}")
 print(f"  Volume Base:       {VOLUME_BASE}")
 print("=" * 60)
 print()

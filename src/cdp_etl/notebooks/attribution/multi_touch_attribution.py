@@ -13,11 +13,6 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install mlflow
-# MAGIC dbutils.library.restartPython()
-
-# COMMAND ----------
-
 import pandas as pd
 import numpy as np
 from itertools import combinations
@@ -157,7 +152,7 @@ converted_journeys = journeys_pd[journeys_pd["converted"] == 1]
 
 for _, row in converted_journeys.iterrows():
     path = row["path"]
-    value = row["total_conversion_value"] or 1
+    value = float(row["total_conversion_value"] or 1)
     if not path:
         continue
 
@@ -267,7 +262,7 @@ for channel in channels:
     removal_effects[channel] = max(0, baseline_conv - conv_without)
 
 total_effect = sum(removal_effects.values())
-total_conversion_value = converted_journeys["total_conversion_value"].sum()
+total_conversion_value = float(converted_journeys["total_conversion_value"].sum())
 
 markov_attribution = {}
 for ch, effect in removal_effects.items():

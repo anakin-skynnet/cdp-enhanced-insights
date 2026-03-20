@@ -1,12 +1,11 @@
 # PagoNxt Getnet CDP - Jobs for Data Generation, ML, Identity Resolution, and AI Agents
 # Execution order: 00 (data gen), pipelines 01-02, job 03 (identity resolution), pipeline 04 (gold), then jobs 05-14
-# All jobs use serverless compute for faster startup and no cluster management.
 
 resources:
   jobs:
     generate_source_data:
       name: "[${bundle.target}] 00 CDP Generate Synthetic Source Data"
-      description: "Generates realistic synthetic data for all 5 source systems (Salesforce, Zendesk, Getnet, Genesys) into Unity Catalog Volumes"
+      description: "Generates realistic synthetic data for all source systems into Unity Catalog Volumes"
       tasks:
         - task_key: generate_data
           notebook_task:
@@ -21,7 +20,7 @@ resources:
 
     identity_resolution:
       name: "[${bundle.target}] 03 CDP Identity Resolution"
-      description: "Customer Entity Resolution - produces gold_customer_360 golden record and operational tables"
+      description: "Customer Entity Resolution - produces gold_customer_360 golden record"
       tasks:
         - task_key: create_operational_tables
           sql_task:
@@ -45,7 +44,7 @@ resources:
 
     segmentation_refresh:
       name: "[${bundle.target}] 05 CDP Segmentation Refresh"
-      description: "Triggers the Gold Analytics pipeline to refresh all materialized views including segments"
+      description: "Triggers the Gold Analytics pipeline to refresh all materialized views"
       tasks:
         - task_key: refresh_gold_pipeline
           pipeline_task:
@@ -59,7 +58,7 @@ resources:
 
     call_center_nlp:
       name: "[${bundle.target}] 06 CDP Call Center NLP Enrichment"
-      description: "Speech-to-text and sentiment analysis on call center interactions using Foundation Model API"
+      description: "Sentiment analysis on call center interactions using Foundation Model API"
       tasks:
         - task_key: call_center_nlp
           notebook_task:
@@ -93,7 +92,7 @@ resources:
 
     clv_training:
       name: "[${bundle.target}] 08 CDP Customer Lifetime Value"
-      description: "Train BG/NBD + Gamma-Gamma CLV models (Databricks Solution Accelerator)"
+      description: "Train BG/NBD + Gamma-Gamma CLV models"
       tasks:
         - task_key: clv_training
           notebook_task:
@@ -110,7 +109,7 @@ resources:
 
     multi_touch_attribution:
       name: "[${bundle.target}] 09 CDP Multi-Touch Attribution"
-      description: "Markov Chain channel attribution (Databricks Solution Accelerator)"
+      description: "Markov Chain channel attribution"
       tasks:
         - task_key: attribution
           notebook_task:
@@ -127,7 +126,7 @@ resources:
 
     propensity_scoring:
       name: "[${bundle.target}] 10 CDP Hyper-Personalization Propensity"
-      description: "Train churn/upsell/activation propensity models for hyper-personalization"
+      description: "Train churn/upsell/activation propensity models"
       tasks:
         - task_key: propensity
           notebook_task:
@@ -144,7 +143,7 @@ resources:
 
     behavioral_segmentation:
       name: "[${bundle.target}] 11 CDP Behavioral Segmentation"
-      description: "K-Means behavioral clustering (Databricks Solution Accelerator)"
+      description: "K-Means behavioral clustering"
       tasks:
         - task_key: clustering
           notebook_task:
@@ -196,6 +195,17 @@ resources:
     deploy_agents:
       name: "[${bundle.target}] 14 CDP Deploy AI Agents"
       description: "Log and deploy CDP Supervisor + 3 specialist agents to Model Serving"
+      environments:
+        - environment_key: agent_env
+          spec:
+            client: "1"
+            dependencies:
+              - databricks-langchain
+              - langgraph
+              - databricks-agents
+              - azure-storage-file-datalake
+              - azure-core
+              - azure-identity
       tasks:
         - task_key: setup_uc_functions
           sql_task:
@@ -210,6 +220,7 @@ resources:
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
+          environment_key: agent_env
       permissions:
         - level: CAN_VIEW
           group_name: "users"

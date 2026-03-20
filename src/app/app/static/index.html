@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Getnet CDP - Customer 360</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script>
@@ -11,6 +14,7 @@
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'] },
           colors: {
             border: 'hsl(var(--border))',
             input: 'hsl(var(--input))',
@@ -39,35 +43,36 @@
   </script>
   <style>
     :root {
-      --background: 0 0% 3.9%;
-      --foreground: 0 0% 98%;
-      --card: 0 0% 5.5%;
-      --card-foreground: 0 0% 98%;
-      --primary: 142 71% 45%;
+      /* Santander corporate palette — dark mode */
+      --background: 0 0% 4.5%;
+      --foreground: 0 0% 97%;
+      --card: 0 0% 6%;
+      --card-foreground: 0 0% 97%;
+      --primary: 0 100% 46%;
       --primary-foreground: 0 0% 100%;
-      --secondary: 0 0% 14.9%;
-      --secondary-foreground: 0 0% 98%;
-      --muted: 0 0% 14.9%;
-      --muted-foreground: 0 0% 63.9%;
-      --accent: 0 0% 14.9%;
-      --accent-foreground: 0 0% 98%;
-      --destructive: 0 62.8% 30.6%;
-      --destructive-foreground: 0 0% 98%;
-      --border: 0 0% 14.9%;
-      --input: 0 0% 14.9%;
-      --ring: 142 71% 45%;
+      --secondary: 0 0% 13%;
+      --secondary-foreground: 0 0% 97%;
+      --muted: 0 0% 13%;
+      --muted-foreground: 0 0% 58%;
+      --accent: 0 0% 13%;
+      --accent-foreground: 0 0% 97%;
+      --destructive: 25 95% 40%;
+      --destructive-foreground: 0 0% 100%;
+      --border: 0 0% 13%;
+      --input: 0 0% 13%;
+      --ring: 0 100% 46%;
       --radius: 0.75rem;
-      --sidebar: 0 0% 4.5%;
-      --sidebar-foreground: 0 0% 95%;
+      --sidebar: 0 0% 5%;
+      --sidebar-foreground: 0 0% 92%;
       --sidebar-accent: 0 0% 10%;
-      --sidebar-accent-foreground: 0 0% 95%;
-      --chart-1: 142 71% 45%;
-      --chart-2: 210 70% 50%;
-      --chart-3: 45 93% 47%;
-      --chart-4: 0 72% 51%;
-      --chart-5: 280 65% 60%;
+      --sidebar-accent-foreground: 0 0% 92%;
+      --chart-1: 0 100% 46%;
+      --chart-2: 0 0% 55%;
+      --chart-3: 210 65% 50%;
+      --chart-4: 35 90% 52%;
+      --chart-5: 0 100% 32%;
     }
-    html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+    html, body { height: 100%; margin: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
     body { background: hsl(var(--background)); color: hsl(var(--foreground)); }
     * { box-sizing: border-box; }
     .scrollbar-thin::-webkit-scrollbar { width: 6px; }
@@ -77,29 +82,63 @@
     .animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
     @keyframes skeleton-loading { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
     .skeleton { background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--accent)) 50%, hsl(var(--muted)) 75%); background-size: 200% 100%; animation: skeleton-loading 1.5s ease-in-out infinite; border-radius: var(--radius); }
-    .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 600; line-height: 1.25rem; }
-    .badge-green { background: hsl(142 71% 45% / 0.15); color: hsl(142 71% 55%); }
-    .badge-blue { background: hsl(210 70% 50% / 0.15); color: hsl(210 70% 60%); }
-    .badge-yellow { background: hsl(45 93% 47% / 0.15); color: hsl(45 93% 57%); }
-    .badge-red { background: hsl(0 72% 51% / 0.15); color: hsl(0 72% 61%); }
-    .badge-purple { background: hsl(280 65% 60% / 0.15); color: hsl(280 65% 70%); }
-    .badge-gray { background: hsl(0 0% 40% / 0.15); color: hsl(0 0% 65%); }
-    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border-radius: calc(var(--radius) - 2px); cursor: pointer; transition: all 0.15s; color: hsl(var(--sidebar-foreground)); font-size: 0.875rem; }
+    @keyframes notif-in { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes notif-out { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+    .notif-enter { animation: notif-in 0.3s ease-out forwards; }
+    .notif-exit  { animation: notif-out 0.25s ease-in forwards; }
+    #notif-stack { pointer-events: none; }
+    #notif-stack > div { pointer-events: auto; }
+    #notif-panel { scrollbar-width: thin; scrollbar-color: hsl(var(--muted)) transparent; }
+    .badge { display: inline-flex; align-items: center; border-radius: 9999px; padding: 2px 10px; font-size: 0.75rem; font-weight: 600; line-height: 1.25rem; letter-spacing: 0.01em; }
+    .badge-green { background: hsl(152 60% 42% / 0.15); color: hsl(152 60% 55%); }
+    .badge-blue { background: hsl(210 65% 50% / 0.15); color: hsl(210 65% 62%); }
+    .badge-yellow { background: hsl(40 90% 50% / 0.15); color: hsl(40 90% 60%); }
+    .badge-red { background: hsl(0 100% 46% / 0.12); color: hsl(0 100% 60%); }
+    .badge-purple { background: hsl(270 55% 55% / 0.15); color: hsl(270 55% 68%); }
+    .badge-gray { background: hsl(0 0% 45% / 0.15); color: hsl(0 0% 62%); }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; border-radius: calc(var(--radius) - 2px); cursor: pointer; transition: all 0.15s; color: hsl(var(--sidebar-foreground)); font-size: 0.875rem; font-weight: 400; }
     .nav-item:hover { background: hsl(var(--sidebar-accent)); }
-    .nav-item.active { background: hsl(var(--primary) / 0.15); color: hsl(var(--primary)); font-weight: 600; }
+    .nav-item.active { background: hsl(var(--primary) / 0.12); color: hsl(0, 100%, 62%); font-weight: 600; }
     canvas { max-height: 300px; }
   </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
+  <!-- Notification Toast Stack (top-right) -->
+  <div id="notif-stack" class="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-96 max-w-[calc(100vw-2rem)]"></div>
+
+  <!-- Notification History Panel (slide-over) -->
+  <div id="notif-overlay" class="fixed inset-0 z-[90] bg-black/40 hidden" onclick="toggleNotifPanel()"></div>
+  <div id="notif-panel-wrap" class="fixed top-0 right-0 z-[95] h-full w-96 max-w-[90vw] translate-x-full transition-transform duration-300 flex flex-col bg-card border-l border-border shadow-2xl">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+        <span class="text-sm font-semibold">Notifications</span>
+        <span id="notif-panel-count" class="text-xs text-muted-foreground"></span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="clearAllNotifs()" class="text-xs text-muted-foreground hover:text-foreground transition-colors">Clear all</button>
+        <button onclick="toggleNotifPanel()" class="text-muted-foreground hover:text-foreground transition-colors p-1" aria-label="Close notifications">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+    </div>
+    <div id="notif-panel" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+    <div id="notif-empty" class="flex-1 flex items-center justify-center text-muted-foreground text-sm hidden">No notifications</div>
+  </div>
+
   <!-- Sidebar -->
   <aside id="sidebar" class="w-64 shrink-0 border-r border-border bg-sidebar flex flex-col h-full">
     <div class="flex items-center gap-3 px-4 py-5 border-b border-border">
-      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm">G</div>
-      <div>
-        <div class="font-semibold text-sm text-sidebar-foreground">Getnet CDP</div>
-        <div class="text-xs text-muted-foreground">Customer 360</div>
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm tracking-tight">G</div>
+      <div class="flex-1">
+        <div class="font-semibold text-sm text-sidebar-foreground tracking-tight">Getnet <span class="text-primary">CDP</span></div>
+        <div class="text-xs text-muted-foreground font-light">Customer 360 &middot; Santander</div>
       </div>
+      <button onclick="toggleNotifPanel()" class="relative p-1.5 rounded-md hover:bg-sidebar-accent transition-colors" title="Notifications" aria-label="Open notifications">
+        <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+        <span id="notif-badge" class="absolute -top-0.5 -right-0.5 hidden min-w-[16px] h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">0</span>
+      </button>
     </div>
 
     <nav class="flex-1 overflow-y-auto scrollbar-thin px-3 py-4 space-y-1">
@@ -240,9 +279,8 @@
     let currentPage = 'dashboard';
     const chartInstances = {};
     const CHART_COLORS = [
-      'hsl(142, 71%, 45%)', 'hsl(210, 70%, 50%)', 'hsl(45, 93%, 47%)',
-      'hsl(0, 72%, 51%)', 'hsl(280, 65%, 60%)', 'hsl(190, 80%, 45%)',
-      'hsl(30, 90%, 55%)', 'hsl(330, 70%, 50%)', 'hsl(160, 60%, 40%)',
+      '#EC0000', '#6d6d6d', '#4A90D9', '#D4882A', '#8B1A1A',
+      '#3D9B8F', '#A0522D', '#C2C2C2', '#7A5C99',
     ];
 
     // ═══════════════════════════════════════════════════════════
@@ -251,10 +289,20 @@
     async function api(path, opts) {
       try {
         const r = await fetch(path, opts);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) {
+          let detail = '';
+          try { const b = await r.text(); if (b) detail = b.substring(0, 200); } catch (_) {}
+          throw { status: r.status, detail };
+        }
         return await r.json();
       } catch (e) {
         console.error(`API error ${path}:`, e);
+        const endpoint = path.split('/').pop();
+        if (e.status) {
+          notify(`API ${e.status}: ${endpoint}`, 'error', e.detail || path);
+        } else {
+          notify(`Network error: ${endpoint}`, 'error', e.message || 'Connection failed');
+        }
         return null;
       }
     }
@@ -335,10 +383,10 @@
       if (!ctx) return;
       const defaults = {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: 'hsl(0,0%,63.9%)', font: { size: 11 } } } },
+        plugins: { legend: { labels: { color: '#9a9a9a', font: { size: 11, family: 'Inter' } } } },
         scales: type === 'doughnut' || type === 'pie' ? {} : {
-          x: { ticks: { color: 'hsl(0,0%,63.9%)', font: { size: 10 } }, grid: { color: 'hsl(0,0%,14.9%)' } },
-          y: { ticks: { color: 'hsl(0,0%,63.9%)', font: { size: 10 } }, grid: { color: 'hsl(0,0%,14.9%)' } },
+          x: { ticks: { color: '#9a9a9a', font: { size: 10, family: 'Inter' } }, grid: { color: '#222' } },
+          y: { ticks: { color: '#9a9a9a', font: { size: 10, family: 'Inter' } }, grid: { color: '#222' } },
         }
       };
       chartInstances[canvasId] = new Chart(ctx, { type, data, options: { ...defaults, ...options } });
@@ -413,7 +461,10 @@
       container.innerHTML = `<div class="space-y-6">${skeletonKpis()}<div class="grid grid-cols-1 lg:grid-cols-2 gap-4">${card('', skeleton('h-64'))}${card('', skeleton('h-64'))}</div></div>`;
       if (loaders[page]) {
         try { await loaders[page](); }
-        catch(e) { container.innerHTML = card('Error', `<p class="text-red-400">${e.message || 'Failed to load page data. Please try again.'}</p>`); }
+        catch(e) {
+          container.innerHTML = card('Error', `<p class="text-red-400">${escapeHtml(e.message || 'Failed to load page data. Please try again.')}</p>`);
+          notify(`Page "${page}" failed to load`, 'error', e.message || 'Unknown error');
+        }
       }
     }
 
@@ -455,8 +506,8 @@
         createChart('chart-health', 'bar', {
           labels: health.map(h => h.health_tier),
           datasets: [
-            { label: 'Count', data: health.map(h => h.merchant_count), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 6 },
-            { label: 'Avg Score', data: health.map(h => h.avg_score), backgroundColor: 'hsl(210,70%,50%,0.7)', borderRadius: 6 },
+            { label: 'Count', data: health.map(h => h.merchant_count), backgroundColor: 'rgba(236,0,0,0.75)', borderRadius: 6 },
+            { label: 'Avg Score', data: health.map(h => h.avg_score), backgroundColor: 'rgba(109,109,109,0.75)', borderRadius: 6 },
           ]
         });
       }
@@ -469,14 +520,13 @@
     const MERCHANT_PAGE_SIZE = 25;
 
     let merchantFilters = { search: '', segment: '', health_tier: '', sort: 'txn_volume' };
-    const SEGMENTS = ['champions','loyal','potential','promising','new','needs_attention','about_to_sleep','at_risk','cant_lose','hibernating'];
+    const SEGMENTS = ['champions','loyal','potential_loyalists','new_customers','promising','need_attention','at_risk','cant_lose','hibernating'];
     const HEALTH_TIERS = ['excellent','good','fair','poor','critical'];
     const SORT_OPTIONS = [
       { value: 'txn_volume', label: 'Volume (high→low)' },
       { value: 'health_score', label: 'Health Score' },
-      { value: 'days_since_last_txn', label: 'Recency' },
-      { value: 'ticket_count', label: 'Tickets' },
-      { value: 'txn_count', label: 'Txn Count' },
+      { value: 'days_inactive', label: 'Recency' },
+      { value: 'tickets', label: 'Tickets' },
     ];
 
     async function loadMerchants(search = '', page = 0) {
@@ -704,11 +754,11 @@
         createChart('chart-sentiment', 'bar', {
           labels: sentiment.map(s => s.topic_category.replace(/_/g, ' ')),
           datasets: [
-            { label: 'Positive %', data: sentiment.map(s => s.positive_pct), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 4 },
-            { label: 'Neutral %', data: sentiment.map(s => s.neutral_pct), backgroundColor: 'hsl(210,70%,50%,0.7)', borderRadius: 4 },
-            { label: 'Negative %', data: sentiment.map(s => s.negative_pct), backgroundColor: 'hsl(0,72%,51%,0.7)', borderRadius: 4 },
+            { label: 'Positive %', data: sentiment.map(s => s.positive_pct), backgroundColor: 'rgba(236,0,0,0.75)', borderRadius: 4 },
+            { label: 'Neutral %', data: sentiment.map(s => s.neutral_pct), backgroundColor: 'rgba(109,109,109,0.75)', borderRadius: 4 },
+            { label: 'Negative %', data: sentiment.map(s => s.negative_pct), backgroundColor: 'rgba(139,26,26,0.8)', borderRadius: 4 },
           ]
-        }, { scales: { x: { stacked: true, ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' } }, y: { stacked: true, ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' } } } });
+        }, { scales: { x: { stacked: true, ticks: { color: '#9a9a9a' }, grid: { color: '#222' } }, y: { stacked: true, ticks: { color: '#9a9a9a' }, grid: { color: '#222' } } } });
       }
       if (queues) {
         const rows = queues.map(q => `
@@ -759,14 +809,14 @@
         createChart('chart-roi', 'bar', {
           labels: roi.map(r => r.campaign_type.replace(/_/g, ' ')),
           datasets: [
-            { label: 'Post Revenue', data: roi.map(r => r.total_post_revenue), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 6 },
-            { label: 'Conversions', data: roi.map(r => r.conversions), backgroundColor: 'hsl(210,70%,50%,0.7)', borderRadius: 6, yAxisID: 'y1' },
+            { label: 'Post Revenue', data: roi.map(r => r.total_post_revenue), backgroundColor: 'rgba(236,0,0,0.75)', borderRadius: 6 },
+            { label: 'Conversions', data: roi.map(r => r.conversions), backgroundColor: 'rgba(109,109,109,0.75)', borderRadius: 6, yAxisID: 'y1' },
           ]
         }, {
           scales: {
-            x: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' } },
-            y: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' }, position: 'left' },
-            y1: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { display: false }, position: 'right' },
+            x: { ticks: { color: '#9a9a9a' }, grid: { color: '#222' } },
+            y: { ticks: { color: '#9a9a9a' }, grid: { color: '#222' }, position: 'left' },
+            y1: { ticks: { color: '#9a9a9a' }, grid: { display: false }, position: 'right' },
           }
         });
         const rows = roi.map(r => `
@@ -958,7 +1008,7 @@
         createChart('chart-clv', 'bar', {
           labels: summary.map(s => s.clv_tier.replace(/_/g, ' ')),
           datasets: [
-            { label: 'Total CLV', data: summary.map(s => s.total_clv), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 6 },
+            { label: 'Total CLV', data: summary.map(s => s.total_clv), backgroundColor: 'rgba(236,0,0,0.75)', borderRadius: 6 },
           ]
         });
       }
@@ -1033,14 +1083,14 @@
         createChart('chart-behavioral', 'bar', {
           labels: data.map(d => d.behavioral_segment.replace(/_/g, ' ')),
           datasets: [
-            { label: 'Merchants', data: data.map(d => d.merchant_count), backgroundColor: 'hsl(142,71%,45%,0.7)', borderRadius: 6 },
-            { label: 'Avg Health', data: data.map(d => d.avg_health), backgroundColor: 'hsl(210,70%,50%,0.7)', borderRadius: 6, yAxisID: 'y1' },
+            { label: 'Merchants', data: data.map(d => d.merchant_count), backgroundColor: 'rgba(236,0,0,0.75)', borderRadius: 6 },
+            { label: 'Avg Health', data: data.map(d => d.avg_health), backgroundColor: 'rgba(109,109,109,0.75)', borderRadius: 6, yAxisID: 'y1' },
           ]
         }, {
           scales: {
-            x: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' } },
-            y: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { color: 'hsl(0,0%,14.9%)' }, position: 'left' },
-            y1: { ticks: { color: 'hsl(0,0%,63.9%)' }, grid: { display: false }, position: 'right' },
+            x: { ticks: { color: '#9a9a9a' }, grid: { color: '#222' } },
+            y: { ticks: { color: '#9a9a9a' }, grid: { color: '#222' }, position: 'left' },
+            y1: { ticks: { color: '#9a9a9a' }, grid: { display: false }, position: 'right' },
           }
         });
         const rows = data.map(d => `
@@ -1059,13 +1109,18 @@
     // ═══════════════════════════════════════════════════════════
     // PAGE: Anomaly Alerts
     // ═══════════════════════════════════════════════════════════
-    async function loadAnomalies() {
-      const [kpis, alerts] = await Promise.all([api('/api/anomaly-alerts/kpis'), api('/api/anomaly-alerts?limit=50')]);
+    let anomalyFilter = '';
+    async function loadAnomalies(typeFilter) {
+      if (typeFilter !== undefined) anomalyFilter = typeFilter;
+      const params = anomalyFilter ? `anomaly_type=${anomalyFilter}&limit=50` : 'limit=50';
+      const [kpis, alerts] = await Promise.all([api('/api/anomaly-alerts/kpis'), api(`/api/anomaly-alerts?${params}`)]);
       const c = document.getElementById('page-container');
       const anomalyBadge = (t) => {
         const m = { volume_drop: 'red', unexpected_inactivity: 'yellow', ticket_spike: 'purple', health_collapse: 'red' };
         return badge(t.replace(/_/g, ' '), m[t] || 'gray');
       };
+      const ANOMALY_TYPES = ['volume_drop', 'unexpected_inactivity', 'ticket_spike', 'health_collapse'];
+      const filterOpts = ANOMALY_TYPES.map(t => `<option value="${t}" ${anomalyFilter === t ? 'selected' : ''}>${t.replace(/_/g, ' ')}</option>`).join('');
       const rows = (alerts || []).map(a => `
         <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${a.golden_id}')">
           <td class="px-4 py-3 font-medium">${a.merchant_name || a.golden_id}</td>
@@ -1093,7 +1148,14 @@
             ${card('Severity Distribution', '<div style="height:280px"><canvas id="chart-anomaly-severity"></canvas></div>')}
           </div>
           <div class="flex items-center justify-between">
-            <h3 class="font-semibold">Active Alerts</h3>
+            <div class="flex items-center gap-3">
+              <h3 class="font-semibold">Active Alerts</h3>
+              <select onchange="loadAnomalies(this.value)" aria-label="Filter by anomaly type"
+                class="h-8 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring">
+                <option value="" ${!anomalyFilter ? 'selected' : ''}>All Types</option>${filterOpts}
+              </select>
+              <span class="text-xs text-muted-foreground">${(alerts || []).length} alerts</span>
+            </div>
             <a href="/api/export/anomaly-alerts?limit=500" class="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors">Export CSV</a>
           </div>
           ${tableWrap(['Merchant', 'Anomaly', 'Segment', 'Health', 'Deviation', 'Volume', 'Revenue Risk', 'Urgency', 'Detected'], rows)}
@@ -1102,7 +1164,7 @@
         createChart('chart-anomaly-dist', 'doughnut', {
           labels: ['Volume Drop', 'Inactivity', 'Ticket Spike', 'Health Collapse'],
           datasets: [{ data: [kpis.volume_drops, kpis.unexpected_inactivity, kpis.ticket_spikes, kpis.health_collapses],
-            backgroundColor: ['hsl(0,72%,51%,0.8)', 'hsl(45,93%,47%,0.8)', 'hsl(280,65%,60%,0.8)', 'hsl(0,72%,35%,0.8)'], borderWidth: 0 }]
+            backgroundColor: ['#EC0000', '#D4882A', '#6d6d6d', '#8B1A1A'], borderWidth: 0 }]
         }, { cutout: '55%' });
       }
       if (alerts && alerts.length) {
@@ -1117,7 +1179,7 @@
         createChart('chart-anomaly-severity', 'bar', {
           labels: Object.keys(buckets),
           datasets: [{ label: 'Alerts', data: Object.values(buckets),
-            backgroundColor: ['hsl(0,72%,51%,0.8)', 'hsl(30,90%,55%,0.8)', 'hsl(45,93%,47%,0.8)', 'hsl(210,70%,50%,0.8)'], borderRadius: 6 }]
+            backgroundColor: ['#EC0000', '#D4882A', '#C2C2C2', '#4A90D9'], borderRadius: 6 }]
         });
       }
     }
@@ -1168,6 +1230,11 @@
         document.getElementById('ds-catalog').textContent = config.catalog;
         document.getElementById('ds-schema').textContent = config.schema_name || config.schema;
         document.getElementById('ds-connected').textContent = config.warehouse_connected ? 'Yes' : 'No';
+        if (isMock) notify('Running with mock data — connect a SQL warehouse for live data', 'warning');
+        else if (!config.warehouse_connected) notify('SQL warehouse not connected — check DATABRICKS_WAREHOUSE_ID', 'error');
+        else notify('Connected to Databricks', 'success', `${config.catalog}.${config.schema_name || config.schema}`);
+      } else {
+        notify('Failed to load app configuration', 'error', 'The backend may be unreachable');
       }
       navigateTo('dashboard');
       loadFreshnessIndicator();
@@ -1207,13 +1274,13 @@
       <div class="space-y-8 max-w-5xl">
 
         <!-- Hero -->
-        <div class="${sectionStyle} bg-gradient-to-br from-primary/5 via-card to-chart-2/5 border-primary/20">
+        <div class="${sectionStyle} bg-gradient-to-br from-primary/5 via-card to-card border-primary/20">
           <div class="flex items-start gap-4">
             <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <svg class="w-7 h-7 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+              <svg class="w-7 h-7 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.5 2 6 5.5 6 9c0 2.5 1.2 4.5 3 5.7V17a1 1 0 001 1h4a1 1 0 001-1v-2.3c1.8-1.2 3-3.2 3-5.7 0-3.5-2.5-7-6-7zm-1 17h2v1h-2v-1zm0 2h2v1h-2v-1z"/></svg>
             </div>
             <div>
-              <h1 class="text-2xl font-bold">PagoNxt Getnet — Enhanced Customer Intelligence Platform</h1>
+              <h1 class="text-2xl font-bold tracking-tight"><span class="text-primary">Santander</span> Getnet — Enhanced Customer Intelligence Platform</h1>
               <p class="text-muted-foreground mt-1 leading-relaxed max-w-3xl">
                 A production-grade <strong class="text-foreground">Customer 360</strong> solution built entirely on the
                 <strong class="text-foreground">Databricks Lakehouse Platform</strong>. It unifies fragmented merchant data from
@@ -1341,9 +1408,9 @@
                 <div class="w-3 h-3 rounded-full bg-slate-400"></div>
                 <span class="font-semibold text-slate-300">Silver — Cleansed & Conformed</span>
               </div>
-              <p class="text-xs text-muted-foreground">Materialized views that cleanse, conform, and join data across sources. Type casting, null handling, business key alignment, and cross-source joins create a unified data model.</p>
+              <p class="text-xs text-muted-foreground">Streaming tables that cleanse, conform, and join data across sources. Type casting, null handling, business key alignment, and cross-source joins create a unified data model.</p>
               <div class="text-xs font-mono text-muted-foreground">Pipeline: <span class="text-slate-300">CDP Silver Transformations</span></div>
-              <div class="text-xs text-muted-foreground">5 materialized views &bull; Serverless &bull; Photon enabled</div>
+              <div class="text-xs text-muted-foreground">5 streaming tables &bull; Serverless &bull; Photon enabled</div>
             </div>
             <div class="rounded-lg border border-yellow-400/30 bg-yellow-400/5 p-4 space-y-2">
               <div class="flex items-center gap-2">
@@ -1641,11 +1708,34 @@
           </div>
         </div>
 
+        <!-- Runtime Configuration -->
+        <div class="${sectionStyle}">
+          ${h2('Runtime Configuration', '<svg class="w-5 h-5 text-chart-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>')}
+          <div id="about-runtime-config" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div class="rounded-lg border border-border p-3"><div class="text-xs text-muted-foreground mb-1">Data Source</div><div id="about-cfg-source" class="font-mono font-semibold">-</div></div>
+            <div class="rounded-lg border border-border p-3"><div class="text-xs text-muted-foreground mb-1">Catalog</div><div id="about-cfg-catalog" class="font-mono font-semibold">-</div></div>
+            <div class="rounded-lg border border-border p-3"><div class="text-xs text-muted-foreground mb-1">Schema</div><div id="about-cfg-schema" class="font-mono font-semibold">-</div></div>
+            <div class="rounded-lg border border-border p-3"><div class="text-xs text-muted-foreground mb-1">Warehouse Connected</div><div id="about-cfg-connected" class="font-mono font-semibold">-</div></div>
+          </div>
+        </div>
+
         <!-- Footer -->
         <div class="text-center text-xs text-muted-foreground pb-4">
-          Built with the Databricks Lakehouse Platform &bull; PagoNxt Getnet Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, and AI/BI
+          Built with the Databricks Lakehouse Platform &bull; Santander &middot; PagoNxt Getnet Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, and AI/BI
         </div>
       </div>`;
+      const cfg = await api('/api/config');
+      if (cfg) {
+        const el = (id) => document.getElementById(id);
+        if (el('about-cfg-source')) el('about-cfg-source').textContent = cfg.source || '-';
+        if (el('about-cfg-catalog')) el('about-cfg-catalog').textContent = cfg.catalog || '-';
+        if (el('about-cfg-schema')) el('about-cfg-schema').textContent = cfg.schema_name || cfg.schema || '-';
+        if (el('about-cfg-connected')) {
+          const connected = cfg.warehouse_connected;
+          el('about-cfg-connected').textContent = connected ? 'Yes' : 'No';
+          el('about-cfg-connected').className = `font-mono font-semibold ${connected ? 'text-green-400' : 'text-yellow-400'}`;
+        }
+      }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -1662,18 +1752,109 @@
       navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
     }
 
-    function showToast(msg) {
-      let t = document.getElementById('app-toast');
-      if (!t) {
-        t = document.createElement('div');
-        t.id = 'app-toast';
-        t.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 z-[60] px-4 py-2 rounded-lg bg-foreground text-background text-sm font-medium shadow-lg transition-all duration-300 opacity-0 pointer-events-none';
-        document.body.appendChild(t);
-      }
-      t.textContent = msg;
-      t.classList.remove('opacity-0'); t.classList.add('opacity-100');
-      setTimeout(() => { t.classList.remove('opacity-100'); t.classList.add('opacity-0'); }, 2000);
+    // ═══════════════════════════════════════════════════════════
+    // Notification System
+    // ═══════════════════════════════════════════════════════════
+    const _notifLog = [];
+    const NOTIF_ICONS = {
+      error:   `<svg class="w-4 h-4 shrink-0 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+      warning: `<svg class="w-4 h-4 shrink-0 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`,
+      success: `<svg class="w-4 h-4 shrink-0 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+      info:    `<svg class="w-4 h-4 shrink-0 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+    };
+    const NOTIF_BORDERS = {
+      error: 'border-l-red-500', warning: 'border-l-yellow-500',
+      success: 'border-l-green-500', info: 'border-l-blue-500',
+    };
+
+    function notify(msg, type = 'info', detail = '') {
+      const ts = new Date();
+      const entry = { msg, type, detail, ts };
+      _notifLog.unshift(entry);
+      if (_notifLog.length > 100) _notifLog.length = 100;
+      _updateBadge();
+      _renderPanelList();
+      _showPopup(entry);
     }
+
+    function _showPopup(entry) {
+      const stack = document.getElementById('notif-stack');
+      const el = document.createElement('div');
+      el.className = `notif-enter rounded-lg border border-border ${NOTIF_BORDERS[entry.type]} border-l-4 bg-card shadow-lg p-3 flex gap-2.5 items-start cursor-pointer`;
+      el.innerHTML = `
+        ${NOTIF_ICONS[entry.type]}
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium text-foreground leading-snug">${escapeHtml(entry.msg)}</div>
+          ${entry.detail ? `<div class="text-xs text-muted-foreground mt-0.5 truncate">${escapeHtml(entry.detail)}</div>` : ''}
+          <div class="text-[10px] text-muted-foreground mt-1">${_fmtTime(entry.ts)}</div>
+        </div>
+        <button class="shrink-0 text-muted-foreground hover:text-foreground transition-colors" onclick="event.stopPropagation();this.closest('div.notif-enter,div.notif-exit')?.remove()">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>`;
+      el.onclick = () => { el.remove(); toggleNotifPanel(); };
+      stack.prepend(el);
+      const autoClose = entry.type === 'error' ? 8000 : entry.type === 'warning' ? 6000 : 3500;
+      setTimeout(() => {
+        if (el.parentNode) { el.classList.remove('notif-enter'); el.classList.add('notif-exit'); setTimeout(() => el.remove(), 300); }
+      }, autoClose);
+      while (stack.children.length > 5) stack.lastElementChild.remove();
+    }
+
+    function _fmtTime(d) {
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function _updateBadge() {
+      const badge = document.getElementById('notif-badge');
+      const errCount = _notifLog.filter(n => n.type === 'error' || n.type === 'warning').length;
+      if (errCount > 0) { badge.textContent = errCount > 99 ? '99+' : errCount; badge.classList.remove('hidden'); badge.classList.add('flex'); }
+      else { badge.classList.add('hidden'); badge.classList.remove('flex'); }
+    }
+
+    function _renderPanelList() {
+      const panel = document.getElementById('notif-panel');
+      const empty = document.getElementById('notif-empty');
+      if (_notifLog.length === 0) { panel.classList.add('hidden'); empty.classList.remove('hidden'); return; }
+      panel.classList.remove('hidden'); empty.classList.add('hidden');
+      panel.innerHTML = _notifLog.map((n, i) => `
+        <div class="rounded-md border border-border ${NOTIF_BORDERS[n.type]} border-l-4 bg-background p-2.5 flex gap-2 items-start">
+          ${NOTIF_ICONS[n.type]}
+          <div class="flex-1 min-w-0">
+            <div class="text-xs font-medium text-foreground">${escapeHtml(n.msg)}</div>
+            ${n.detail ? `<div class="text-[11px] text-muted-foreground mt-0.5">${escapeHtml(n.detail)}</div>` : ''}
+            <div class="text-[10px] text-muted-foreground mt-1">${_fmtTime(n.ts)}</div>
+          </div>
+          <button class="shrink-0 text-muted-foreground hover:text-foreground" onclick="_notifLog.splice(${i},1);_updateBadge();_renderPanelList()">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>`).join('');
+      document.getElementById('notif-panel-count').textContent = `(${_notifLog.length})`;
+    }
+
+    function toggleNotifPanel() {
+      const wrap = document.getElementById('notif-panel-wrap');
+      const overlay = document.getElementById('notif-overlay');
+      const open = wrap.classList.contains('translate-x-full');
+      if (open) { wrap.classList.remove('translate-x-full'); overlay.classList.remove('hidden'); _renderPanelList(); }
+      else { wrap.classList.add('translate-x-full'); overlay.classList.add('hidden'); }
+    }
+
+    function clearAllNotifs() {
+      _notifLog.length = 0;
+      _updateBadge();
+      _renderPanelList();
+    }
+
+    function showToast(msg, type) {
+      notify(msg, type || 'info');
+    }
+
+    window.onerror = function(msg, src, line) {
+      notify('Unexpected error', 'error', `${msg} (line ${line})`);
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+      notify('Unhandled async error', 'error', String(e.reason).substring(0, 150));
+    });
 
     initApp();
 
@@ -1714,21 +1895,23 @@
     }
 
     let _feedbackCounter = 0;
+    const _chatResponses = {};
     function appendBotMessage(md) {
       chatHistory.push({ role: 'assistant', content: md });
       const el = document.getElementById('chat-messages');
       const fid = 'fb-' + (++_feedbackCounter);
+      _chatResponses[fid] = md;
       el.innerHTML += `
         <div class="flex flex-col">
           <div class="max-w-[85%] rounded-lg bg-muted px-3 py-2 text-sm prose-sm">${renderMd(md)}</div>
           <div id="${fid}" class="flex gap-1 mt-1 ml-1">
-            <button onclick="copyToClipboard(\`${md.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)" class="text-muted-foreground hover:text-foreground transition-colors p-0.5" title="Copy response" aria-label="Copy response">
+            <button onclick="copyToClipboard(_chatResponses['${fid}'])" class="text-muted-foreground hover:text-foreground transition-colors p-0.5" title="Copy response" aria-label="Copy response">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
             </button>
-            <button onclick="rateBotMsg('${fid}','${escapeHtml(md.substring(0,200))}',5)" class="text-muted-foreground hover:text-green-400 transition-colors p-0.5" title="Helpful" aria-label="Mark as helpful">
+            <button onclick="rateBotMsg('${fid}',5)" class="text-muted-foreground hover:text-green-400 transition-colors p-0.5" title="Helpful" aria-label="Mark as helpful">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"></path></svg>
             </button>
-            <button onclick="rateBotMsg('${fid}','${escapeHtml(md.substring(0,200))}',1)" class="text-muted-foreground hover:text-red-400 transition-colors p-0.5" title="Not helpful" aria-label="Mark as not helpful">
+            <button onclick="rateBotMsg('${fid}',1)" class="text-muted-foreground hover:text-red-400 transition-colors p-0.5" title="Not helpful" aria-label="Mark as not helpful">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018c.163 0 .326.02.485.06L17 4m-7 10v2a3.5 3.5 0 003.5 3.5h.792c.486 0 .937-.268 1.168-.695l1.044-1.93c.385-.713.565-1.505.565-2.307V9.5a2 2 0 00-2-2H14m-7 7h2"></path></svg>
             </button>
           </div>
@@ -1736,9 +1919,10 @@
       el.scrollTop = el.scrollHeight;
     }
 
-    async function rateBotMsg(fid, content, rating) {
+    async function rateBotMsg(fid, rating) {
       const el = document.getElementById(fid);
       if (el) el.innerHTML = `<span class="text-xs text-muted-foreground">${rating >= 3 ? 'Thanks!' : 'Noted'}</span>`;
+      const content = (_chatResponses[fid] || '').substring(0, 200);
       await apiPost('/api/agent/feedback', { message_content: content, rating, comment: '' });
     }
 
@@ -1784,7 +1968,7 @@
         const result = await api('/api/genie/ask', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ question: text }) });
         removeLoading();
         if (result) appendGenieResult(result);
-        else appendBotMessage('Genie request failed. Please try again.');
+        else { appendBotMessage('Genie request failed. Please try again.'); notify('Genie query failed', 'error', 'Check SQL warehouse connection'); }
       } else {
         const result = await apiPost('/api/agent/chat', { messages: chatHistory.map(m => ({ role: m.role, content: m.content })) });
         removeLoading();
@@ -1795,6 +1979,7 @@
           appendBotMessage(texts.join('\n\n') || 'No response from agent.');
         } else {
           appendBotMessage('Agent request failed. Check the connection.');
+          notify('Agent request failed', 'error', 'Model serving endpoint may be unreachable');
         }
       }
     }
@@ -1802,8 +1987,18 @@
     async function apiPost(path, body) {
       try {
         const r = await fetch(path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+        if (!r.ok) {
+          let detail = '';
+          try { const b = await r.text(); if (b) detail = b.substring(0, 200); } catch (_) {}
+          notify(`API ${r.status}: ${path.split('/').pop()}`, 'error', detail || path);
+          return null;
+        }
         return await r.json();
-      } catch(e) { console.error(e); return null; }
+      } catch(e) {
+        console.error(`POST error ${path}:`, e);
+        notify(`Network error: ${path.split('/').pop()}`, 'error', e.message || 'Connection failed');
+        return null;
+      }
     }
 
     function escapeHtml(s) {
@@ -1812,16 +2007,33 @@
     const esc = (v) => escapeHtml(String(v ?? ''));
 
     function renderMd(md) {
-      return md
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        .replace(/\n\n/g, '<br><br>')
-        .replace(/\n/g, '<br>')
-        .replace(/\|(.+)\|/g, (match) => {
-          if (match.includes('---')) return '';
-          const cells = match.split('|').filter(c => c.trim());
-          return `<div class="flex gap-4 text-xs font-mono">${cells.map(c => `<span>${c.trim()}</span>`).join('')}</div>`;
-        });
+      const lines = md.split('\n');
+      const out = [];
+      let inTable = false;
+      let headerDone = false;
+      for (const line of lines) {
+        if (/^\|.+\|$/.test(line.trim())) {
+          if (/^\|[\s:-]+\|$/.test(line.trim())) { headerDone = true; continue; }
+          const cells = line.split('|').slice(1, -1).map(c => c.trim());
+          if (!inTable) { inTable = true; headerDone = false; out.push('<div class="overflow-x-auto my-2"><table class="w-full text-xs border border-border rounded"><thead><tr class="bg-muted/50">'); }
+          if (!headerDone) {
+            out.push(cells.map(c => `<th class="px-2 py-1 text-left font-medium text-muted-foreground">${c}</th>`).join(''));
+            out.push('</tr></thead><tbody>');
+            headerDone = true;
+          } else {
+            out.push(`<tr class="border-t border-border">${cells.map(c => `<td class="px-2 py-1">${c}</td>`).join('')}</tr>`);
+          }
+        } else {
+          if (inTable) { inTable = false; headerDone = false; out.push('</tbody></table></div>'); }
+          const processed = line
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.+?)\*/g, '<em>$1</em>');
+          if (line.trim() === '') out.push('<br>');
+          else out.push(processed + '<br>');
+        }
+      }
+      if (inTable) out.push('</tbody></table></div>');
+      return out.join('');
     }
 
     function handleChatKey(e) {

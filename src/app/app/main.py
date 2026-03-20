@@ -29,9 +29,14 @@ DATA_SOURCE = os.environ.get("CDP_DATA_SOURCE", "mock").lower()
 if DATA_SOURCE == "mock":
     from . import mock_data as ds
 else:
-    from . import db as ds  # type: ignore[no-redef]
+    try:
+        from . import db as ds  # type: ignore[no-redef]
+    except Exception as _import_err:
+        logger.error("Failed to import db module, falling back to mock: %s", _import_err)
+        from . import mock_data as ds  # type: ignore[no-redef]
+        DATA_SOURCE = "mock (fallback)"
 
-_USE_THREADS = DATA_SOURCE != "mock"
+_USE_THREADS = DATA_SOURCE not in ("mock", "mock (fallback)")
 
 
 async def _run(fn, *args, **kwargs):
@@ -41,9 +46,9 @@ async def _run(fn, *args, **kwargs):
     return fn(*args, **kwargs)
 
 app = FastAPI(
-    title="Getnet CDP - Customer 360",
-    version="2.0.0",
-    description="PagoNxt Getnet Customer Data Platform API. "
+    title="Santander Getnet CDP - Customer 360",
+    version="2.1.0",
+    description="Santander PagoNxt Getnet Customer Data Platform API. "
                 f"Data source: **{DATA_SOURCE}**",
 )
 
@@ -60,7 +65,14 @@ async def root():
 async def healthcheck():
     """Standard healthcheck for Databricks Apps OAuth2 token auth."""
     from datetime import datetime, timezone
-    return {"status": "OK", "timestamp": datetime.now(timezone.utc).isoformat(), "data_source": DATA_SOURCE}
+    diag = {"db_module": "loaded"}
+    try:
+        from . import db as _db_check
+        diag["db_module"] = "ok"
+        diag["host"] = str(getattr(_db_check, 'CATALOG', 'n/a'))
+    except Exception as e:
+        diag["db_module"] = f"error: {e}"
+    return {"status": "OK", "timestamp": datetime.now(timezone.utc).isoformat(), "data_source": DATA_SOURCE, "diagnostics": diag}
 
 
 @app.get("/metrics")

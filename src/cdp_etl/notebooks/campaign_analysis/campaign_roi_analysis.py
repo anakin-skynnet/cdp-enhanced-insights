@@ -12,11 +12,6 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install mlflow
-# MAGIC dbutils.library.restartPython()
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## 1. Configuration
 

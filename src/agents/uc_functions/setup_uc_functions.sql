@@ -4,6 +4,67 @@
 -- Run this notebook once to create the functions.
 -- NOTE: LIMIT in UC SQL functions must be a constant (not a parameter).
 
+-- ═══════════════════════════════════════════════════════════════
+-- ENSURE PLACEHOLDER TABLES EXIST (for ML-output tables)
+-- UC SQL functions validate referenced tables at creation time.
+-- These CREATE TABLE IF NOT EXISTS statements ensure the functions
+-- can always be created, even before the ML jobs run.
+-- ═══════════════════════════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.gold_customer_ltv (
+  golden_id STRING, clv_12m DOUBLE, clv_tier STRING, p_alive DOUBLE,
+  predicted_purchases_12m DOUBLE, total_amount DOUBLE, frequency DOUBLE, recency DOUBLE,
+  monetary_value DOUBLE, T DOUBLE, expected_profit DOUBLE,
+  _model_version STRING, _scored_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.gold_behavioral_segments (
+  golden_id STRING, cluster_id INT, behavioral_segment STRING,
+  txn_count DOUBLE, txn_volume DOUBLE, days_since_last_txn DOUBLE,
+  ticket_count DOUBLE, health_score DOUBLE, recency_score DOUBLE,
+  frequency_score DOUBLE, monetary_score DOUBLE, support_penalty DOUBLE,
+  tenure_bonus DOUBLE, tenure_days DOUBLE, r_score DOUBLE,
+  f_score DOUBLE, m_score DOUBLE,
+  _model_version STRING, _scored_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.gold_channel_attribution (
+  channel STRING, markov_attributed_value DOUBLE, markov_attribution_share DOUBLE,
+  first_touch_value DOUBLE, last_touch_value DOUBLE,
+  linear_value DOUBLE, time_decay_value DOUBLE,
+  markov_conversions DOUBLE, _model_version STRING, _scored_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.gold_ad_creative_library (
+  segment STRING, merchant_count BIGINT, avg_volume DOUBLE,
+  avg_health DOUBLE, avg_recency_days DOUBLE,
+  email_subject STRING, email_body_preview STRING,
+  sms_message STRING, push_notification STRING,
+  ad_headline STRING, ad_description STRING,
+  tone STRING, cta STRING, generated_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.gold_call_center_sentiment (
+  conversation_id STRING, agent_id STRING, customer_external_id STRING,
+  conversation_date DATE, media_type STRING, duration_seconds BIGINT,
+  sentiment STRING, topic_category STRING, call_summary STRING,
+  _enriched_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.gold_churn_scores (
+  golden_id STRING, churn_probability DOUBLE, churn_risk_tier STRING,
+  _model_version STRING, _scored_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS ahs_demos_catalog.cdp_360.gold_propensity_scores (
+  golden_id STRING, propensity_type STRING, propensity_score DOUBLE,
+  propensity_tier STRING, _model_version STRING, _scored_at TIMESTAMP
+);
+
+-- ═══════════════════════════════════════════════════════════════
+-- CORE FUNCTIONS
+-- ═══════════════════════════════════════════════════════════════
+
 -- 1. Look up a merchant by golden_id, email, or name fragment
 CREATE OR REPLACE FUNCTION ahs_demos_catalog.cdp_360.lookup_merchant(
   search_term STRING COMMENT 'Golden ID, email address, or merchant name fragment to search for'

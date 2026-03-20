@@ -10,11 +10,6 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install mlflow databricks-langchain langgraph databricks-agents pydantic
-# MAGIC dbutils.library.restartPython()
-
-# COMMAND ----------
-
 import mlflow
 from mlflow.models.resources import DatabricksServingEndpoint, DatabricksFunction, DatabricksGenieSpace
 
@@ -106,7 +101,7 @@ pip_requirements = [
 with mlflow.start_run(run_name="churn_prevention_agent"):
     model_info = mlflow.pyfunc.log_model(
         name="churn_prevention_agent",
-        python_model="src/agents/churn_prevention/agent.py",
+        python_model="churn_prevention/agent.py",
         resources=base_resources + uc_functions_churn,
         pip_requirements=pip_requirements,
         input_example={
@@ -126,7 +121,7 @@ with mlflow.start_run(run_name="churn_prevention_agent"):
 with mlflow.start_run(run_name="segment_campaign_agent"):
     model_info = mlflow.pyfunc.log_model(
         name="segment_campaign_agent",
-        python_model="src/agents/segment_campaign/agent.py",
+        python_model="segment_campaign/agent.py",
         resources=base_resources + uc_functions_campaign,
         pip_requirements=pip_requirements,
         input_example={
@@ -146,7 +141,7 @@ with mlflow.start_run(run_name="segment_campaign_agent"):
 with mlflow.start_run(run_name="next_best_action_agent"):
     model_info = mlflow.pyfunc.log_model(
         name="next_best_action_agent",
-        python_model="src/agents/next_best_action/agent.py",
+        python_model="next_best_action/agent.py",
         resources=base_resources + uc_functions_nba,
         pip_requirements=pip_requirements,
         input_example={
@@ -163,7 +158,11 @@ with mlflow.start_run(run_name="next_best_action_agent"):
 
 # COMMAND ----------
 
-genie_space_id = spark.conf.get("spark.cdp.genie_space_id", "")
+try:
+    genie_space_id = spark.conf.get("spark.cdp.genie_space_id")
+except Exception:
+    genie_space_id = ""
+
 supervisor_resources = base_resources + ALL_UC_FUNCTIONS
 if genie_space_id:
     supervisor_resources.append(DatabricksGenieSpace(genie_space_id=genie_space_id))
@@ -171,7 +170,7 @@ if genie_space_id:
 with mlflow.start_run(run_name="cdp_supervisor_agent"):
     model_info = mlflow.pyfunc.log_model(
         name="cdp_supervisor_agent",
-        python_model="src/agents/cdp_supervisor/agent.py",
+        python_model="cdp_supervisor/agent.py",
         resources=supervisor_resources,
         pip_requirements=pip_requirements,
         input_example={
@@ -194,8 +193,10 @@ from mlflow import MlflowClient
 client = MlflowClient()
 
 def _latest_version(model_name: str) -> str:
-    versions = client.search_model_versions(f"name='{model_name}'", order_by=["version_number DESC"], max_results=1)
-    return str(versions[0].version) if versions else "1"
+    versions = client.search_model_versions(f"name='{model_name}'")
+    if not versions:
+        return "1"
+    return str(max(int(v.version) for v in versions))
 
 _AGENT_MODELS = [
     (f"{UC_PREFIX}.cdp_supervisor_agent", {"use_case": "cdp_supervisor", "cdp": "getnet", "role": "primary"}),
@@ -207,6 +208,6 @@ _AGENT_MODELS = [
 for model_name, tags in _AGENT_MODELS:
     ver = _latest_version(model_name)
     print(f"Deploying {model_name} v{ver}")
-    agents.deploy(model_name, version=ver, tags=tags)
+    agents.deploy(model_name, ver, tags=tags)
 
 print("All four agents deployed. Supervisor is the primary entry point.")
