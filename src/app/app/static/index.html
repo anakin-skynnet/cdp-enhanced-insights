@@ -1219,7 +1219,12 @@
     // Init
     // ═══════════════════════════════════════════════════════════
     async function initApp() {
-      const config = await api('/api/config');
+      let config = await api('/api/config');
+      if (config && !config.warehouse_connected && config.source === 'databricks') {
+        notify('Warming up warehouse connection…', 'info');
+        await new Promise(r => setTimeout(r, 3000));
+        config = await api('/api/config');
+      }
       const dot = document.getElementById('ds-dot');
       const label = document.getElementById('ds-label');
       if (config) {

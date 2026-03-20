@@ -61,6 +61,17 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled error on %s", request.url.path)
     return JSONResponse(status_code=500, content={"error": str(exc)[:500], "path": request.url.path})
 
+
+@app.on_event("startup")
+async def warmup():
+    """Pre-initialize the SDK client so the first user request doesn't pay cold-start cost."""
+    if _USE_THREADS:
+        try:
+            await asyncio.to_thread(ds.query, "SELECT 1")
+            logger.info("Startup warmup: warehouse connected OK")
+        except Exception as e:
+            logger.warning("Startup warmup: warehouse not ready yet (%s)", e)
+
 _static_dir = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=_static_dir), name="static")
 
