@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet - Customer Entity Resolution
+# MAGIC # Bank Payment Platform - Customer Entity Resolution
 # MAGIC
 # MAGIC Produces `gold_customer_360` (golden record) and `gold_identity_graph` (source_id → golden_id mappings).
 # MAGIC Based on Databricks Customer Entity Resolution Solution Accelerator patterns.

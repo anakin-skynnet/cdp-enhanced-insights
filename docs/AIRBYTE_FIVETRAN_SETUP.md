@@ -1,4 +1,4 @@
-# Airbyte / Fivetran Setup - PagoNxt Getnet CDP
+# Airbyte / Fivetran Setup - Bank Payment Platform CDP
 
 Third-party connectors for Genesys, Apian, Oracle Siebel, and Qualtrics. Data lands in Unity Catalog volumes or tables for Bronze pipeline consumption.
 

@@ -1,6 +1,6 @@
 """
 Mock data provider for offline development and demos.
-Generates realistic PagoNxt Getnet merchant data without a Databricks connection.
+Generates realistic Bank Payment Platform merchant data without a Databricks connection.
 Toggle via CDP_DATA_SOURCE=mock environment variable.
 """
 
@@ -22,7 +22,7 @@ ACTIONS = ["executive_outreach", "premium_win_back", "win_back_campaign",
            "upsell_premium_plan", "cross_sell_products", "onboarding_nurture",
            "activation_incentive", "product_education", "growth_acceleration"]
 CHANNELS = ["sfmc_email", "sfmc_journey", "zender_sms", "phone",
-            "getnet_app_push", "phone_inperson"]
+            "app_push", "phone_inperson"]
 TOPICS = ["billing", "technical_issue", "onboarding", "account_inquiry",
           "complaint", "fraud", "feature_request", "cancellation", "positive_feedback"]
 
@@ -52,7 +52,7 @@ def _email(name: str) -> str:
     slug = name.lower().replace(" ", ".").replace("á", "a").replace("é", "e") \
         .replace("í", "i").replace("ó", "o").replace("ú", "u").replace("ñ", "n")
     slug = "".join(c for c in slug if c.isalnum() or c == ".")
-    return f"{slug[:20]}@getnet.com.ar"
+    return f"{slug[:20]}@bankplatform.com"
 
 
 def _phone() -> str:
@@ -285,7 +285,7 @@ def get_clv_top_merchants(limit=20) -> list[dict]:
 
 def get_channel_attribution() -> list[dict]:
     channels = ["sfmc_email", "google_ads", "meta_ads", "zender_sms",
-                "getnet_app", "referral", "organic"]
+                "platform_app", "referral", "organic"]
     total = 1000000
     result = []
     for ch in channels:
@@ -404,14 +404,17 @@ def get_call_center_queues() -> list[dict]:
 
 
 def get_call_center_sentiment() -> list[dict]:
-    return [
-        {"topic_category": t, "interaction_count": random.randint(100, 800),
-         "positive_pct": round(random.uniform(20, 60), 1),
-         "negative_pct": round(random.uniform(5, 30), 1),
-         "neutral_pct": round(random.uniform(15, 40), 1),
-         "avg_duration": random.randint(120, 480)}
-        for t in TOPICS
-    ]
+    result = []
+    for t in TOPICS:
+        pos = round(random.uniform(20, 55), 1)
+        neg = round(random.uniform(5, 25), 1)
+        neu = round(100 - pos - neg, 1)
+        result.append({
+            "topic_category": t, "interaction_count": random.randint(100, 800),
+            "positive_pct": pos, "negative_pct": neg, "neutral_pct": neu,
+            "avg_duration": random.randint(120, 480),
+        })
+    return result
 
 
 def get_personalization_summary() -> list[dict]:
@@ -457,15 +460,15 @@ def get_propensity_distribution() -> list[dict]:
 def get_ad_creative_library() -> list[dict]:
     creatives = {
         "champions": ("Your loyalty deserves a reward", "Congrats on being a top merchant! Unlock exclusive rates.",
-                      "Getnet VIP: Exclusive rates inside", "VIP rates unlocked!", "Exclusive Rates", "Save up to 15% on processing fees", "celebratory", "Claim Reward"),
+                      "VIP: Exclusive rates inside", "VIP rates unlocked!", "Exclusive Rates", "Save up to 15% on processing fees", "celebratory", "Claim Reward"),
         "at_risk": ("We miss you — come back with a special offer", "It's been a while. Here's a 30-day fee waiver to welcome you back.",
                     "Come back! Fee waiver waiting", "Miss you! Free month inside", "Come Back", "30-day processing fee waiver", "warm", "Reactivate Now"),
-        "new_customers": ("Welcome to Getnet — get started in 3 easy steps", "Your first 1000 transactions are fee-free. Start accepting payments today.",
+        "new_customers": ("Welcome — get started in 3 easy steps", "Your first 1000 transactions are fee-free. Start accepting payments today.",
                           "Welcome! Free transactions await", "1000 free txns for you!", "Get Started Free", "1000 fee-free transactions for new merchants", "friendly", "Start Now"),
         "loyal": ("Thank you for growing with us", "Upgrade to Premium and unlock advanced analytics + priority support.",
                   "Upgrade to Premium today", "Premium analytics await!", "Go Premium", "Advanced analytics and priority support", "professional", "Upgrade Now"),
-        "hibernating": ("Your Getnet account is waiting", "Reactivate today and we'll waive your first month's fees.",
-                        "Reactivate today: free month", "Your Getnet misses you", "Reactivate", "First month fees waived on reactivation", "empathetic", "Reactivate Free"),
+        "hibernating": ("Your account is waiting", "Reactivate today and we'll waive your first month's fees.",
+                        "Reactivate today: free month", "We miss you", "Reactivate", "First month fees waived on reactivation", "empathetic", "Reactivate Free"),
     }
     result = []
     for seg, c in creatives.items():
@@ -485,7 +488,7 @@ def get_campaign_roi_summary() -> list[dict]:
         {"campaign_type": "win_back_campaign", "channel": "sfmc_email",
          "merchants_targeted": 45, "conversions": 12,
          "conversion_rate": 26.7, "total_post_revenue": 185000, "reactivations": 8},
-        {"campaign_type": "loyalty_reward", "channel": "getnet_app_push",
+        {"campaign_type": "loyalty_reward", "channel": "app_push",
          "merchants_targeted": 30, "conversions": 18,
          "conversion_rate": 60.0, "total_post_revenue": 420000, "reactivations": 0},
         {"campaign_type": "premium_win_back", "channel": "phone",
@@ -506,11 +509,31 @@ def get_campaign_outcome_distribution() -> list[dict]:
 
 
 def get_audience_summary() -> list[dict]:
-    return [{
-        "churn_risk": 28, "high_value": 22, "new_onboarding": 15,
-        "winback": 19, "growth": 24, "vip": 8, "immediate_action": 12,
-        "total_activatable": 95,
-    }]
+    ms = _build_merchants()
+    counts = {
+        "churn_risk": len([m for m in ms if m["segment"] in ("at_risk", "cant_lose")]),
+        "high_value": len([m for m in ms if m["txn_volume"] > 50000 and m["segment"] in ("champions", "loyal")]),
+        "new_onboarding": len([m for m in ms if m["segment"] == "new_customers"]),
+        "winback": len([m for m in ms if m["segment"] in ("hibernating", "need_attention") and m["days_since_last_txn"] > 45]),
+        "growth": len([m for m in ms if m["segment"] in ("promising", "potential_loyalists")]),
+        "vip": len([m for m in ms if m["txn_volume"] > 100000]),
+        "immediate_action": len([m for m in ms if m["urgency"] == "immediate"]),
+    }
+    unique_ids = set()
+    for key, filt in {
+        "churn_risk": lambda m: m["segment"] in ("at_risk", "cant_lose"),
+        "high_value": lambda m: m["txn_volume"] > 50000 and m["segment"] in ("champions", "loyal"),
+        "new_onboarding": lambda m: m["segment"] == "new_customers",
+        "winback": lambda m: m["segment"] in ("hibernating", "need_attention") and m["days_since_last_txn"] > 45,
+        "growth": lambda m: m["segment"] in ("promising", "potential_loyalists"),
+        "vip": lambda m: m["txn_volume"] > 100000,
+        "immediate_action": lambda m: m["urgency"] == "immediate",
+    }.items():
+        for m in ms:
+            if filt(m):
+                unique_ids.add(m["golden_id"])
+    counts["total_activatable"] = len(unique_ids)
+    return [counts]
 
 
 def get_audience_list(audience_type: str, limit=100) -> list[dict]:
@@ -546,16 +569,21 @@ ANOMALY_ACTIONS = {
 }
 
 
-def get_anomaly_alerts(anomaly_type: str = "", limit: int = 50) -> list[dict]:
+_anomaly_cache: list[dict] | None = None
+
+
+def _build_anomaly_alerts() -> list[dict]:
+    global _anomaly_cache
+    if _anomaly_cache is not None:
+        return _anomaly_cache
+    rng = random.Random(42)
     ms = _build_merchants()
     alerts = []
     for m in ms:
-        if m["health_score"] > 50 or random.random() > 0.35:
+        if m["health_score"] > 50 or rng.random() > 0.35:
             continue
-        at = random.choice(ANOMALY_TYPES)
-        if anomaly_type and at != anomaly_type:
-            continue
-        dev = round(random.uniform(-85, -20), 1)
+        at = rng.choice(ANOMALY_TYPES)
+        dev = round(rng.uniform(-85, -20), 1)
         alerts.append({
             "golden_id": m["golden_id"],
             "merchant_name": m["merchant_name"],
@@ -569,14 +597,22 @@ def get_anomaly_alerts(anomaly_type: str = "", limit: int = 50) -> list[dict]:
             "recommended_action": ANOMALY_ACTIONS[at],
             "urgency": "immediate" if dev < -60 else "this_week",
             "estimated_revenue_impact": round(abs(dev / 100) * m["txn_volume"] * 0.3, 0),
-            "detected_at": (datetime.now() - timedelta(hours=random.randint(1, 72))).strftime("%Y-%m-%d %H:%M"),
+            "detected_at": (datetime.now() - timedelta(hours=rng.randint(1, 72))).strftime("%Y-%m-%d %H:%M"),
         })
     alerts.sort(key=lambda a: abs(a["deviation_pct"]), reverse=True)
+    _anomaly_cache = alerts
+    return _anomaly_cache
+
+
+def get_anomaly_alerts(anomaly_type: str = "", limit: int = 50) -> list[dict]:
+    alerts = _build_anomaly_alerts()
+    if anomaly_type:
+        alerts = [a for a in alerts if a["anomaly_type"] == anomaly_type]
     return alerts[:limit]
 
 
 def get_anomaly_kpis() -> dict:
-    alerts = get_anomaly_alerts()
+    alerts = _build_anomaly_alerts()
     return {
         "total_alerts": len(alerts),
         "volume_drops": sum(1 for a in alerts if a["anomaly_type"] == "volume_drop"),
@@ -615,7 +651,13 @@ def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
 
 # ── Data Freshness ───────────────────────────────────────────────
 
+_freshness_cache: list[dict] | None = None
+
+
 def get_data_freshness() -> list[dict]:
+    global _freshness_cache
+    if _freshness_cache is not None:
+        return _freshness_cache
     tables = [
         "gold_customer_360", "gold_engagement_metrics", "gold_segments",
         "gold_health_score", "gold_next_best_actions", "gold_customer_ltv",
@@ -625,17 +667,19 @@ def get_data_freshness() -> list[dict]:
         "gold_propensity_scores", "gold_ad_creative_library",
         "gold_campaign_roi", "gold_audience_exports", "gold_anomaly_alerts",
     ]
+    rng = random.Random(42)
     result = []
     now = datetime.now()
-    for i, t in enumerate(tables):
-        hrs = random.randint(0, 2) if random.random() > 0.12 else random.randint(4, 8)
+    for t in tables:
+        hrs = rng.randint(0, 2) if rng.random() > 0.12 else rng.randint(4, 8)
         result.append({
             "table_name": t,
             "last_updated": (now - timedelta(hours=hrs)).strftime("%Y-%m-%d %H:%M"),
-            "row_count": random.randint(50, 5000),
+            "row_count": rng.randint(50, 5000),
             "status": "healthy" if hrs < 4 else "stale",
         })
-    return result
+    _freshness_cache = result
+    return _freshness_cache
 
 
 # ── Agent Feedback ───────────────────────────────────────────────

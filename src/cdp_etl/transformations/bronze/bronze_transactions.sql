@@ -1,4 +1,4 @@
--- Bronze: Payment/transactional data (Getnet acquiring)
+-- Bronze: Payment/transactional data (acquiring)
 -- Source: Databricks transactional tables or Event Hub -> Volume
 -- Path: /Volumes/{catalog}/{schema}/raw/transactions/
 

@@ -107,7 +107,7 @@
           "widget": {
             "name": "title",
             "multilineTextboxSpec": {
-              "lines": ["## PagoNxt Getnet - Churn Risk Analysis"]
+              "lines": ["## Bank Payment Platform - Churn Risk Analysis"]
             }
           },
           "position": {"x": 0, "y": 0, "width": 6, "height": 1}

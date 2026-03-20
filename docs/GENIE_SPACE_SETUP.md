@@ -1,4 +1,4 @@
-# Genie Space Setup - PagoNxt Getnet CDP
+# Genie Space Setup - Bank Payment Platform CDP
 
 Create a Genie Space for natural language analytics on the Customer 360 golden record.
 
@@ -6,7 +6,7 @@ Create a Genie Space for natural language analytics on the Customer 360 golden r
 
 1. Navigate to **AI/BI** → **Genie** → **Spaces**
 2. Click **Create Space**
-3. **Title:** Getnet Merchant 360 Analytics
+3. **Title:** Merchant 360 Analytics
 4. **Description:** Ask questions about merchant data, churn risk, segments, and engagement
 5. **SQL Warehouse:** Select shared warehouse
 6. **Tables:** Add:
@@ -29,7 +29,7 @@ url = "https://<workspace>.azuredatabricks.net/api/2.0/genie/spaces"
 headers = {"Authorization": f"Bearer {token}"}
 payload = {
     "warehouse_id": "<warehouse_id>",
-    "title": "Getnet Merchant 360 Analytics",
+    "title": "Merchant 360 Analytics",
     "description": "Ask questions about merchant data, churn risk, segments, and engagement",
     "serialized_space": {
         "version": 1,
@@ -57,8 +57,8 @@ Add to `resources/genie_spaces.yml`:
 ```yaml
 resources:
   genie_spaces:
-    getnet_merchant_360:
-      title: "[${bundle.target}] Getnet Merchant 360 Analytics"
+    merchant_360:
+      title: "[${bundle.target}] Merchant 360 Analytics"
       description: "Ask questions about merchant data, churn risk, segments, and engagement"
       warehouse_id: ${var.warehouse_id}
       # serialized_space from API or UI export

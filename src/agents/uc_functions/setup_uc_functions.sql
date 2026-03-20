@@ -1,4 +1,4 @@
--- PagoNxt Getnet CDP - Unity Catalog Functions for AI Agents
+-- Bank Payment Platform CDP - Unity Catalog Functions for AI Agents
 -- These functions are registered as tools the agents call to query
 -- the golden record, engagement metrics, and segments.
 -- Run this notebook once to create the functions.

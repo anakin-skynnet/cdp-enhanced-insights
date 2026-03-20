@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet - Merchant Churn Model Training
+# MAGIC # Bank Payment Platform - Merchant Churn Model Training
 # MAGIC
 # MAGIC Trains XGBoost churn prediction model on gold_customer_360 + gold_engagement_metrics.
 # MAGIC Registers model to MLflow for Model Serving deployment.
@@ -25,7 +25,7 @@ def _widget(name, default):
 
 catalog = _widget("catalog", "ahs_demos_catalog")
 schema = _widget("schema", "cdp_360")
-model_name = f"{catalog}.{schema}.getnet_merchant_churn"
+model_name = f"{catalog}.{schema}.merchant_churn"
 CHURN_THRESHOLD_DAYS = 90
 
 # COMMAND ----------
@@ -118,7 +118,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=stratify_param,
 )
 
-mlflow.set_experiment("/Shared/getnet_cdp_churn")
+mlflow.set_experiment("/Shared/cdp_churn")
 
 with mlflow.start_run(run_name="xgb_churn_optimized"):
     params = {

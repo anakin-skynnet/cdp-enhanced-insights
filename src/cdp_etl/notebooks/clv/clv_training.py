@@ -1,9 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet CDP - Customer Lifetime Value Model
+# MAGIC # Bank Payment Platform CDP - Customer Lifetime Value Model
 # MAGIC
 # MAGIC Implements the Databricks [Customer Lifetime Value Solution Accelerator](https://www.databricks.com/solutions/accelerators/customer-lifetime-value)
-# MAGIC adapted for PagoNxt Getnet's merchant payment data.
+# MAGIC adapted for the Bank Payment Platform's merchant payment data.
 # MAGIC
 # MAGIC **Method**: BG/NBD model (purchase probability) + Gamma-Gamma model (monetary value)
 # MAGIC implemented natively with scipy (no external BTYD dependency for serverless compatibility).

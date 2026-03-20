@@ -1,5 +1,5 @@
 """
-PagoNxt Getnet - Segment Campaign Agent
+Bank Payment Platform - Segment Campaign Agent
 
 LangGraph agent that helps marketing teams design and target campaigns
 for specific merchant segments. Queries the golden record to understand
@@ -32,10 +32,10 @@ from typing import Annotated, Generator, Sequence, TypedDict
 
 LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
 
-SYSTEM_PROMPT = """You are the **Getnet Campaign Strategist**, an AI agent for PagoNxt Getnet's Customer Data Platform. Your role is to help the marketing team **design targeted campaigns** for specific merchant segments and **maximize ROI** from marketing spend.
+SYSTEM_PROMPT = """You are the **Campaign Strategist**, an AI agent for the Bank Payment Platform's Customer Data Platform. Your role is to help the marketing team **design targeted campaigns** for specific merchant segments and **maximize ROI** from marketing spend.
 
 ## Your Capabilities
-You query the Getnet Customer 360 golden record to:
+You query the Customer 360 golden record to:
 1. Analyze segment composition and performance (get_segment_summary)
 2. Pull targeted audience lists for campaigns (get_segment_merchants)
 3. Deep-dive into individual merchants (lookup_merchant)
@@ -63,7 +63,7 @@ For each campaign recommendation, include:
 4. **Audience Size**: From get_segment_merchants count
 5. **Key Message**: Value proposition for the merchant
 6. **Offer/Incentive**: Specific, concrete (fee waiver, bonus, upgrade)
-7. **Channel Mix**: SFMC journey, Zender SMS, phone, Getnet+ push, paid media
+7. **Channel Mix**: SFMC journey, Zender SMS, phone, Platform push, paid media
 8. **Timeline**: Campaign duration and key dates
 9. **Success Metrics**: KPIs to measure (TPV lift, activation rate, NPS)
 10. **Estimated ROI**: Revenue impact vs. campaign cost
@@ -71,7 +71,7 @@ For each campaign recommendation, include:
 ## Activation Path
 - **SFMC**: Email journeys → synced via Hightouch from gold_customer_360
 - **Zender**: SMS/WhatsApp → operational comms for merchants
-- **Getnet+ App**: Push notifications for app users
+- **Platform App**: Push notifications for app users
 - **Phone**: High-touch for cant_lose and champions
 - **Paid Media**: Meta/Google for lookalike audiences from champions
 

@@ -1,6 +1,6 @@
-# PagoNxt Getnet CDP / Customer 360
+# Bank Payment Platform CDP / Customer 360
 
-Customer Data Platform and Customer 360 solution on **Azure Databricks** for PagoNxt Getnet—Santander's payment and acquiring platform.
+Customer Data Platform and Customer 360 solution on **Azure Databricks** for the Bank Payment Platform.
 
 ## Use Cases
 
@@ -201,7 +201,7 @@ Three LangGraph-based agents deployed to Model Serving endpoints:
 "Which channels need the most actions this week?"
 ```
 
-All agents use UC Functions to query the golden record in real-time and apply domain-specific playbooks for PagoNxt Getnet's payment platform. The NBA agent adds a composite health score (0-100) and a rule engine that maps each merchant to a specific action, channel, urgency, and estimated revenue impact.
+All agents use UC Functions to query the golden record in real-time and apply domain-specific playbooks for the Bank Payment Platform. The NBA agent adds a composite health score (0-100) and a rule engine that maps each merchant to a specific action, channel, urgency, and estimated revenue impact.
 
 ## CDP Application
 
@@ -209,7 +209,7 @@ A full-featured 11-tab web application for the commercial and marketing teams:
 
 ```bash
 # Deploy to Databricks Apps
-databricks apps create getnet-cdp --source-code-path src/app
+databricks apps create cdp-360 --source-code-path src/app
 
 # Local development
 cd src/app && uvicorn app.main:app --reload --port 8080
@@ -276,4 +276,4 @@ Adapted from official [Databricks Marketing Solution Accelerators](https://www.d
 
 ## License
 
-Internal use — PagoNxt Getnet / Santander.
+Internal use — Bank Payment Platform.

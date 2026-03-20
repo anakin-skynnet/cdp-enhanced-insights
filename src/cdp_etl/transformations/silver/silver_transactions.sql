@@ -1,4 +1,4 @@
--- Silver: Cleaned transactional data (Getnet payment volume)
+-- Silver: Cleaned transactional data (payment volume)
 -- Merchant-level payment metrics for RFM and churn
 
 CREATE OR REFRESH STREAMING TABLE silver_transactions

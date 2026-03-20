@@ -1,9 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet CDP - Multi-Touch Attribution
+# MAGIC # Bank Payment Platform CDP - Multi-Touch Attribution
 # MAGIC
 # MAGIC Implements the Databricks [Multi-Touch Attribution Solution Accelerator](https://www.databricks.com/solutions/accelerators/multi-touch-attribution)
-# MAGIC adapted for PagoNxt Getnet's marketing touchpoint data.
+# MAGIC adapted for the Bank Payment Platform's marketing touchpoint data.
 # MAGIC
 # MAGIC **Methods**:
 # MAGIC - Heuristic: first-touch, last-touch, linear, time-decay

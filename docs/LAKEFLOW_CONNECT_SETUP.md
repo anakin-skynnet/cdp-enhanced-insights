@@ -1,4 +1,4 @@
-# Lakeflow Connect Setup - PagoNxt Getnet CDP
+# Lakeflow Connect Setup - Bank Payment Platform CDP
 
 Lakeflow Connect pipelines are created via the Databricks UI or REST API. This guide documents the required configuration for Salesforce and Zendesk connectors.
 

@@ -1,4 +1,4 @@
-# PagoNxt Getnet CDP - Jobs for Data Generation, ML, Identity Resolution, and AI Agents
+# Bank Payment Platform CDP - Jobs for Data Generation, ML, Identity Resolution, and AI Agents
 # Execution order: 00 (data gen), pipelines 01-02, job 03 (identity resolution), pipeline 04 (gold), then jobs 05-14
 
 resources:

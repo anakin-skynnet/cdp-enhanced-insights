@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet - AI Ad Creative Generation
+# MAGIC # Bank Payment Platform - AI Ad Creative Generation
 # MAGIC
 # MAGIC Uses Databricks Foundation Model API to generate personalized marketing content
 # MAGIC at scale for each merchant segment.
@@ -66,7 +66,7 @@ try:
         f"""ai_query(
           '{llm_endpoint}',
           CONCAT(
-            'You are a marketing copywriter for Getnet, a payment platform for merchants. ',
+            'You are a marketing copywriter for a payment platform for merchants. ',
             'Generate personalized marketing content for the "', segment, '" segment. ',
             'This segment has ', CAST(merchant_count AS STRING), ' merchants, ',
             'avg payment volume $', CAST(COALESCE(avg_volume, 0) AS STRING), ', ',
@@ -116,14 +116,14 @@ except Exception as e:
     print("Generating fallback template-based creative...")
 
     templates = {
-        "champions": ("Your loyalty deserves more", "Exclusive perks for our top merchants!", "You earned a reward!", "Top Merchant Perks", "Unlock exclusive benefits for Getnet champions.", "celebratory", "Claim Your Reward"),
-        "loyal": ("Thanks for your continued partnership", "Upgrade your plan for more benefits!", "Loyalty bonus inside!", "Loyal Merchant Bonus", "Grow faster with premium Getnet features.", "warm", "Upgrade Now"),
+        "champions": ("Your loyalty deserves more", "Exclusive perks for our top merchants!", "You earned a reward!", "Top Merchant Perks", "Unlock exclusive benefits for our champions.", "celebratory", "Claim Your Reward"),
+        "loyal": ("Thanks for your continued partnership", "Upgrade your plan for more benefits!", "Loyalty bonus inside!", "Loyal Merchant Bonus", "Grow faster with premium platform features.", "warm", "Upgrade Now"),
         "potential_loyalists": ("You're on track for great things", "See how other merchants grew 3x with us", "Growth tips inside!", "Grow Your Business", "Get personalized tips to boost your sales.", "encouraging", "See Tips"),
-        "at_risk": ("We miss you — let's reconnect", "Special offer: 50% off fees this month", "Come back & save!", "Welcome Back Deal", "Return to Getnet and save on fees.", "empathetic", "Reactivate Now"),
-        "hibernating": ("It's been a while — check what's new", "New features since you last visited", "New tools await!", "What's New at Getnet", "Discover powerful new payment features.", "re-engaging", "Explore Now"),
-        "need_attention": ("Quick check-in on your account", "Optimize your setup in 5 minutes", "Quick optimization tip", "Optimize Your Setup", "Simple steps to get more from Getnet.", "helpful", "Optimize Now"),
+        "at_risk": ("We miss you — let's reconnect", "Special offer: 50% off fees this month", "Come back & save!", "Welcome Back Deal", "Return and save on fees.", "empathetic", "Reactivate Now"),
+        "hibernating": ("It's been a while — check what's new", "New features since you last visited", "New tools await!", "What's New", "Discover powerful new payment features.", "re-engaging", "Explore Now"),
+        "need_attention": ("Quick check-in on your account", "Optimize your setup in 5 minutes", "Quick optimization tip", "Optimize Your Setup", "Simple steps to get more from our platform.", "helpful", "Optimize Now"),
     }
-    default = ("Grow your business with Getnet", "Discover how Getnet can help you grow", "Getnet has new features!", "Grow With Getnet", "Payment solutions that help you succeed.", "professional", "Learn More")
+    default = ("Grow your business with us", "Discover how we can help you grow", "New features available!", "Grow With Us", "Payment solutions that help you succeed.", "professional", "Learn More")
 
     from pyspark.sql.types import StructType, StructField, StringType, LongType, DoubleType, TimestampType
 
@@ -164,7 +164,7 @@ except Exception as e:
 
 # COMMAND ----------
 
-mlflow.set_experiment(f"/Shared/getnet_cdp_ad_creative")
+mlflow.set_experiment(f"/Shared/cdp_ad_creative")
 
 with mlflow.start_run(run_name="ad_creative_generation"):
     mlflow.log_param("llm_endpoint", llm_endpoint)

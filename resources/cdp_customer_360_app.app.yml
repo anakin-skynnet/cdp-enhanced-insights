@@ -1,11 +1,11 @@
-# PagoNxt Getnet CDP - Databricks App (DABs managed)
+# Bank Payment Platform CDP - Databricks App (DABs managed)
 # Customer 360 full-stack application
 
 resources:
   apps:
     cdp_customer_360_app:
-      name: getnet-cdp-360
-      description: "PagoNxt Getnet Customer 360 — Enhanced Customer Intelligence Platform. 13 analytics pages, AI chat (Supervisor Agent + Genie), anomaly detection, and full merchant 360 view."
+      name: bpp-cdp-360
+      description: "Bank Payment Platform Customer 360 — Enhanced Customer Intelligence Platform. 13 analytics pages, AI chat (Supervisor Agent + Genie), anomaly detection, and full merchant 360 view."
       source_code_path: ../src/app
       resources:
         - name: sql-warehouse
@@ -18,7 +18,7 @@ resources:
             permission: CAN_QUERY
         - name: genie-space
           genie_space:
-            name: "Getnet Merchant 360 Analytics"
+            name: "Merchant 360 Analytics"
             space_id: 01f12432dc001e7d927a3ce0f42926ad
             permission: CAN_RUN
       permissions:

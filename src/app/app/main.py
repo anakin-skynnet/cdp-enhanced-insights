@@ -1,5 +1,5 @@
 """
-PagoNxt Getnet CDP - Customer 360 Application
+Bank Payment Platform CDP - Customer 360 Application
 FastAPI backend with Pydantic response models and mock/Databricks data toggle.
 
 Set CDP_DATA_SOURCE=mock for offline development (no Databricks connection needed).
@@ -50,9 +50,9 @@ from fastapi.responses import JSONResponse
 from starlette.requests import Request
 
 app = FastAPI(
-    title="Santander Getnet CDP - Customer 360",
+    title="Bank Payment Platform CDP - Customer 360",
     version="2.1.0",
-    description="Santander PagoNxt Getnet Customer Data Platform API. "
+    description="Bank Payment Platform Customer Data Platform API. "
                 f"Data source: **{DATA_SOURCE}**",
 )
 
@@ -283,7 +283,10 @@ async def personalization_summary():
 
 @app.get("/api/personalization/{golden_id}")
 async def personalization_signals(golden_id: str):
-    return await _run(ds.get_personalization_for_merchant, golden_id)
+    result = await _run(ds.get_personalization_for_merchant, golden_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Merchant not found")
+    return result
 
 
 @app.get("/api/propensity", response_model=list[M.PropensityDistribution])
@@ -341,6 +344,9 @@ async def anomaly_alerts(
 
 @app.get("/api/merchants/{golden_id}/timeline", response_model=list[M.TimelineEvent])
 async def merchant_timeline(golden_id: str, limit: int = Query(default=30, le=100)):
+    merchant = await _run(ds.get_merchant_detail, golden_id)
+    if not merchant:
+        raise HTTPException(status_code=404, detail="Merchant not found")
     return await _run(ds.get_merchant_timeline, golden_id, limit)
 
 
@@ -370,8 +376,10 @@ async def export_csv(
         rows = await _run(ds.get_anomaly_alerts, limit=limit)
     elif resource_type == "support":
         rows = await _run(ds.get_support_merchants, limit=limit)
+    elif resource_type == "campaign-roi":
+        rows = await _run(ds.get_campaign_roi_summary)
     else:
-        raise HTTPException(status_code=400, detail="Supported: audience, merchants, nba, anomaly-alerts, support")
+        raise HTTPException(status_code=400, detail="Supported: audience, merchants, nba, anomaly-alerts, support, campaign-roi")
     if not rows:
         raise HTTPException(status_code=404, detail="No data found")
     output = io.StringIO()
@@ -489,8 +497,13 @@ async def genie_ask(req: M.GenieRequest):
 def _mock_agent_response(question: str) -> dict:
     q = question.lower()
     if "churn" in q or "risk" in q:
-        text = ("Based on the Customer 360 data, I've identified **44 at-risk merchants** "
+        text = ("Based on the Customer 360 data, the **overall churn risk rate is 36.7%** "
+                "(44 of 120 merchants in at-risk, can't-lose, or hibernating segments), "
                 "representing **$2.3M in revenue at risk**.\n\n"
+                "**Key Churn Metrics:**\n"
+                "- At-risk merchants: **44** (36.7%)\n"
+                "- Avg health score (at-risk): **22.4** vs portfolio avg **47.8**\n"
+                "- Revenue concentration at risk: **18.5%** of total volume\n\n"
                 "**Top 3 Priority Actions:**\n"
                 "| Merchant | Health | Action | Revenue Impact |\n"
                 "|----------|--------|--------|----------------|\n"
@@ -498,7 +511,7 @@ def _mock_agent_response(question: str) -> dict:
                 "| Supermercado El Progreso #5 | 22 (poor) | Premium win-back | $38,100 |\n"
                 "| Hotel Vista Mar #7 | 25 (poor) | Win-back campaign | $31,500 |\n\n"
                 "I recommend starting with executive outreach to the critical-tier merchants today. "
-                "Would you like me to draft a retention plan for any specific merchant?")
+                "Would you like me to drill into a specific segment or draft a retention plan?")
     elif "campaign" in q or "segment" in q:
         text = ("I've analyzed the segment composition. Here's a campaign recommendation:\n\n"
                 "**Campaign: Holiday Reactivation Blitz**\n"
@@ -521,7 +534,7 @@ def _mock_agent_response(question: str) -> dict:
                 "**Total revenue at stake:** $485K across 30 merchants.\n"
                 "Would you like to drill into any specific action or merchant?")
     else:
-        text = ("I'm the **Getnet CDP Intelligence Hub**. I can help you with:\n\n"
+        text = ("I'm the **CDP Intelligence Hub**. I can help you with:\n\n"
                 "- **Churn prevention** - identify at-risk merchants and retention actions\n"
                 "- **Campaign strategy** - design targeted campaigns for any segment\n"
                 "- **Next best actions** - prioritized action queues for your team\n"

@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet CDP — Synthetic Data Generator
+# MAGIC # Bank Payment Platform CDP — Synthetic Data Generator
 # MAGIC
 # MAGIC Generates realistic synthetic data for all five source systems and writes
 # MAGIC them as files to Unity Catalog Volumes, exactly where the Bronze Auto Loader
@@ -11,7 +11,7 @@
 # MAGIC | Salesforce Contacts | JSON | `/Volumes/{catalog}/{schema}/raw/salesforce/contacts/` |
 # MAGIC | Salesforce Accounts | JSON | `/Volumes/{catalog}/{schema}/raw/salesforce/accounts/` |
 # MAGIC | Zendesk Tickets | JSON | `/Volumes/{catalog}/{schema}/raw/zendesk/tickets/` |
-# MAGIC | Getnet Transactions | Parquet | `/Volumes/{catalog}/{schema}/raw/transactions/` |
+# MAGIC | Transactions | Parquet | `/Volumes/{catalog}/{schema}/raw/transactions/` |
 # MAGIC | Genesys Interactions | JSON | `/Volumes/{catalog}/{schema}/raw/genesys/` |
 # MAGIC | NBA Action Log | Delta Table | `{catalog}.{schema}.nba_action_log` |
 # MAGIC
@@ -212,7 +212,7 @@ print(f"Wrote {len(sf_contacts)} Salesforce contacts to {path}")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 6. Getnet Transactions (Parquet)
+# MAGIC ## 6. Transactions (Parquet)
 # MAGIC
 # MAGIC Payment transactions over the last 12 months with realistic volume patterns.
 
@@ -426,7 +426,7 @@ NBA_ACTION_TYPES = [
 ]
 NBA_CHANNELS = [
     "sfmc_email", "sfmc_email", "sfmc_email", "zender_sms", "zender_sms",
-    "phone", "phone_sfmc", "getnet_app_push", "sfmc_journey",
+    "phone", "phone_sfmc", "app_push", "sfmc_journey",
 ]
 CAMPAIGN_NAMES = [
     "Q4 Win-Back Blitz", "Holiday Loyalty Bonus", "New Year Activation",

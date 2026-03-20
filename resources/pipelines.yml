@@ -1,4 +1,4 @@
-# PagoNxt Getnet CDP - Lakeflow Spark Declarative Pipelines
+# Bank Payment Platform CDP - Lakeflow Spark Declarative Pipelines
 # Bronze, Silver, and Gold pipelines for medallion architecture
 
 resources:

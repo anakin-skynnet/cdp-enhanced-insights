@@ -1,4 +1,4 @@
-# SQL Alerts Setup - PagoNxt Getnet CDP
+# SQL Alerts Setup - Bank Payment Platform CDP
 
 Create SQL alerts manually in the Databricks workspace for pipeline failure monitoring.
 

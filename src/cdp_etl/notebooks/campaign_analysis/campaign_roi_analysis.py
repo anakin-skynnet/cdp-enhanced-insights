@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet - Marketing Campaign ROI Analysis
+# MAGIC # Bank Payment Platform - Marketing Campaign ROI Analysis
 # MAGIC
 # MAGIC Analyzes campaign effectiveness by measuring:
 # MAGIC - **Conversion rate** (did merchant transact post-campaign?)
@@ -124,7 +124,7 @@ print("Campaign ROI analysis complete.")
 
 import mlflow
 
-mlflow.set_experiment("/Shared/getnet_cdp_campaign_roi")
+mlflow.set_experiment("/Shared/cdp_campaign_roi")
 
 with mlflow.start_run(run_name="campaign_roi_analysis"):
     summary_pd = campaign_summary.toPandas()

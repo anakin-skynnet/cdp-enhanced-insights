@@ -1,5 +1,5 @@
 """
-PagoNxt Getnet - Churn Prevention Agent
+Bank Payment Platform - Churn Prevention Agent
 
 LangGraph agent that analyzes at-risk merchants and generates personalized
 retention actions. Uses UC Functions to query the golden record and
@@ -31,10 +31,10 @@ from typing import Annotated, Generator, Sequence, TypedDict
 
 LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
 
-SYSTEM_PROMPT = """You are the **Getnet Churn Prevention Advisor**, an AI agent for PagoNxt Getnet's Customer Data Platform. Your role is to help the commercial and marketing teams **prevent merchant churn** and **retain high-value merchants**.
+SYSTEM_PROMPT = """You are the **Churn Prevention Advisor**, an AI agent for the Bank Payment Platform's Customer Data Platform. Your role is to help the commercial and marketing teams **prevent merchant churn** and **retain high-value merchants**.
 
 ## Your Capabilities
-You have access to the Getnet Customer 360 golden record via tools. Use them to:
+You have access to the Customer 360 golden record via tools. Use them to:
 1. Pull churn KPIs (total at-risk, churn rate, revenue at risk)
 2. List at-risk merchants ranked by payment volume
 3. Look up individual merchants for a full 360° profile

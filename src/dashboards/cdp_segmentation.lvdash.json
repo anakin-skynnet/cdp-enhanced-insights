@@ -115,7 +115,7 @@
           "widget": {
             "name": "title",
             "multilineTextboxSpec": {
-              "lines": ["## PagoNxt Getnet - Merchant Segmentation"]
+              "lines": ["## Bank Payment Platform - Merchant Segmentation"]
             }
           },
           "position": {"x": 0, "y": 0, "width": 6, "height": 1}

@@ -1,4 +1,4 @@
-# PagoNxt Getnet CDP - AI/BI Dashboards
+# Bank Payment Platform CDP - AI/BI Dashboards
 # Customer 360, Churn Risk, and Segmentation dashboards
 # Note: If CLI v0.281.0+, add dataset_catalog/dataset_schema to avoid
 # fully-qualified table names in queries.
@@ -6,7 +6,7 @@
 resources:
   dashboards:
     cdp_customer_360:
-      display_name: "[${bundle.target}] Getnet Customer 360 Overview"
+      display_name: "[${bundle.target}] Customer 360 Overview"
       file_path: ../src/dashboards/cdp_customer_360.lvdash.json
       warehouse_id: ${var.warehouse_id}
       permissions:
@@ -14,7 +14,7 @@ resources:
           group_name: "users"
 
     cdp_churn_risk:
-      display_name: "[${bundle.target}] Getnet Churn Risk Analysis"
+      display_name: "[${bundle.target}] Churn Risk Analysis"
       file_path: ../src/dashboards/cdp_churn_risk.lvdash.json
       warehouse_id: ${var.warehouse_id}
       permissions:
@@ -22,7 +22,7 @@ resources:
           group_name: "users"
 
     cdp_segmentation:
-      display_name: "[${bundle.target}] Getnet Merchant Segmentation"
+      display_name: "[${bundle.target}] Merchant Segmentation"
       file_path: ../src/dashboards/cdp_segmentation.lvdash.json
       warehouse_id: ${var.warehouse_id}
       permissions:
@@ -30,7 +30,7 @@ resources:
           group_name: "users"
 
     cdp_next_best_actions:
-      display_name: "[${bundle.target}] Getnet Next Best Actions"
+      display_name: "[${bundle.target}] Next Best Actions"
       file_path: ../src/dashboards/cdp_next_best_actions.lvdash.json
       warehouse_id: ${var.warehouse_id}
       permissions:
@@ -38,7 +38,7 @@ resources:
           group_name: "users"
 
     cdp_support_analytics:
-      display_name: "[${bundle.target}] Getnet Support Analytics"
+      display_name: "[${bundle.target}] Support Analytics"
       file_path: ../src/dashboards/cdp_support_analytics.lvdash.json
       warehouse_id: ${var.warehouse_id}
       permissions:
@@ -46,7 +46,7 @@ resources:
           group_name: "users"
 
     cdp_call_center:
-      display_name: "[${bundle.target}] Getnet Call Center Analytics"
+      display_name: "[${bundle.target}] Call Center Analytics"
       file_path: ../src/dashboards/cdp_call_center.lvdash.json
       warehouse_id: ${var.warehouse_id}
       permissions:

@@ -1,4 +1,4 @@
-# PagoNxt Getnet CDP - SQL Alerts for pipeline monitoring
+# Bank Payment Platform CDP - SQL Alerts for pipeline monitoring
 # Alerts on pipeline failures (requires warehouse_id to be set)
 
 resources:

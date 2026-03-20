@@ -1,9 +1,9 @@
 resources:
   genie_spaces:
-    getnet_merchant_360:
-      display_name: "[${bundle.target}] Getnet Merchant 360 Analytics"
+    merchant_360:
+      display_name: "[${bundle.target}] Merchant 360 Analytics"
       description: |
-        Natural language analytics for the PagoNxt Getnet Customer 360 platform.
+        Natural language analytics for the Bank Payment Platform Customer 360.
         Ask questions about merchant health, churn risk, segments, transactions,
         support quality, call center performance, campaign ROI, and more.
       warehouse_id: ${var.warehouse_id}
@@ -29,7 +29,7 @@ resources:
         - "${var.catalog}.${var.schema}.nba_action_log"
         - "${var.catalog}.${var.schema}.agent_feedback_log"
       sql_instructions: |
-        -- Merchant-centric C360 data model for PagoNxt Getnet payment platform.
+        -- Merchant-centric C360 data model for Bank Payment Platform.
         -- All merchants have a golden_id as their primary key.
         -- gold_customer_360 is the master entity table from identity resolution.
         -- gold_engagement_metrics has transaction aggregates (txn_volume, txn_count, days_since_last_txn).

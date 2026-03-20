@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet CDP - Advanced Behavioral Segmentation
+# MAGIC # Bank Payment Platform CDP - Advanced Behavioral Segmentation
 # MAGIC
 # MAGIC Rule-based behavioral clustering using percentile bands on engagement features.
 # MAGIC Avoids Spark ML / sklearn dependencies for maximum serverless compatibility.

@@ -84,7 +84,7 @@
           "widget": {
             "name": "title",
             "multilineTextboxSpec": {
-              "lines": ["## PagoNxt Getnet - Customer 360 Overview"]
+              "lines": ["## Bank Payment Platform - Customer 360 Overview"]
             }
           },
           "position": {"x": 0, "y": 0, "width": 6, "height": 1}

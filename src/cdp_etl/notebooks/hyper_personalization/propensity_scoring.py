@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet - Hyper-Personalization: Propensity Scoring
+# MAGIC # Bank Payment Platform - Hyper-Personalization: Propensity Scoring
 # MAGIC
 # MAGIC Trains multi-output propensity models (upsell, churn, activation) using XGBoost
 # MAGIC on the gold feature set. Writes propensity scores to `gold_propensity_scores`
@@ -96,7 +96,7 @@ X = pdf[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-mlflow.set_experiment("/Shared/getnet_cdp_propensity")
+mlflow.set_experiment("/Shared/cdp_propensity")
 
 propensity_results = {}
 for label_col, model_name in [
@@ -155,7 +155,7 @@ for label_col, model_name in [
         mlflow.log_metric("positive_rate", float(y.mean()))
         mlflow.sklearn.log_model(scaler, "scaler")
         sig = infer_signature(X_train, model.predict(X_train))
-        mlflow.sklearn.log_model(model, "model", signature=sig, registered_model_name=f"{catalog}.{schema}.getnet_{model_name}")
+        mlflow.sklearn.log_model(model, "model", signature=sig, registered_model_name=f"{catalog}.{schema}.{model_name}")
 
         pdf[f"{model_name}_score"] = model.predict_proba(X_scaled)[:, 1]
         propensity_results[model_name] = {"auc": auc, "f1": f1}

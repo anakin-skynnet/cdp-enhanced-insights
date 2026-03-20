@@ -114,7 +114,7 @@ enriched AS (
       WHEN 'sunset_survey' THEN 'sfmc_email'
       WHEN 'support_escalation' THEN 'phone'
       WHEN 'proactive_checkin' THEN 'phone'
-      WHEN 'loyalty_reward' THEN 'getnet_app_push'
+      WHEN 'loyalty_reward' THEN 'app_push'
       WHEN 'referral_program' THEN 'sfmc_email'
       WHEN 'upsell_premium_plan' THEN 'phone_sfmc'
       WHEN 'cross_sell_products' THEN 'sfmc_email'

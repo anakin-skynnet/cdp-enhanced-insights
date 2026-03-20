@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet CDP - Deploy AI Agents
+# MAGIC # Bank Payment Platform CDP - Deploy AI Agents
 # MAGIC
 # MAGIC Logs and deploys **four** agents to Databricks Model Serving:
 # MAGIC 1. **CDP Supervisor** (primary entry point - orchestrates all specialists + Genie)
@@ -199,10 +199,10 @@ def _latest_version(model_name: str) -> str:
     return str(max(int(v.version) for v in versions))
 
 _AGENT_MODELS = [
-    (f"{UC_PREFIX}.cdp_supervisor_agent", {"use_case": "cdp_supervisor", "cdp": "getnet", "role": "primary"}),
-    (f"{UC_PREFIX}.churn_prevention_agent", {"use_case": "churn_prevention", "cdp": "getnet"}),
-    (f"{UC_PREFIX}.segment_campaign_agent", {"use_case": "segment_campaigns", "cdp": "getnet"}),
-    (f"{UC_PREFIX}.next_best_action_agent", {"use_case": "next_best_action", "cdp": "getnet"}),
+    (f"{UC_PREFIX}.cdp_supervisor_agent", {"use_case": "cdp_supervisor", "cdp": "bank_payment_platform", "role": "primary"}),
+    (f"{UC_PREFIX}.churn_prevention_agent", {"use_case": "churn_prevention", "cdp": "bank_payment_platform"}),
+    (f"{UC_PREFIX}.segment_campaign_agent", {"use_case": "segment_campaigns", "cdp": "bank_payment_platform"}),
+    (f"{UC_PREFIX}.next_best_action_agent", {"use_case": "next_best_action", "cdp": "bank_payment_platform"}),
 ]
 
 for model_name, tags in _AGENT_MODELS:

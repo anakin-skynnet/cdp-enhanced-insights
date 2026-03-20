@@ -1,4 +1,4 @@
-# Hightouch Setup - PagoNxt Getnet CDP Activation
+# Hightouch Setup - Bank Payment Platform CDP Activation
 
 Hightouch enables reverse ETL from Databricks to Salesforce Marketing Cloud, Meta, Google Ads, and Power BI.
 

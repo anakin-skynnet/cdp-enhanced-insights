@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Getnet CDP - Customer 360</title>
+  <title>CDP - Customer 360</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
@@ -43,7 +43,7 @@
   </script>
   <style>
     :root {
-      /* Santander corporate palette — dark mode */
+      /* Corporate palette — dark mode */
       --background: 0 0% 4.5%;
       --foreground: 0 0% 97%;
       --card: 0 0% 6%;
@@ -130,10 +130,12 @@
   <!-- Sidebar -->
   <aside id="sidebar" class="w-64 shrink-0 border-r border-border bg-sidebar flex flex-col h-full">
     <div class="flex items-center gap-3 px-4 py-5 border-b border-border">
-      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm tracking-tight">G</div>
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      </div>
       <div class="flex-1">
-        <div class="font-semibold text-sm text-sidebar-foreground tracking-tight">Getnet <span class="text-primary">CDP</span></div>
-        <div class="text-xs text-muted-foreground font-light">Customer 360 &middot; Santander</div>
+        <div class="font-semibold text-sm text-sidebar-foreground tracking-tight">Bank Payment <span class="text-primary">CDP</span></div>
+        <div class="text-xs text-muted-foreground font-light">Customer 360</div>
       </div>
       <button onclick="toggleNotifPanel()" class="relative p-1.5 rounded-md hover:bg-sidebar-accent transition-colors" title="Notifications" aria-label="Open notifications">
         <svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-5-5.917V4a1 1 0 10-2 0v1.083A6 6 0 006 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
@@ -706,12 +708,15 @@
           </div>
         </div>`;
       if (quality) {
+        const tierColors = { excellent: '#22c55e', good: '#3b82f6', fair: '#eab308', poor: '#ef4444' };
         createChart('chart-support-quality', 'bar', {
           labels: quality.map(q => q.support_quality_tier),
           datasets: [
-            { label: 'Merchants', data: quality.map(q => q.merchant_count), backgroundColor: CHART_COLORS.slice(0, quality.length), borderRadius: 6 },
+            { label: 'Merchants', data: quality.map(q => q.merchant_count),
+              backgroundColor: quality.map(q => tierColors[q.support_quality_tier] || '#6d6d6d'),
+              borderRadius: 6 },
           ]
-        });
+        }, { plugins: { legend: { display: false } } });
       }
       if (merchants) {
         const rows = merchants.map(m => `
@@ -803,7 +808,7 @@
             ${card('Campaign ROI by Type', '<div style="height:300px"><canvas id="chart-roi"></canvas></div>')}
             ${card('Campaign Outcomes', '<div style="height:300px"><canvas id="chart-outcomes"></canvas></div>')}
           </div>
-          ${card('Campaign Details', '<div id="roi-table"></div>')}
+          ${card('<div class="flex items-center justify-between w-full"><span>Campaign Details</span><a href="/api/export/campaign-roi" class="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors font-normal">Export CSV</a></div>', '<div id="roi-table"></div>')}
         </div>`;
       if (roi) {
         createChart('chart-roi', 'bar', {
@@ -1285,12 +1290,12 @@
               <svg class="w-7 h-7 text-primary" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.5 2 6 5.5 6 9c0 2.5 1.2 4.5 3 5.7V17a1 1 0 001 1h4a1 1 0 001-1v-2.3c1.8-1.2 3-3.2 3-5.7 0-3.5-2.5-7-6-7zm-1 17h2v1h-2v-1zm0 2h2v1h-2v-1z"/></svg>
             </div>
             <div>
-              <h1 class="text-2xl font-bold tracking-tight"><span class="text-primary">Santander</span> Getnet — Enhanced Customer Intelligence Platform</h1>
+              <h1 class="text-2xl font-bold tracking-tight"><span class="text-primary">Bank Payment Platform</span> — Enhanced Customer Intelligence</h1>
               <p class="text-muted-foreground mt-1 leading-relaxed max-w-3xl">
                 A production-grade <strong class="text-foreground">Customer 360</strong> solution built entirely on the
                 <strong class="text-foreground">Databricks Lakehouse Platform</strong>. It unifies fragmented merchant data from
                 transactional systems, CRM, support, and call center sources into a single golden record, then layers
-                AI/ML models, real-time anomaly detection, and conversational AI agents on top — enabling Getnet teams
+                AI/ML models, real-time anomaly detection, and conversational AI agents on top — enabling teams
                 to drive higher campaign ROI, reduce churn, and maximize customer lifetime value through data-driven
                 next best actions.
               </p>
@@ -1539,7 +1544,7 @@
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="font-semibold text-sm">AI/BI Genie Space (Natural Language SQL)</div>
-              <p class="text-xs text-muted-foreground">Enables any user to ask questions in natural language across all 20+ gold tables. The Genie Space is configured with SQL instructions and sample prompts that understand the Getnet data model.</p>
+              <p class="text-xs text-muted-foreground">Enables any user to ask questions in natural language across all 20+ gold tables. The Genie Space is configured with SQL instructions and sample prompts that understand the data model.</p>
               <div class="text-xs text-muted-foreground">Tables: 20+ gold tables &bull; Pre-configured SQL context &bull; 10 sample prompts</div>
             </div>
           </div>
@@ -1726,7 +1731,7 @@
 
         <!-- Footer -->
         <div class="text-center text-xs text-muted-foreground pb-4">
-          Built with the Databricks Lakehouse Platform &bull; Santander &middot; PagoNxt Getnet Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, and AI/BI
+          Built with the Databricks Lakehouse Platform &bull; Bank Payment Platform Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, and AI/BI
         </div>
       </div>`;
       const cfg = await api('/api/config');
@@ -1875,7 +1880,7 @@
       document.getElementById('ai-chat-panel').classList.toggle('hidden', !chatOpen);
       document.getElementById('chat-fab').classList.toggle('ring-2', chatOpen);
       if (chatOpen && chatHistory.length === 0) {
-        appendBotMessage("Hello! I'm the **Getnet CDP Intelligence Hub**. I can help you with churn prevention, campaign strategy, next best actions, and more.\n\nTry: *What are the top priority actions this week?*");
+        appendBotMessage("Hello! I'm the **CDP Intelligence Hub**. I can help you with churn prevention, campaign strategy, next best actions, and more.\n\nTry: *What are the top priority actions this week?*");
       }
     }
 
@@ -2053,7 +2058,7 @@
   </button>
 
   <!-- AI Chat Panel -->
-  <div id="ai-chat-panel" class="fixed bottom-24 right-6 z-50 hidden w-96 h-[32rem] rounded-lg border border-border bg-card shadow-2xl flex flex-col overflow-hidden">
+  <div id="ai-chat-panel" class="fixed bottom-24 right-6 z-50 hidden w-96 rounded-lg border border-border bg-card shadow-2xl flex flex-col overflow-hidden" style="height: min(32rem, calc(100vh - 8rem))">
     <div class="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
       <div class="flex items-center gap-2">
         <div class="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">AI</div>

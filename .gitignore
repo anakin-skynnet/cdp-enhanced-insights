@@ -5,5 +5,8 @@ __pycache__/
 node_modules/
 test_output/
 test_screenshots/
+ui-test-results/
+scripts/ui_audit*
 *.png
+mlflow.db
 .vscode/

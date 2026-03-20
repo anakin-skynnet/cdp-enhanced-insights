@@ -1,6 +1,6 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # PagoNxt Getnet - Call Center Analytics: Speech-to-Text & Sentiment Analysis
+# MAGIC # Bank Payment Platform - Call Center Analytics: Speech-to-Text & Sentiment Analysis
 # MAGIC
 # MAGIC Uses Databricks Foundation Model API (`ai_query`) to enrich call center interactions:
 # MAGIC - **Sentiment Analysis** on transcripts/notes
@@ -148,7 +148,7 @@ except Exception as e:
 
 # COMMAND ----------
 
-mlflow.set_experiment(f"/Shared/getnet_cdp_call_center_nlp")
+mlflow.set_experiment(f"/Shared/cdp_call_center_nlp")
 
 with mlflow.start_run(run_name="call_center_sentiment_enrichment"):
     result_count = spark.table(f"{catalog}.{schema}.gold_call_center_sentiment").count()
