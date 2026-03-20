@@ -45,12 +45,21 @@ async def _run(fn, *args, **kwargs):
         return await asyncio.to_thread(fn, *args, **kwargs)
     return fn(*args, **kwargs)
 
+from fastapi.responses import JSONResponse
+from starlette.requests import Request
+
 app = FastAPI(
     title="Santander Getnet CDP - Customer 360",
     version="2.1.0",
     description="Santander PagoNxt Getnet Customer Data Platform API. "
                 f"Data source: **{DATA_SOURCE}**",
 )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled error on %s", request.url.path)
+    return JSONResponse(status_code=500, content={"error": str(exc)[:500], "path": request.url.path})
 
 _static_dir = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=_static_dir), name="static")
@@ -378,7 +387,7 @@ async def agent_feedback(feedback: M.AgentFeedback):
 # AI Agent Chat + Genie
 # ═══════════════════════════════════════════════════════════════
 
-AGENT_ENDPOINT = os.environ.get("CDP_AGENT_ENDPOINT", "agents_ahs_demos_catalog-cdp_360-cdp_supervisor_agent")
+AGENT_ENDPOINT = os.environ.get("CDP_AGENT_ENDPOINT", "agents_ahs_demos_catalog-cdp_360-cdp_supervisor_agent").strip()
 GENIE_SPACE_ID = os.environ.get("CDP_GENIE_SPACE_ID", "")
 
 

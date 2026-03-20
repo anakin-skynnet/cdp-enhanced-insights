@@ -393,6 +393,7 @@ class AgentFeedback(BaseModel):
 # ── Data Source Toggle ─────────────────────────────────────────
 
 class DataSourceConfig(BaseModel):
+    model_config = {"populate_by_name": True}
     source: str = Field(description="Current data source: 'databricks' or 'mock'")
     catalog: str = Field(description="Unity Catalog name")
     schema_name: str = Field(alias="schema", description="Schema name")

@@ -1,74 +1,28 @@
 """
 SQL warehouse data layer for the CDP application.
-Queries gold tables via the Databricks SQL Connector.
-Features: connection pooling, TTL caching, retry logic.
+Uses the Databricks SDK Statement Execution API (no extra dependencies).
+Features: TTL caching, retry logic.
 """
 
 import os
+import re
 import time
 import logging
-import threading
-from contextlib import contextmanager
-from functools import wraps
-from databricks import sql as dbsql
+from databricks.sdk import WorkspaceClient
+from databricks.sdk.service.sql import StatementState
 
 logger = logging.getLogger(__name__)
 
-# ── Connection Pool ──────────────────────────────────────────────
-
-_pool_lock = threading.Lock()
-_pool: list = []
-_MAX_POOL = 3
+_w: WorkspaceClient | None = None
+_WAREHOUSE_ID = os.environ.get("DATABRICKS_WAREHOUSE_ID", "")
 
 
-def _get_connection():
-    with _pool_lock:
-        if _pool:
-            conn = _pool.pop()
-            try:
-                c = conn.cursor()
-                try:
-                    c.execute("SELECT 1")
-                finally:
-                    c.close()
-                return conn
-            except Exception:
-                try:
-                    conn.close()
-                except Exception:
-                    pass
-    from databricks.sdk import WorkspaceClient
-    w = WorkspaceClient()
-    hostname = w.config.host.replace("https://", "").replace("http://", "")
-    warehouse_id = os.environ.get("DATABRICKS_WAREHOUSE_ID", "")
-    logger.info("Connecting to warehouse %s on %s", warehouse_id, hostname)
-    return dbsql.connect(
-        server_hostname=hostname,
-        http_path=f"/sql/1.0/warehouses/{warehouse_id}",
-        credentials_provider=w.config.authenticate,
-    )
-
-
-def _return_connection(conn):
-    with _pool_lock:
-        if len(_pool) < _MAX_POOL:
-            _pool.append(conn)
-        else:
-            try:
-                conn.close()
-            except Exception:
-                pass
-
-
-@contextmanager
-def get_cursor():
-    conn = _get_connection()
-    try:
-        cursor = conn.cursor()
-        yield cursor
-    finally:
-        cursor.close()
-        _return_connection(conn)
+def _client() -> WorkspaceClient:
+    global _w
+    if _w is None:
+        _w = WorkspaceClient()
+        logger.info("SDK client initialised, warehouse=%s", _WAREHOUSE_ID)
+    return _w
 
 
 # ── TTL Cache ────────────────────────────────────────────────────
@@ -88,23 +42,50 @@ def _set_cache(key: str, value):
     _cache[key] = (time.time(), value)
 
 
+# ── Named-param substitution ────────────────────────────────────
+
+def _inline_params(sql: str, params: dict | None) -> str:
+    """Replace :name placeholders with literal values (safe for our internal queries)."""
+    if not params:
+        return sql
+    def _repl(m):
+        key = m.group(1)
+        val = params.get(key, m.group(0))
+        if val is None:
+            return "NULL"
+        return "'" + str(val).replace("'", "''") + "'"
+    return re.sub(r":(\w+)", _repl, sql)
+
+
 # ── Query helpers with retry ─────────────────────────────────────
 
 _MAX_RETRIES = 2
 
 
 def query(sql: str, params: dict | None = None) -> list[dict]:
+    statement = _inline_params(sql, params)
+    w = _client()
     for attempt in range(_MAX_RETRIES + 1):
         try:
-            with get_cursor() as cursor:
-                cursor.execute(sql, params)
-                columns = [desc[0] for desc in cursor.description]
-                return [dict(zip(columns, row)) for row in cursor.fetchall()]
+            resp = w.statement_execution.execute_statement(
+                statement=statement,
+                warehouse_id=_WAREHOUSE_ID,
+                wait_timeout="50s",
+            )
+            if resp.status and resp.status.state == StatementState.FAILED:
+                raise RuntimeError(resp.status.error.message if resp.status.error else "SQL failed")
+            columns = [c.name for c in (resp.manifest.schema.columns or [])]
+            rows: list[dict] = []
+            if resp.result and resp.result.data_array:
+                for row in resp.result.data_array:
+                    rows.append(dict(zip(columns, row)))
+            return rows
         except Exception as e:
             if attempt < _MAX_RETRIES and "timeout" in str(e).lower():
                 logger.warning("Query retry %d: %s", attempt + 1, e)
                 time.sleep(1)
                 continue
+            logger.error("SQL error: %s\n%s", e, statement[:300])
             raise
 
 
@@ -338,9 +319,9 @@ def get_segment_merchants_for_campaign(segment: str, limit: int = 100) -> list[d
 def get_clv_summary() -> list[dict]:
     return query(f"""
         SELECT clv_tier, COUNT(*) AS merchant_count,
-               ROUND(AVG(clv_12m), 2) AS avg_clv,
-               ROUND(SUM(clv_12m), 0) AS total_clv,
-               ROUND(AVG(p_alive), 3) AS avg_p_alive
+               COALESCE(ROUND(AVG(clv_12m), 2), 0) AS avg_clv,
+               COALESCE(ROUND(SUM(clv_12m), 0), 0) AS total_clv,
+               COALESCE(ROUND(AVG(p_alive), 3), 0) AS avg_p_alive
         FROM {_t('gold_customer_ltv')}
         GROUP BY clv_tier ORDER BY avg_clv DESC
     """)
@@ -728,7 +709,7 @@ def get_data_freshness() -> list[dict]:
     if cached:
         return cached
     union = " UNION ALL ".join(
-        f"SELECT '{t}' AS table_name FROM {_t(t)} LIMIT 1" for t in _GOLD_TABLES
+        f"(SELECT '{t}' AS table_name FROM {_t(t)} LIMIT 1)" for t in _GOLD_TABLES
     )
     rows = query(f"""
         WITH tables AS ({union})
