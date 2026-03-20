@@ -378,7 +378,7 @@ async def agent_feedback(feedback: M.AgentFeedback):
 # AI Agent Chat + Genie
 # ═══════════════════════════════════════════════════════════════
 
-AGENT_ENDPOINT = os.environ.get("CDP_AGENT_ENDPOINT", "ahs_demos_catalog-cdp_360-cdp_supervisor_agent")
+AGENT_ENDPOINT = os.environ.get("CDP_AGENT_ENDPOINT", "agents_ahs_demos_catalog-cdp_360-cdp_supervisor_agent")
 GENIE_SPACE_ID = os.environ.get("CDP_GENIE_SPACE_ID", "")
 
 

@@ -10,6 +10,9 @@ env:
   - name: DATABRICKS_WAREHOUSE_ID
     valueFrom: sql-warehouse
 
+  - name: CDP_AGENT_ENDPOINT
+    valueFrom: serving-endpoint
+
   - name: CDP_CATALOG
     value: "ahs_demos_catalog"
 
@@ -17,10 +20,7 @@ env:
     value: "cdp_360"
 
   - name: CDP_DATA_SOURCE
-    value: "mock"
-
-  - name: CDP_AGENT_ENDPOINT
-    value: "ahs_demos_catalog-cdp_360-cdp_supervisor_agent"
+    value: "databricks"
 
   - name: CDP_GENIE_SPACE_ID
     value: ""
