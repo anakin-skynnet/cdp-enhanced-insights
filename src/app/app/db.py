@@ -148,7 +148,7 @@ def get_segment_distribution() -> list[dict]:
 def get_health_distribution() -> list[dict]:
     return query(f"""
         SELECT health_tier, COUNT(*) AS merchant_count,
-               ROUND(AVG(health_score), 1) AS avg_score
+               COALESCE(ROUND(AVG(health_score), 1), 0) AS avg_score
         FROM {_t('gold_health_score')}
         GROUP BY health_tier
         ORDER BY CASE health_tier
@@ -289,8 +289,8 @@ def get_nba_summary() -> list[dict]:
     return query(f"""
         SELECT primary_action,
                COUNT(*) AS merchant_count,
-               ROUND(SUM(estimated_revenue_impact), 0) AS revenue_impact,
-               ROUND(AVG(health_score), 1) AS avg_health,
+               COALESCE(ROUND(SUM(estimated_revenue_impact), 0), 0) AS revenue_impact,
+               COALESCE(ROUND(AVG(health_score), 1), 0) AS avg_health,
                COUNT(CASE WHEN urgency = 'immediate' THEN 1 END) AS immediate,
                COUNT(CASE WHEN urgency = 'this_week' THEN 1 END) AS this_week
         FROM {_t('gold_next_best_actions')}
@@ -331,8 +331,10 @@ def get_clv_top_merchants(limit: int = 20) -> list[dict]:
     return query(f"""
         SELECT l.golden_id,
                COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
-               l.clv_12m, l.clv_tier, l.p_alive,
-               l.predicted_purchases_12m, l.total_amount
+               COALESCE(l.clv_12m, 0) AS clv_12m, COALESCE(l.clv_tier, '') AS clv_tier,
+               COALESCE(l.p_alive, 0) AS p_alive,
+               COALESCE(l.predicted_purchases_12m, 0) AS predicted_purchases_12m,
+               COALESCE(l.total_amount, 0) AS total_amount
         FROM {_t('gold_customer_ltv')} l
         LEFT JOIN {_t('gold_customer_360')} c ON l.golden_id = c.golden_id
         ORDER BY l.clv_12m DESC LIMIT {min(int(limit), 100)}
@@ -351,10 +353,10 @@ def get_channel_attribution() -> list[dict]:
 def get_behavioral_segments() -> list[dict]:
     return query(f"""
         SELECT behavioral_segment, COUNT(*) AS merchant_count,
-               ROUND(AVG(health_score), 1) AS avg_health,
-               ROUND(AVG(txn_volume), 0) AS avg_volume,
-               ROUND(AVG(ticket_count), 1) AS avg_tickets,
-               ROUND(AVG(days_since_last_txn), 0) AS avg_recency
+               COALESCE(ROUND(AVG(health_score), 1), 0) AS avg_health,
+               COALESCE(ROUND(AVG(txn_volume), 0), 0) AS avg_volume,
+               COALESCE(ROUND(AVG(ticket_count), 1), 0) AS avg_tickets,
+               COALESCE(ROUND(AVG(days_since_last_txn), 0), 0) AS avg_recency
         FROM {_t('gold_behavioral_segments')}
         GROUP BY behavioral_segment ORDER BY avg_volume DESC
     """)
@@ -397,8 +399,8 @@ def get_support_kpis() -> dict:
 def get_support_quality_distribution() -> list[dict]:
     return query(f"""
         SELECT support_quality_tier, COUNT(*) AS merchant_count,
-               ROUND(AVG(avg_resolution_min), 0) AS avg_resolution,
-               ROUND(AVG(csat_score), 1) AS avg_csat
+               COALESCE(ROUND(AVG(avg_resolution_min), 0), 0) AS avg_resolution,
+               COALESCE(ROUND(AVG(csat_score), 1), 0) AS avg_csat
         FROM {_t('gold_support_analytics')}
         GROUP BY support_quality_tier
         ORDER BY CASE support_quality_tier
@@ -416,9 +418,12 @@ def get_support_merchants(quality: str = "", limit: int = 50) -> list[dict]:
     return query(f"""
         SELECT sa.golden_id,
                COALESCE(c.merchant_name, c.first_name, '') AS merchant_name,
-               sa.total_tickets, sa.open_tickets, sa.resolved_tickets,
-               sa.avg_first_response_min, sa.avg_resolution_min,
-               sa.csat_score, sa.sla_resolution_pct, sa.support_quality_tier
+               COALESCE(sa.total_tickets, 0) AS total_tickets,
+               COALESCE(sa.open_tickets, 0) AS open_tickets,
+               COALESCE(sa.resolved_tickets, 0) AS resolved_tickets,
+               COALESCE(sa.avg_first_response_min, 0) AS avg_first_response_min,
+               COALESCE(sa.avg_resolution_min, 0) AS avg_resolution_min,
+               sa.csat_score, sa.sla_resolution_pct, COALESCE(sa.support_quality_tier, 'unknown') AS support_quality_tier
         FROM {_t('gold_support_analytics')} sa
         LEFT JOIN {_t('gold_customer_360')} c ON sa.golden_id = c.golden_id
         WHERE {where}
@@ -432,13 +437,13 @@ def get_support_merchants(quality: str = "", limit: int = 50) -> list[dict]:
 def get_call_center_kpis() -> dict:
     return query_one(f"""
         SELECT
-          SUM(total_interactions) AS total_interactions,
-          SUM(voice_calls) AS total_voice,
-          SUM(chat_sessions) AS total_chat,
-          ROUND(AVG(avg_handle_time_sec), 0) AS avg_handle_time,
-          ROUND(AVG(avg_queue_wait_sec), 0) AS avg_queue_wait,
-          ROUND(AVG(resolution_rate), 1) AS avg_resolution_rate,
-          ROUND(AVG(abandonment_rate), 1) AS avg_abandonment_rate
+          COALESCE(SUM(total_interactions), 0) AS total_interactions,
+          COALESCE(SUM(voice_calls), 0) AS total_voice,
+          COALESCE(SUM(chat_sessions), 0) AS total_chat,
+          COALESCE(ROUND(AVG(avg_handle_time_sec), 0), 0) AS avg_handle_time,
+          COALESCE(ROUND(AVG(avg_queue_wait_sec), 0), 0) AS avg_queue_wait,
+          COALESCE(ROUND(AVG(resolution_rate), 1), 0) AS avg_resolution_rate,
+          COALESCE(ROUND(AVG(abandonment_rate), 1), 0) AS avg_abandonment_rate
         FROM {_t('gold_call_center_analytics')}
         WHERE metric_type = 'agent'
     """) or {}
@@ -446,10 +451,17 @@ def get_call_center_kpis() -> dict:
 
 def get_call_center_agents(limit: int = 20) -> list[dict]:
     return query(f"""
-        SELECT entity_id AS agent_id, total_interactions, voice_calls,
-               chat_sessions, email_interactions,
-               avg_handle_time_sec, avg_talk_time_sec, avg_hold_time_sec,
-               avg_queue_wait_sec, resolution_rate, abandonment_rate
+        SELECT entity_id AS agent_id,
+               COALESCE(total_interactions, 0) AS total_interactions,
+               COALESCE(voice_calls, 0) AS voice_calls,
+               COALESCE(chat_sessions, 0) AS chat_sessions,
+               COALESCE(email_interactions, 0) AS email_interactions,
+               COALESCE(avg_handle_time_sec, 0) AS avg_handle_time_sec,
+               COALESCE(avg_talk_time_sec, 0) AS avg_talk_time_sec,
+               COALESCE(avg_hold_time_sec, 0) AS avg_hold_time_sec,
+               COALESCE(avg_queue_wait_sec, 0) AS avg_queue_wait_sec,
+               COALESCE(resolution_rate, 0) AS resolution_rate,
+               COALESCE(abandonment_rate, 0) AS abandonment_rate
         FROM {_t('gold_call_center_analytics')}
         WHERE metric_type = 'agent'
         ORDER BY total_interactions DESC
@@ -459,9 +471,12 @@ def get_call_center_agents(limit: int = 20) -> list[dict]:
 
 def get_call_center_queues() -> list[dict]:
     return query(f"""
-        SELECT entity_id AS queue_name, total_interactions,
-               avg_handle_time_sec, avg_queue_wait_sec,
-               abandonment_rate, service_level_pct
+        SELECT entity_id AS queue_name,
+               COALESCE(total_interactions, 0) AS total_interactions,
+               COALESCE(avg_handle_time_sec, 0) AS avg_handle_time_sec,
+               COALESCE(avg_queue_wait_sec, 0) AS avg_queue_wait_sec,
+               COALESCE(abandonment_rate, 0) AS abandonment_rate,
+               COALESCE(service_level_pct, 0) AS service_level_pct
         FROM {_t('gold_call_center_analytics')}
         WHERE metric_type = 'queue'
         ORDER BY total_interactions DESC
@@ -471,10 +486,10 @@ def get_call_center_queues() -> list[dict]:
 def get_call_center_sentiment() -> list[dict]:
     return query(f"""
         SELECT topic_category, COUNT(*) AS interaction_count,
-               ROUND(COUNT(CASE WHEN sentiment = 'positive' THEN 1 END) * 100.0 / COUNT(*), 1) AS positive_pct,
-               ROUND(COUNT(CASE WHEN sentiment = 'negative' THEN 1 END) * 100.0 / COUNT(*), 1) AS negative_pct,
-               ROUND(COUNT(CASE WHEN sentiment = 'neutral' THEN 1 END) * 100.0 / COUNT(*), 1) AS neutral_pct,
-               ROUND(AVG(duration_seconds), 0) AS avg_duration
+               COALESCE(ROUND(COUNT(CASE WHEN sentiment = 'positive' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1), 0) AS positive_pct,
+               COALESCE(ROUND(COUNT(CASE WHEN sentiment = 'negative' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1), 0) AS negative_pct,
+               COALESCE(ROUND(COUNT(CASE WHEN sentiment = 'neutral' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1), 0) AS neutral_pct,
+               COALESCE(ROUND(AVG(duration_seconds), 0), 0) AS avg_duration
         FROM {_t('gold_call_center_sentiment')}
         GROUP BY topic_category
         ORDER BY interaction_count DESC
@@ -487,9 +502,9 @@ def get_personalization_summary() -> list[dict]:
     return query(f"""
         SELECT content_theme, merchant_tier,
                COUNT(*) AS merchant_count,
-               ROUND(AVG(upsell_propensity), 2) AS avg_upsell,
-               ROUND(AVG(churn_propensity), 2) AS avg_churn,
-               ROUND(AVG(activation_propensity), 2) AS avg_activation
+               COALESCE(ROUND(AVG(upsell_propensity), 2), 0) AS avg_upsell,
+               COALESCE(ROUND(AVG(churn_propensity), 2), 0) AS avg_churn,
+               COALESCE(ROUND(AVG(activation_propensity), 2), 0) AS avg_activation
         FROM {_t('gold_personalization_signals')}
         GROUP BY content_theme, merchant_tier
         ORDER BY merchant_count DESC
@@ -506,9 +521,9 @@ def get_personalization_for_merchant(golden_id: str) -> dict:
 def get_propensity_distribution() -> list[dict]:
     return query(f"""
         SELECT propensity_tier, COUNT(*) AS merchant_count,
-               ROUND(AVG(churn_propensity_score), 3) AS avg_churn,
-               ROUND(AVG(upsell_propensity_score), 3) AS avg_upsell,
-               ROUND(AVG(activation_propensity_score), 3) AS avg_activation
+               COALESCE(ROUND(AVG(churn_propensity_score), 3), 0) AS avg_churn,
+               COALESCE(ROUND(AVG(upsell_propensity_score), 3), 0) AS avg_upsell,
+               COALESCE(ROUND(AVG(activation_propensity_score), 3), 0) AS avg_activation
         FROM {_t('gold_propensity_scores')}
         GROUP BY propensity_tier
         ORDER BY merchant_count DESC
@@ -521,7 +536,8 @@ def get_ad_creative_library() -> list[dict]:
     return query(f"""
         SELECT segment, email_subject, email_body_preview, sms_message,
                push_notification, ad_headline, ad_description, tone, cta,
-               merchant_count, avg_volume
+               COALESCE(merchant_count, 0) AS merchant_count,
+               COALESCE(avg_volume, 0) AS avg_volume
         FROM {_t('gold_ad_creative_library')}
         ORDER BY avg_volume DESC
     """)
@@ -533,9 +549,9 @@ def get_campaign_roi_summary() -> list[dict]:
     return query(f"""
         SELECT campaign_type, channel,
                COUNT(*) AS merchants_targeted,
-               SUM(converted) AS conversions,
-               ROUND(SUM(converted) * 100.0 / NULLIF(COUNT(*), 0), 1) AS conversion_rate,
-               ROUND(SUM(post_30d_volume), 0) AS total_post_revenue,
+               COALESCE(SUM(converted), 0) AS conversions,
+               COALESCE(ROUND(SUM(converted) * 100.0 / NULLIF(COUNT(*), 0), 1), 0) AS conversion_rate,
+               COALESCE(ROUND(SUM(post_30d_volume), 0), 0) AS total_post_revenue,
                COUNT(CASE WHEN campaign_outcome = 'reactivated' THEN 1 END) AS reactivations
         FROM {_t('gold_campaign_roi')}
         GROUP BY campaign_type, channel
@@ -546,8 +562,8 @@ def get_campaign_roi_summary() -> list[dict]:
 def get_campaign_outcome_distribution() -> list[dict]:
     return query(f"""
         SELECT campaign_outcome, COUNT(*) AS merchant_count,
-               ROUND(AVG(post_30d_volume), 0) AS avg_revenue,
-               ROUND(AVG(current_health_score), 1) AS avg_health
+               COALESCE(ROUND(AVG(post_30d_volume), 0), 0) AS avg_revenue,
+               COALESCE(ROUND(AVG(current_health_score), 1), 0) AS avg_health
         FROM {_t('gold_campaign_roi')}
         GROUP BY campaign_outcome
         ORDER BY merchant_count DESC
@@ -602,9 +618,18 @@ def get_anomaly_alerts(anomaly_type: str = "", limit: int = 50) -> list[dict]:
         where += " AND anomaly_type = :atype"
         params["atype"] = anomaly_type.strip()
     return query(f"""
-        SELECT golden_id, merchant_name, segment, health_score, health_tier,
-               current_volume, avg_volume_30d, anomaly_type, deviation_pct,
-               recommended_action, urgency, estimated_revenue_impact, detected_at
+        SELECT golden_id, COALESCE(merchant_name, '') AS merchant_name,
+               COALESCE(segment, '') AS segment,
+               COALESCE(health_score, 0) AS health_score,
+               COALESCE(health_tier, 'unknown') AS health_tier,
+               COALESCE(current_volume, 0) AS current_volume,
+               COALESCE(avg_volume_30d, 0) AS avg_volume_30d,
+               anomaly_type,
+               COALESCE(deviation_pct, 0) AS deviation_pct,
+               COALESCE(recommended_action, '') AS recommended_action,
+               COALESCE(urgency, '') AS urgency,
+               COALESCE(estimated_revenue_impact, 0) AS estimated_revenue_impact,
+               detected_at
         FROM {_t('gold_anomaly_alerts')}
         WHERE {where}
         ORDER BY ABS(deviation_pct) DESC

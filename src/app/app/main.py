@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import csv
+import datetime
 import io
 import logging
 import os
@@ -449,21 +450,37 @@ async def genie_ask(req: M.GenieRequest):
         from databricks.sdk import WorkspaceClient
         w = WorkspaceClient()
 
-        conversation = w.genie.start_conversation(space_id=GENIE_SPACE_ID, content=req.question)
-        result = w.genie.get_message_query_result(
-            space_id=GENIE_SPACE_ID,
-            conversation_id=conversation.conversation_id,
-            message_id=conversation.message_id,
-        )
+        wait = w.genie.start_conversation(space_id=GENIE_SPACE_ID, content=req.question)
+        msg = wait.result(timeout=datetime.timedelta(seconds=120))
 
-        columns = [col.name for col in (result.statement_response.manifest.schema.columns or [])]
-        rows = []
-        chunk = result.statement_response.result
-        if chunk and chunk.data_array:
-            for row in chunk.data_array[:100]:
-                rows.append(dict(zip(columns, row)))
+        conversation_id = wait.conversation_id
+        message_id = wait.message_id
 
-        return {"question": req.question, "columns": columns, "rows": rows, "row_count": len(rows)}
+        genie_sql = None
+        text_answer = None
+        for att in (msg.attachments or []):
+            if att.query and getattr(att.query, "query", None):
+                genie_sql = att.query.query
+            if att.text and getattr(att.text, "content", None):
+                text_answer = att.text.content
+
+        if genie_sql:
+            from databricks.sdk.service.sql import StatementState
+            warehouse_id = os.environ.get("DATABRICKS_WAREHOUSE_ID", "")
+            resp = w.statement_execution.execute_statement(
+                statement=genie_sql,
+                warehouse_id=warehouse_id,
+                wait_timeout="50s",
+            )
+            if resp.status and resp.status.state == StatementState.SUCCEEDED and resp.manifest:
+                columns = [c.name for c in (resp.manifest.schema.columns or [])]
+                rows = []
+                if resp.result and resp.result.data_array:
+                    for row in resp.result.data_array[:100]:
+                        rows.append(dict(zip(columns, row)))
+                return {"question": req.question, "columns": columns, "rows": rows, "row_count": len(rows), "text_answer": text_answer, "sql": genie_sql}
+
+        return {"question": req.question, "columns": ["answer"], "rows": [{"answer": text_answer or "Genie processed your question but returned no tabular data."}], "row_count": 1}
     except Exception as e:
         logger.exception("Genie ask error")
         return {"question": req.question, "error": str(e)}
