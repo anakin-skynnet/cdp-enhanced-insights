@@ -16,6 +16,11 @@ resources:
           serving_endpoint:
             name: agents_ahs_demos_catalog-cdp_360-cdp_supervisor_agent
             permission: CAN_QUERY
+        - name: genie-space
+          genie_space:
+            name: "Getnet Merchant 360 Analytics"
+            space_id: 01f12432dc001e7d927a3ce0f42926ad
+            permission: CAN_RUN
       permissions:
         - level: CAN_USE
           group_name: "users"
