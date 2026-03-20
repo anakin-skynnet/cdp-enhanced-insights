@@ -208,6 +208,10 @@ _AGENT_MODELS = [
 for model_name, tags in _AGENT_MODELS:
     ver = _latest_version(model_name)
     print(f"Deploying {model_name} v{ver}")
-    agents.deploy(model_name, ver, tags=tags)
+    # Deploy without custom tags to avoid "Duplicate key(s)" error on redeploy,
+    # then set tags separately afterward.
+    agents.deploy(model_name, ver)
+    for k, v in tags.items():
+        client.set_model_version_tag(model_name, ver, k, v)
 
 print("All four agents deployed. Supervisor is the primary entry point.")
