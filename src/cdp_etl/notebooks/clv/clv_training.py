@@ -12,13 +12,21 @@
 
 # COMMAND ----------
 
+# MAGIC %pip install scipy mlflow --quiet
+
+# COMMAND ----------
+
 import numpy as np
 import pandas as pd
 from datetime import timedelta
 from scipy.optimize import minimize
-from scipy.special import gammaln, betaln, hyp2f1
+from scipy.special import gammaln, betaln
 import pyspark.sql.functions as F
 import mlflow
+
+print(f"scipy version: {__import__('scipy').__version__}")
+print(f"numpy version: {np.__version__}")
+print(f"mlflow version: {mlflow.__version__}")
 
 # COMMAND ----------
 
@@ -39,9 +47,12 @@ schema = _widget("schema", "cdp_360")
 
 # COMMAND ----------
 
-txn_df = spark.table(f"{catalog}.{schema}.silver_transactions").filter(
-    F.col("status").isin("approved", "APPROVED", "completed")
+txn_df = (
+    spark.table(f"{catalog}.{schema}.silver_transactions")
+    .filter(F.col("status").isin("approved", "APPROVED", "completed"))
+    .withColumn("amount", F.col("amount").cast("double"))
 )
+print(f"Loaded transactions: {txn_df.count():,} rows")
 
 analysis_date = txn_df.agg(F.max("transaction_date")).collect()[0][0]
 
@@ -202,10 +213,22 @@ print(f"Top-10 CLV merchants account for: {rfm_pd.nlargest(10, 'clv_12m')['clv_1
 
 # COMMAND ----------
 
-rfm_pd["clv_tier"] = pd.qcut(
-    rfm_pd["clv_12m"], q=5, labels=["very_low", "low", "medium", "high", "very_high"],
-    duplicates="drop",
-).astype(str)
+tier_labels = ["very_low", "low", "medium", "high", "very_high"]
+try:
+    rfm_pd["clv_tier"] = pd.qcut(
+        rfm_pd["clv_12m"], q=5, labels=tier_labels, duplicates="drop",
+    ).astype(str)
+except ValueError:
+    n_unique = rfm_pd["clv_12m"].nunique()
+    actual_bins = min(n_unique, 5)
+    if actual_bins < 2:
+        rfm_pd["clv_tier"] = "medium"
+    else:
+        rfm_pd["clv_tier"] = pd.qcut(
+            rfm_pd["clv_12m"], q=actual_bins,
+            labels=tier_labels[:actual_bins], duplicates="drop",
+        ).astype(str)
+    print(f"Adjusted CLV tiers to {actual_bins} bins (data has {n_unique} unique CLV values)")
 
 clv_spark = spark.createDataFrame(
     rfm_pd[[
@@ -247,30 +270,34 @@ import json
 import tempfile
 import os
 
-with mlflow.start_run(run_name="clv_bgnbd_gammagamma"):
-    mlflow.log_params({
-        "model_type": "BG/NBD + Gamma-Gamma (native scipy)",
-        "projection_months": 12,
-        "discount_rate": 0.01,
-        "bgnbd_params": str(bgnbd_params.tolist()),
-        "gg_params": str(gg_params.tolist()),
-        "merchant_count": len(rfm_pd),
-    })
-    mlflow.log_metrics({
-        "avg_p_alive": float(rfm_pd["p_alive"].mean()),
-        "avg_predicted_purchases_12m": float(rfm_pd["predicted_purchases_12m"].mean()),
-        "avg_clv_12m": float(rfm_pd["clv_12m"].mean()),
-        "median_clv_12m": float(rfm_pd["clv_12m"].median()),
-        "total_projected_clv": float(rfm_pd["clv_12m"].sum()),
-    })
-    params_payload = {
-        "bgnbd": bgnbd_params.tolist(),
-        "gamma_gamma": gg_params.tolist(),
-    }
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
-        json.dump(params_payload, f)
-        params_path = f.name
-    mlflow.log_artifact(params_path, "models")
-    os.unlink(params_path)
+try:
+    with mlflow.start_run(run_name="clv_bgnbd_gammagamma"):
+        mlflow.log_params({
+            "model_type": "BG/NBD + Gamma-Gamma (native scipy)",
+            "projection_months": 12,
+            "discount_rate": 0.01,
+            "bgnbd_params": str(bgnbd_params.tolist()),
+            "gg_params": str(gg_params.tolist()),
+            "merchant_count": len(rfm_pd),
+        })
+        mlflow.log_metrics({
+            "avg_p_alive": float(rfm_pd["p_alive"].mean()),
+            "avg_predicted_purchases_12m": float(rfm_pd["predicted_purchases_12m"].mean()),
+            "avg_clv_12m": float(rfm_pd["clv_12m"].mean()),
+            "median_clv_12m": float(rfm_pd["clv_12m"].median()),
+            "total_projected_clv": float(rfm_pd["clv_12m"].sum()),
+        })
+        params_payload = {
+            "bgnbd": bgnbd_params.tolist(),
+            "gamma_gamma": gg_params.tolist(),
+        }
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            json.dump(params_payload, f)
+            params_path = f.name
+        mlflow.log_artifact(params_path, "models")
+        os.unlink(params_path)
+    print("MLflow logging complete.")
+except Exception as e:
+    print(f"MLflow logging failed (non-fatal): {e}")
 
 print("CLV model training complete.")

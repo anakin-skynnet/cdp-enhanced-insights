@@ -13,13 +13,18 @@
 
 # COMMAND ----------
 
+# MAGIC %pip install mlflow --quiet
+
+# COMMAND ----------
+
 import pandas as pd
 import numpy as np
-from itertools import combinations
 from collections import defaultdict
 import pyspark.sql.functions as F
-from pyspark.sql.window import Window
 import mlflow
+
+print(f"numpy version: {np.__version__}")
+print(f"mlflow version: {mlflow.__version__}")
 
 # COMMAND ----------
 
@@ -74,7 +79,7 @@ conversions = (
     .select(
         F.col("customer_external_id").alias("merchant_id"),
         F.col("transaction_date").alias("conversion_time"),
-        F.col("amount").alias("conversion_value"),
+        F.col("amount").cast("double").alias("conversion_value"),
     )
     .groupBy("merchant_id")
     .agg(
@@ -97,33 +102,44 @@ print(f"Merchants with conversions: {conversions.count():,}")
 
 # COMMAND ----------
 
-w = Window.partitionBy("merchant_id").orderBy("touchpoint_time")
-
-journeys = (
+print("Collecting touchpoints to pandas...")
+tp_pd = (
     touchpoints
-    .withColumn("channel_order", F.row_number().over(w))
-    .groupBy("merchant_id")
-    .agg(
-        F.collect_list(F.struct("touchpoint_time", "channel")).alias("touchpoint_list"),
-        F.count("*").alias("path_length"),
-    )
-    .join(conversions, "merchant_id", "left")
-    .withColumn("converted", F.when(F.col("first_conversion").isNotNull(), 1).otherwise(0))
+    .select("merchant_id", "touchpoint_time", "channel")
+    .orderBy("merchant_id", "touchpoint_time")
+    .toPandas()
 )
+print(f"Touchpoints collected: {len(tp_pd):,}")
 
-journeys_pd = journeys.select(
-    "merchant_id", "touchpoint_list", "path_length", "converted",
-    "total_conversion_value",
-).toPandas()
+conv_pd = (
+    conversions
+    .select("merchant_id", F.col("total_conversion_value").cast("double"))
+    .toPandas()
+)
+conv_map = dict(zip(conv_pd["merchant_id"], conv_pd["total_conversion_value"]))
+print(f"Conversions collected: {len(conv_pd):,}")
 
-def extract_path(touchpoint_list):
-    if touchpoint_list is None:
-        return []
-    sorted_tp = sorted(touchpoint_list, key=lambda x: str(x["touchpoint_time"]))
-    return [tp["channel"] for tp in sorted_tp]
+paths_by_merchant = {}
+for _, row in tp_pd.iterrows():
+    mid = row["merchant_id"]
+    if mid not in paths_by_merchant:
+        paths_by_merchant[mid] = []
+    paths_by_merchant[mid].append(str(row["channel"]))
 
-journeys_pd["path"] = journeys_pd["touchpoint_list"].apply(extract_path)
-journeys_pd["path_str"] = journeys_pd["path"].apply(lambda p: " > ".join(p) if p else "direct")
+all_merchants = set(paths_by_merchant.keys()) | set(conv_map.keys())
+journeys_list = []
+for mid in all_merchants:
+    path = paths_by_merchant.get(mid, [])
+    journeys_list.append({
+        "merchant_id": mid,
+        "path": path,
+        "path_str": " > ".join(path) if path else "direct",
+        "path_length": len(path),
+        "converted": 1 if mid in conv_map else 0,
+        "total_conversion_value": float(conv_map.get(mid, 0) or 0),
+    })
+
+journeys_pd = pd.DataFrame(journeys_list)
 
 print(f"Total journeys: {len(journeys_pd):,}")
 print(f"Converted: {journeys_pd['converted'].sum():,}")
@@ -287,16 +303,17 @@ for ch, vals in sorted(markov_attribution.items(), key=lambda x: -x[1]["attribut
 combined = []
 for ch in channels:
     row = {
-        "channel": ch,
-        "first_touch_value": first_touch.get(ch, 0),
-        "last_touch_value": last_touch.get(ch, 0),
-        "linear_value": linear.get(ch, 0),
-        "time_decay_value": time_decay.get(ch, 0),
-        "markov_removal_effect": markov_attribution.get(ch, {}).get("removal_effect", 0),
-        "markov_attribution_share": markov_attribution.get(ch, {}).get("attribution_share", 0),
-        "markov_attributed_value": markov_attribution.get(ch, {}).get("attributed_value", 0),
+        "channel": str(ch),
+        "first_touch_value": float(first_touch.get(ch, 0)),
+        "last_touch_value": float(last_touch.get(ch, 0)),
+        "linear_value": float(linear.get(ch, 0)),
+        "time_decay_value": float(time_decay.get(ch, 0)),
+        "markov_removal_effect": float(markov_attribution.get(ch, {}).get("removal_effect", 0)),
+        "markov_attribution_share": float(markov_attribution.get(ch, {}).get("attribution_share", 0)),
+        "markov_attributed_value": float(markov_attribution.get(ch, {}).get("attributed_value", 0)),
     }
     combined.append(row)
+print(f"Attribution results: {len(combined)} channels")
 
 attribution_spark = spark.createDataFrame(pd.DataFrame(combined))
 attribution_spark = attribution_spark.withColumn("_model_version", F.lit("markov_v1"))
@@ -314,19 +331,23 @@ print(f"Saved to {catalog}.{schema}.gold_channel_attribution")
 
 # COMMAND ----------
 
-with mlflow.start_run(run_name="multi_touch_attribution_markov"):
-    mlflow.log_params({
-        "model_type": "Markov Chain + Heuristics",
-        "channels": str(channels),
-        "journey_count": len(journeys_pd),
-        "converted_count": int(journeys_pd["converted"].sum()),
-    })
-    mlflow.log_metrics({
-        "baseline_conversion_rate": baseline_conv,
-        "total_conversion_value": float(total_conversion_value),
-    })
-    for ch, vals in markov_attribution.items():
-        safe_ch = ch.replace(" ", "_").lower()
-        mlflow.log_metric(f"markov_share_{safe_ch}", vals["attribution_share"])
+try:
+    with mlflow.start_run(run_name="multi_touch_attribution_markov"):
+        mlflow.log_params({
+            "model_type": "Markov Chain + Heuristics",
+            "channels": str(channels),
+            "journey_count": len(journeys_pd),
+            "converted_count": int(journeys_pd["converted"].sum()),
+        })
+        mlflow.log_metrics({
+            "baseline_conversion_rate": baseline_conv,
+            "total_conversion_value": float(total_conversion_value),
+        })
+        for ch, vals in markov_attribution.items():
+            safe_ch = ch.replace(" ", "_").lower()
+            mlflow.log_metric(f"markov_share_{safe_ch}", vals["attribution_share"])
+    print("MLflow logging complete.")
+except Exception as e:
+    print(f"MLflow logging failed (non-fatal): {e}")
 
 print("Multi-touch attribution complete.")
