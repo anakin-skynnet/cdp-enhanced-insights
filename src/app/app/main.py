@@ -3,7 +3,7 @@ Bank Payment Platform CDP - Customer 360 Application
 FastAPI backend with Pydantic response models and mock/Databricks data toggle.
 
 Set CDP_DATA_SOURCE=mock for offline development (no Databricks connection needed).
-Set CDP_DATA_SOURCE=databricks (default) for live warehouse data.
+Set CDP_DATA_SOURCE=databricks for live warehouse data.
 """
 
 from __future__ import annotations
@@ -19,7 +19,8 @@ import httpx
 
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
+from starlette.requests import Request
 
 from . import models as M
 
@@ -46,21 +47,21 @@ async def _run(fn, *args, **kwargs):
         return await asyncio.to_thread(fn, *args, **kwargs)
     return fn(*args, **kwargs)
 
-from fastapi.responses import JSONResponse
-from starlette.requests import Request
 
 app = FastAPI(
     title="Bank Payment Platform CDP - Customer 360",
-    version="2.1.0",
+    version="2.2.0",
     description="Bank Payment Platform Customer Data Platform API. "
                 f"Data source: **{DATA_SOURCE}**",
 )
+
+_GENERIC_ERROR = "An internal error occurred. Check server logs for details."
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled error on %s", request.url.path)
-    return JSONResponse(status_code=500, content={"error": str(exc)[:500], "path": request.url.path})
+    return JSONResponse(status_code=500, content={"error": _GENERIC_ERROR, "path": request.url.path})
 
 
 @app.on_event("startup")
@@ -108,7 +109,7 @@ async def get_config():
     connected = DATA_SOURCE == "databricks"
     if connected:
         try:
-            ds.query("SELECT 1")
+            await _run(ds.query, "SELECT 1")
         except Exception:
             connected = False
     return M.DataSourceConfig(
@@ -156,7 +157,7 @@ async def list_merchants(
     health_tier: str = "",
     sort: str = "txn_volume",
     limit: int = Query(default=50, le=200),
-    offset: int = 0,
+    offset: int = Query(default=0, ge=0),
 ):
     return await _run(ds.get_merchants, search, segment, health_tier, sort, limit, offset)
 
@@ -197,11 +198,14 @@ async def campaign_audience(
 
 @app.post("/api/campaigns/execute", response_model=M.CampaignResponse)
 async def execute_campaign(campaign: M.CampaignRequest):
+    if not campaign.merchant_ids:
+        raise HTTPException(status_code=422, detail="merchant_ids must not be empty")
     merchants = [{"golden_id": mid} for mid in campaign.merchant_ids]
     await _run(ds.log_campaign, {
         "name": campaign.name,
         "action_type": campaign.action_type,
         "channel": campaign.channel,
+        "segment": campaign.segment,
         "merchants": merchants,
     })
     return M.CampaignResponse(
@@ -285,7 +289,10 @@ async def personalization_summary():
 async def personalization_signals(golden_id: str):
     result = await _run(ds.get_personalization_for_merchant, golden_id)
     if not result:
-        raise HTTPException(status_code=404, detail="Merchant not found")
+        merchant = await _run(ds.get_merchant_detail, golden_id)
+        if not merchant:
+            raise HTTPException(status_code=404, detail="Merchant not found")
+        return {"golden_id": golden_id, "message": "No personalization signals available for this merchant."}
     return result
 
 
@@ -320,8 +327,13 @@ async def audience_summary():
     return await _run(ds.get_audience_summary)
 
 
+_VALID_AUDIENCES = {"churn_risk", "high_value", "new_onboarding", "winback", "growth", "vip", "immediate_action"}
+
+
 @app.get("/api/audiences/{audience_type}", response_model=list[M.AudienceMember])
 async def audience_list(audience_type: str, limit: int = Query(default=100, le=500)):
+    if audience_type not in _VALID_AUDIENCES:
+        raise HTTPException(status_code=422, detail=f"Invalid audience_type. Valid: {', '.join(sorted(_VALID_AUDIENCES))}")
     return await _run(ds.get_audience_list, audience_type, limit)
 
 
@@ -438,9 +450,12 @@ async def agent_chat(req: M.ChatRequest):
             )
             resp.raise_for_status()
             return resp.json()
+    except httpx.HTTPStatusError as e:
+        logger.exception("Agent chat HTTP error: %s", e.response.status_code)
+        raise HTTPException(status_code=502, detail="Agent endpoint returned an error. Check that the CDP Supervisor Agent is deployed and healthy.")
     except Exception as e:
         logger.exception("Agent chat error")
-        return {"output": [{"type": "message", "content": [{"type": "output_text", "text": f"Agent error: {str(e)}. Ensure the CDP Supervisor Agent is deployed."}]}]}
+        raise HTTPException(status_code=502, detail="Failed to reach the AI Agent. Ensure the CDP Supervisor Agent is deployed.")
 
 
 @app.post("/api/genie/ask")
@@ -491,7 +506,7 @@ async def genie_ask(req: M.GenieRequest):
         return {"question": req.question, "columns": ["answer"], "rows": [{"answer": text_answer or "Genie processed your question but returned no tabular data."}], "row_count": 1}
     except Exception as e:
         logger.exception("Genie ask error")
-        return {"question": req.question, "error": str(e)}
+        raise HTTPException(status_code=502, detail="Genie query failed. Check Genie Space configuration and warehouse connectivity.")
 
 
 def _mock_agent_response(question: str) -> dict:

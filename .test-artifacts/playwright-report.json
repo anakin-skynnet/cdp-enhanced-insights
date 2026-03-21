@@ -1,0 +1,297 @@
+{
+  "initialStatus": 200,
+  "finalUrl": "https://adb-984752964297111.11.azuredatabricks.net/login.html?o=984752964297111&next_url=%2Foidc%2Foauth2%2Fv2.0%2Fauthorize%3Fapproval_prompt%3Dconsent%26client_id%3Da6d639a6-361d-47df-aebe-13861c252117%26code_challenge%3D1grrjldGj-warXfTNh1_MaEVCU6Gm_k6NrNnhdCs4HQ%26code_challenge_method%3DS256%26redirect_uri%3Dhttps%253A%252F%252Fbpp-cdp-360-984752964297111.11.azure.databricksapps.com%252F.auth%252Fcallback%26response_type%3Dcode%26scope%3Ddefault%26state%3DFNGaI6VXWZQbgctHyzPYcUEaOwwRMfSRwATDwgigLWg%253A%252F&tuuid=0d2dd65a-8697-42b7-9545-6c439f516ad6",
+  "title": "Login - Databricks",
+  "consoleAndErrors": [
+    {
+      "type": "log",
+      "text": "JQMIGRATE: Migrate is installed with logging active, version 3.2.0",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/84073.306050ef95.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.assistant.enableBackgroundActivityTracker) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2OperationDurationMetrcReportSamplingRate) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2TransactionDeadlineMs) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2DbCapacity) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2MaxLogSizeMb) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2SendQueueRetryAfterSeconds) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2SendQueueFlushIntervalSeconds) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2SendQueueMaxWaitForFlushQueueSize) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2SendQueueMaxWaitForFlushTotalByteSize) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2SendQueueCapacity) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2SendQueueByteSizeCapacity) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2PersistQueueFlushIntervalSeconds) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2PersistQueueMaxWaitForFlushQueueSize) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2PersistQueueMaxWaitForFlushTotalByteSize) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2PersistQueueCapacity) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2PersistQueueByteSizeCapacity) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2WorkerMaxOrphanedQueueByteSize) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2WorkerReportLoggerStatusIntervalSeconds) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2MetaLoggerMaxLogs) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2MetaLoggerUploadIntervalSeconds) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.enableReliableLoggerV2) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.enableBlockedUsageLogMetricNames) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2ThrottleConfig) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.logThrottler.ratePerSecond) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.logThrottler.maxBurst) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.logThrottler.cacheSize) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.logThrottler.customRateLimits) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.throttledLogCounterReportIntervalSeconds) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.reliableLoggerV2SchemalessRealtimeMetricPollIntervalSeconds) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.enableSafexCallCounter) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.applyFilterOnInitialLoad) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.fixHandlingIndexRoutes) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.addRealtimeMetricsToInteractionLogs) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.enableInteractionTimeout) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.autoHoldInteractionsOnObservers) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.autoHoldInteractionsOnSuspense) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.autoHoldInteractionsOnSuspenseAll) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.autoHoldInteractionsOnPendingRenders) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.batchUpdatesWhenDispatchEvent) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.enablePrPreview) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.enableGitBisect) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "confx(user) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "confx(orgId_new) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "confx(authenticatingPrincipalUniqueName) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.prefetchRouteAssets) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.enablePrefetchQueries) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "adminx(productName) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.productName) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.conf_migrated.confsToServeNewValue) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.webapp.themeIdentifier) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "confx(isCloudlessWorkspace) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.webapp.databricksDocsBaseHostname) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.webapp.authentication.x509.enabled) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.webapp.signupUrl) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "adminx(loginLogo) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.observability.defaultComponentView.typographyLink) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    },
+    {
+      "type": "warning",
+      "text": "safex(databricks.fe.infra.enableLoadingStatePhaseEvents) not loaded.",
+      "loc": "https://databricks-ui-assets-v2-gsd4bmhzapcyenec.b02.azurefd.net/static/js/34845.fdbff5feca.chunk.js"
+    }
+  ]
+}

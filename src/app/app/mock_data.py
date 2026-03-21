@@ -34,7 +34,7 @@ FIRST_NAMES = [
     "Peluquería Estilo", "Ferretería Central", "Zapatería El Paso",
     "Clínica Salud Plus", "Gimnasio Fitness Pro", "Lavandería Express",
     "Joyería Brillante", "Floristería Primavera", "Heladería Polar",
-    "Verdulería Fresca", "Estación de Servicio YPF", "Kiosco 24hs",
+    "Verdulería Fresca", "Estación de Servicio Central", "Kiosco 24hs",
     "Bar La Esquina", "Mercado Municipal", "Veterinaria Animal",
     "Electrónica Digital", "Imprenta Gráfica", "Centro Educativo ABC",
     "Spa Relax", "Agencia de Viajes Sol", "Mueblería Hogar",

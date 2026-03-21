@@ -508,9 +508,15 @@
         createChart('chart-health', 'bar', {
           labels: health.map(h => h.health_tier),
           datasets: [
-            { label: 'Count', data: health.map(h => h.merchant_count), backgroundColor: 'rgba(236,0,0,0.75)', borderRadius: 6 },
-            { label: 'Avg Score', data: health.map(h => h.avg_score), backgroundColor: 'rgba(109,109,109,0.75)', borderRadius: 6 },
+            { label: 'Merchant Count', data: health.map(h => h.merchant_count), backgroundColor: 'rgba(236,0,0,0.75)', borderRadius: 6, yAxisID: 'y' },
+            { label: 'Avg Score', data: health.map(h => h.avg_score), backgroundColor: 'rgba(109,109,109,0.75)', borderRadius: 6, yAxisID: 'y1' },
           ]
+        }, {
+          scales: {
+            x: { ticks: { color: '#9a9a9a' }, grid: { color: '#222' } },
+            y: { position: 'left', title: { display: true, text: 'Merchants', color: '#9a9a9a' }, ticks: { color: '#9a9a9a' }, grid: { color: '#222' } },
+            y1: { position: 'right', title: { display: true, text: 'Avg Score', color: '#9a9a9a' }, ticks: { color: '#9a9a9a' }, grid: { display: false }, min: 0, max: 100 },
+          }
         });
       }
     }
@@ -556,8 +562,9 @@
           <td class="px-4 py-3 text-right">${m.days_since_last_txn}d</td>
           <td class="px-4 py-3 text-right">${m.ticket_count}</td>
         </tr>`).join('');
+      const safeSearch = escapeHtml(merchantFilters.search).replace(/'/g, '&#39;');
       const paginationBtns = totalPages > 1 ? Array.from({length: totalPages}, (_, i) =>
-        `<button onclick="loadMerchants('${merchantFilters.search.replace(/'/g,"\\'")}', ${i})" class="w-8 h-8 rounded text-xs ${i === page ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'} transition-colors">${i + 1}</button>`
+        `<button onclick="loadMerchants('${safeSearch}', ${i})" class="w-8 h-8 rounded text-xs ${i === page ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent'} transition-colors">${i + 1}</button>`
       ).join('') : '';
       const segOpts = SEGMENTS.map(s => `<option value="${s}" ${merchantFilters.segment === s ? 'selected' : ''}>${s.replace(/_/g,' ')}</option>`).join('');
       const htOpts = HEALTH_TIERS.map(t => `<option value="${t}" ${merchantFilters.health_tier === t ? 'selected' : ''}>${t}</option>`).join('');
@@ -600,9 +607,9 @@
         <div class="flex gap-3 py-2">
           <div class="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${eventIcon[e.event_type] || 'text-muted-foreground'} bg-current"></div>
           <div class="min-w-0">
-            <div class="text-xs text-muted-foreground">${e.event_date} &middot; ${e.source}</div>
-            <div class="text-sm">${e.description}</div>
-            ${e.detail ? `<div class="text-xs text-muted-foreground">${e.detail}</div>` : ''}
+            <div class="text-xs text-muted-foreground">${esc(e.event_date)} &middot; ${esc(e.source)}</div>
+            <div class="text-sm">${esc(e.description)}</div>
+            ${e.detail ? `<div class="text-xs text-muted-foreground">${esc(e.detail)}</div>` : ''}
           </div>
         </div>`).join('');
 
@@ -825,8 +832,8 @@
           }
         });
         const rows = roi.map(r => `
-          <tr class="border-b border-border"><td class="px-4 py-2">${r.campaign_type.replace(/_/g, ' ')}</td>
-          <td class="px-4 py-2">${r.channel.replace(/_/g, ' ')}</td>
+          <tr class="border-b border-border"><td class="px-4 py-2">${esc(r.campaign_type).replace(/_/g, ' ')}</td>
+          <td class="px-4 py-2">${esc(r.channel).replace(/_/g, ' ')}</td>
           <td class="px-4 py-2 text-right">${r.merchants_targeted}</td>
           <td class="px-4 py-2 text-right">${r.conversions}</td>
           <td class="px-4 py-2 text-right">${pct(r.conversion_rate)}</td>
@@ -964,24 +971,24 @@
           <div id="${cid}" class="p-5 space-y-3">
             <div>
               <div class="text-xs text-muted-foreground mb-1">Email Subject</div>
-              <div class="text-sm font-medium">${cr.email_subject || '-'}</div>
+              <div class="text-sm font-medium">${esc(cr.email_subject || '-')}</div>
             </div>
             <div>
               <div class="text-xs text-muted-foreground mb-1">SMS</div>
-              <div class="text-sm">${cr.sms_message || '-'}</div>
+              <div class="text-sm">${esc(cr.sms_message || '-')}</div>
             </div>
             <div>
               <div class="text-xs text-muted-foreground mb-1">Push</div>
-              <div class="text-sm">${cr.push_notification || '-'}</div>
+              <div class="text-sm">${esc(cr.push_notification || '-')}</div>
             </div>
             <div>
               <div class="text-xs text-muted-foreground mb-1">Ad</div>
-              <div class="text-sm font-semibold">${cr.ad_headline || '-'}</div>
-              <div class="text-xs text-muted-foreground">${cr.ad_description || ''}</div>
+              <div class="text-sm font-semibold">${esc(cr.ad_headline || '-')}</div>
+              <div class="text-xs text-muted-foreground">${esc(cr.ad_description || '')}</div>
             </div>
             <div class="flex items-center justify-between pt-2 border-t border-border">
-              ${badge(cr.tone || '', 'blue')}
-              <span class="text-xs font-medium text-primary">${cr.cta || ''}</span>
+              ${badge(esc(cr.tone || ''), 'blue')}
+              <span class="text-xs font-medium text-primary">${esc(cr.cta || '')}</span>
             </div>
           </div>
         </div>`;
@@ -1061,7 +1068,7 @@
         });
         const rows = data.map(d => `
           <tr class="border-b border-border">
-            <td class="px-4 py-2 font-medium">${d.channel.replace(/_/g, ' ')}</td>
+            <td class="px-4 py-2 font-medium">${esc(d.channel).replace(/_/g, ' ')}</td>
             <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.markov_attributed_value)}</td>
             <td class="px-4 py-2 text-right">${pct((d.markov_attribution_share || 0) * 100)}</td>
             <td class="px-4 py-2 text-right font-mono">${fmtCurrency(d.first_touch_value)}</td>
@@ -1127,8 +1134,8 @@
       const ANOMALY_TYPES = ['volume_drop', 'unexpected_inactivity', 'ticket_spike', 'health_collapse'];
       const filterOpts = ANOMALY_TYPES.map(t => `<option value="${t}" ${anomalyFilter === t ? 'selected' : ''}>${t.replace(/_/g, ' ')}</option>`).join('');
       const rows = (alerts || []).map(a => `
-        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${a.golden_id}')">
-          <td class="px-4 py-3 font-medium">${a.merchant_name || a.golden_id}</td>
+        <tr class="border-b border-border hover:bg-muted/50 cursor-pointer transition-colors" onclick="openMerchant('${esc(a.golden_id)}')">
+          <td class="px-4 py-3 font-medium">${esc(a.merchant_name || a.golden_id)}</td>
           <td class="px-4 py-3">${anomalyBadge(a.anomaly_type)}</td>
           <td class="px-4 py-3">${segmentBadge(a.segment || 'unassigned')}</td>
           <td class="px-4 py-3">${healthBadge(a.health_tier || 'unknown')}</td>
@@ -1199,8 +1206,11 @@
       const healthy = data.filter(t => t.status === 'healthy').length;
       const stale = data.filter(t => t.status === 'stale').length;
       const empty = data.filter(t => t.status === 'empty').length;
+      const missing = data.filter(t => t.status === 'missing' || t.status === 'unknown').length;
       const rows = data.map(t => {
-        const statusBadge = t.status === 'healthy' ? badge('Healthy', 'green') : t.status === 'stale' ? badge('Stale', 'yellow') : badge('Empty', 'red');
+        const statusMap = { healthy: ['Healthy', 'green'], stale: ['Stale', 'yellow'], empty: ['Empty', 'red'], missing: ['Missing', 'red'], unknown: ['Unknown', 'gray'] };
+        const [label, variant] = statusMap[t.status] || ['Unknown', 'gray'];
+        const statusBadge = badge(label, variant);
         return `
           <tr class="border-b border-border">
             <td class="px-4 py-3 font-mono text-sm">${t.table_name}</td>
@@ -1213,8 +1223,8 @@
         <div class="space-y-6">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             ${kpiCard('Healthy Tables', healthy + '/' + data.length, 'Updated within 4 hours')}
-            ${kpiCard('Stale Tables', stale.toString(), 'May need pipeline refresh')}
-            ${kpiCard('Empty Tables', empty.toString(), 'No data loaded')}
+            ${kpiCard('Stale / Empty', (stale + empty).toString(), 'May need pipeline refresh')}
+            ${kpiCard('Missing / Unknown', missing.toString(), 'Not found in catalog')}
           </div>
           ${card('Gold Layer Tables', tableWrap(['Table', 'Last Updated', 'Rows', 'Status'], rows))}
         </div>`;
@@ -2024,7 +2034,7 @@
       for (const line of lines) {
         if (/^\|.+\|$/.test(line.trim())) {
           if (/^\|[\s:-]+\|$/.test(line.trim())) { headerDone = true; continue; }
-          const cells = line.split('|').slice(1, -1).map(c => c.trim());
+          const cells = line.split('|').slice(1, -1).map(c => esc(c.trim()));
           if (!inTable) { inTable = true; headerDone = false; out.push('<div class="overflow-x-auto my-2"><table class="w-full text-xs border border-border rounded"><thead><tr class="bg-muted/50">'); }
           if (!headerDone) {
             out.push(cells.map(c => `<th class="px-2 py-1 text-left font-medium text-muted-foreground">${c}</th>`).join(''));
@@ -2035,7 +2045,8 @@
           }
         } else {
           if (inTable) { inTable = false; headerDone = false; out.push('</tbody></table></div>'); }
-          const processed = line
+          const escaped = escapeHtml(line);
+          const processed = escaped
             .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.+?)\*/g, '<em>$1</em>');
           if (line.trim() === '') out.push('<br>');
@@ -2058,7 +2069,7 @@
   </button>
 
   <!-- AI Chat Panel -->
-  <div id="ai-chat-panel" class="fixed bottom-24 right-6 z-50 hidden w-96 rounded-lg border border-border bg-card shadow-2xl flex flex-col overflow-hidden" style="height: min(32rem, calc(100vh - 8rem))">
+  <div id="ai-chat-panel" class="fixed bottom-24 right-6 z-50 hidden rounded-lg border border-border bg-card shadow-2xl flex flex-col overflow-hidden" style="width: min(24rem, calc(100vw - 3rem)); height: min(32rem, calc(100vh - 8rem))">
     <div class="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
       <div class="flex items-center gap-2">
         <div class="w-6 h-6 rounded-md bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">AI</div>

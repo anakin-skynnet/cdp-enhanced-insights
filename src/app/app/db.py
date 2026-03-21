@@ -27,7 +27,8 @@ def _client() -> WorkspaceClient:
 
 # ── TTL Cache ────────────────────────────────────────────────────
 
-_cache: dict[str, tuple[float, any]] = {}
+from typing import Any
+_cache: dict[str, tuple[float, Any]] = {}
 _CACHE_TTL = int(os.environ.get("CDP_CACHE_TTL", "120"))
 
 
@@ -74,6 +75,8 @@ def query(sql: str, params: dict | None = None) -> list[dict]:
             )
             if resp.status and resp.status.state == StatementState.FAILED:
                 raise RuntimeError(resp.status.error.message if resp.status.error else "SQL failed")
+            if not resp.manifest or not resp.manifest.schema:
+                return []
             columns = [c.name for c in (resp.manifest.schema.columns or [])]
             rows: list[dict] = []
             if resp.result and resp.result.data_array:
@@ -343,8 +346,13 @@ def get_clv_top_merchants(limit: int = 20) -> list[dict]:
 
 def get_channel_attribution() -> list[dict]:
     return query(f"""
-        SELECT channel, markov_attributed_value, markov_attribution_share,
-               first_touch_value, last_touch_value, linear_value, time_decay_value
+        SELECT channel,
+               COALESCE(markov_attributed_value, 0) AS markov_attributed_value,
+               COALESCE(markov_attribution_share, 0) AS markov_attribution_share,
+               COALESCE(first_touch_value, 0) AS first_touch_value,
+               COALESCE(last_touch_value, 0) AS last_touch_value,
+               COALESCE(linear_value, 0) AS linear_value,
+               COALESCE(time_decay_value, 0) AS time_decay_value
         FROM {_t('gold_channel_attribution')}
         ORDER BY markov_attributed_value DESC
     """)
@@ -366,17 +374,22 @@ def log_campaign(campaign: dict) -> None:
     action_type = str(campaign.get("action_type", ""))[:100]
     channel = str(campaign.get("channel", ""))[:100]
     name = str(campaign.get("name", ""))[:200]
-    for m in campaign.get("merchants", []):
-        query(f"""
-            INSERT INTO {_t('nba_action_log')}
-              (action_id, golden_id, action_type, channel, executed_by, notes, executed_at)
-            VALUES (uuid(), :gid, :action, :channel, 'cdp_app', :notes, CURRENT_TIMESTAMP())
-        """, {
-            "gid": str(m["golden_id"]).strip(),
-            "action": action_type,
-            "channel": channel,
-            "notes": name,
-        })
+    merchants = campaign.get("merchants", [])
+    if not merchants:
+        return
+    values_clauses = []
+    for m in merchants:
+        gid = str(m["golden_id"]).strip().replace("'", "''")
+        act = action_type.replace("'", "''")
+        ch = channel.replace("'", "''")
+        n = name.replace("'", "''")
+        values_clauses.append(f"(uuid(), '{gid}', '{act}', '{ch}', 'cdp_app', '{n}', CURRENT_TIMESTAMP())")
+    values_sql = ",\n".join(values_clauses)
+    query(f"""
+        INSERT INTO {_t('nba_action_log')}
+          (action_id, golden_id, action_type, channel, executed_by, notes, executed_at)
+        VALUES {values_sql}
+    """)
 
 
 # ── Customer Support Analytics ─────────────────────────────────────
@@ -587,17 +600,21 @@ def get_audience_summary() -> list[dict]:
     """)
 
 
+_AUDIENCE_FLAG_MAP = {
+    "churn_risk": "audience_churn_risk",
+    "high_value": "audience_high_value",
+    "new_onboarding": "audience_new_onboarding",
+    "winback": "audience_winback",
+    "growth": "audience_growth",
+    "vip": "audience_vip",
+    "immediate_action": "audience_immediate_action",
+}
+
+
 def get_audience_list(audience_type: str, limit: int = 100) -> list[dict]:
-    flag_map = {
-        "churn_risk": "audience_churn_risk",
-        "high_value": "audience_high_value",
-        "new_onboarding": "audience_new_onboarding",
-        "winback": "audience_winback",
-        "growth": "audience_growth",
-        "vip": "audience_vip",
-        "immediate_action": "audience_immediate_action",
-    }
-    flag = flag_map.get(audience_type, "TRUE")
+    flag = _AUDIENCE_FLAG_MAP.get(audience_type)
+    if flag is None:
+        raise ValueError(f"Unknown audience_type '{audience_type}'. Valid: {', '.join(_AUDIENCE_FLAG_MAP)}")
     return query(f"""
         SELECT golden_id, merchant_name, email, hashed_email,
                rfm_segment, health_score, txn_volume,
@@ -733,23 +750,28 @@ def get_data_freshness() -> list[dict]:
     cached = _cached("data_freshness")
     if cached:
         return cached
-    union = " UNION ALL ".join(
-        f"(SELECT '{t}' AS table_name FROM {_t(t)} LIMIT 1)" for t in _GOLD_TABLES
-    )
+    table_list = ", ".join(f"'{t}'" for t in _GOLD_TABLES)
     rows = query(f"""
-        WITH tables AS ({union})
-        SELECT t.table_name,
-               COALESCE(i.last_altered, i.created) AS last_updated
-        FROM tables t
-        LEFT JOIN {CATALOG}.information_schema.tables i
-          ON i.table_catalog = '{CATALOG}'
+        SELECT
+          i.table_name,
+          COALESCE(i.last_altered, i.created) AS last_updated
+        FROM {CATALOG}.information_schema.tables i
+        WHERE i.table_catalog = '{CATALOG}'
           AND i.table_schema = '{SCHEMA}'
-          AND i.table_name = t.table_name
+          AND i.table_name IN ({table_list})
+        ORDER BY i.table_name
     """)
     result = []
+    found = set()
     for r in rows:
-        status = "healthy" if r.get("last_updated") else "unknown"
-        result.append({**r, "status": status})
+        tname = r.get("table_name", "")
+        found.add(tname)
+        updated = r.get("last_updated")
+        status = "healthy" if updated else "unknown"
+        result.append({"table_name": tname, "last_updated": updated, "row_count": 0, "status": status})
+    for t in _GOLD_TABLES:
+        if t not in found:
+            result.append({"table_name": t, "last_updated": None, "row_count": 0, "status": "missing"})
     _set_cache("data_freshness", result)
     return result
 
@@ -757,7 +779,10 @@ def get_data_freshness() -> list[dict]:
 # ── Agent Feedback ───────────────────────────────────────────────
 
 def log_agent_feedback(feedback: dict) -> dict:
-    rating = max(1, min(5, int(feedback.get("rating", 3))))
+    try:
+        rating = max(1, min(5, int(feedback.get("rating", 3))))
+    except (ValueError, TypeError):
+        rating = 3
     query(f"""
         INSERT INTO {_t('agent_feedback_log')}
           (feedback_id, message_content, rating, comment, created_at)

@@ -80,10 +80,10 @@ class NBAItem(BaseModel):
     segment: str = "unassigned"
     health_score: int = 0
     health_tier: str = "unknown"
-    primary_action: str
+    primary_action: str = "review"
     secondary_action: Optional[str] = None
-    primary_channel: str
-    urgency: str
+    primary_channel: str = "email"
+    urgency: str = "this_week"
     priority_score: float = 0
     estimated_revenue_impact: float = 0
     txn_volume: float = 0
@@ -150,12 +150,12 @@ class CLVMerchant(BaseModel):
 
 class ChannelAttribution(BaseModel):
     channel: str
-    markov_attributed_value: float
+    markov_attributed_value: float = 0
     markov_attribution_share: float = 0
-    first_touch_value: float = 0
-    last_touch_value: float = 0
-    linear_value: float = 0
-    time_decay_value: float = 0
+    first_touch_value: Optional[float] = 0
+    last_touch_value: Optional[float] = 0
+    linear_value: Optional[float] = 0
+    time_decay_value: Optional[float] = 0
 
 
 class BehavioralSegment(BaseModel):
