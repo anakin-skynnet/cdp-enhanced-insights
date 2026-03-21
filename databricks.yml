@@ -8,7 +8,7 @@ include:
   - resources/pipelines.yml
   - resources/jobs.yml
   - resources/dashboards.yml
-  # - resources/cdp_customer_360_app.app.yml  # disabled: workspace SP quota (20k users) prevents new app creation
+  - resources/cdp_customer_360_app.app.yml
   - resources/genie_spaces.yml
   # resources/alerts.yml - SQL alerts: create manually in workspace; schema may vary by CLI version
 
