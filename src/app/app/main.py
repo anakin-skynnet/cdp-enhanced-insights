@@ -333,7 +333,7 @@ async def ad_creative():
     return await _run(ds.get_ad_creative_library)
 
 
-_LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+_LLM_ENDPOINT = "databricks-gpt-5-4-mini"
 
 
 def _call_llm(prompt: str) -> str:
@@ -345,8 +345,8 @@ def _call_llm(prompt: str) -> str:
     resp = _httpx.post(
         f"{host}/serving-endpoints/{_LLM_ENDPOINT}/invocations",
         headers=auth,
-        json={"messages": [{"role": "user", "content": prompt}], "max_tokens": 1200, "temperature": 0.7},
-        timeout=90,
+        json={"messages": [{"role": "user", "content": prompt}], "max_tokens": 4000, "temperature": 0.8},
+        timeout=120,
     )
     resp.raise_for_status()
     data = resp.json()
@@ -398,85 +398,162 @@ Generate content in this exact JSON format (no markdown, no extra text):
 
 
 _SEGMENT_PALETTES = {
-    "champions": ("#10B981", "#059669", "#D1FAE5"),
-    "loyal": ("#3B82F6", "#2563EB", "#DBEAFE"),
-    "potential_loyalists": ("#6366F1", "#4F46E5", "#E0E7FF"),
-    "new_customers": ("#8B5CF6", "#7C3AED", "#EDE9FE"),
-    "promising": ("#A855F7", "#9333EA", "#F3E8FF"),
-    "at_risk": ("#EF4444", "#DC2626", "#FEE2E2"),
-    "cant_lose": ("#F97316", "#EA580C", "#FFEDD5"),
-    "hibernating": ("#F59E0B", "#D97706", "#FEF3C7"),
-    "need_attention": ("#EC4899", "#DB2777", "#FCE7F3"),
+    "champions": ("#10B981", "#059669"), "loyal": ("#3B82F6", "#2563EB"),
+    "potential_loyalists": ("#6366F1", "#4F46E5"), "new_customers": ("#8B5CF6", "#7C3AED"),
+    "promising": ("#A855F7", "#9333EA"), "at_risk": ("#EF4444", "#DC2626"),
+    "cant_lose": ("#F97316", "#EA580C"), "hibernating": ("#F59E0B", "#D97706"),
+    "need_attention": ("#EC4899", "#DB2777"),
 }
 
 
-def _generate_svg_banner(segment: str, tagline: str, theme: str) -> str:
-    """Generate a professional SVG campaign banner."""
+def _generate_ai_svg(segment: str, tagline: str, theme: str) -> str:
+    """Use the LLM to generate a unique SVG campaign banner."""
     import base64
-    c1, c2, c3 = _SEGMENT_PALETTES.get(segment, ("#6366F1", "#4F46E5", "#E0E7FF"))
-    safe_tagline = (tagline or "Grow Your Business").replace("&", "&amp;").replace("<", "&lt;").replace('"', "&quot;")
-    safe_theme = (theme or "Campaign").replace("&", "&amp;").replace("<", "&lt;").replace('"', "&quot;")
+    c1, c2 = _SEGMENT_PALETTES.get(segment, ("#6366F1", "#4F46E5"))
     seg_label = segment.replace("_", " ").title()
 
-    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:{c1};stop-opacity:1"/>
-      <stop offset="100%" style="stop-color:{c2};stop-opacity:1"/>
-    </linearGradient>
-    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:white;stop-opacity:0"/>
-      <stop offset="50%" style="stop-color:white;stop-opacity:0.08"/>
-      <stop offset="100%" style="stop-color:white;stop-opacity:0"/>
-    </linearGradient>
-  </defs>
-  <rect width="1200" height="400" fill="url(#bg)" rx="16"/>
-  <rect width="1200" height="400" fill="url(#shine)" rx="16"/>
-  <circle cx="1050" cy="80" r="180" fill="white" opacity="0.06"/>
-  <circle cx="1100" cy="320" r="120" fill="white" opacity="0.04"/>
-  <circle cx="150" cy="350" r="200" fill="white" opacity="0.05"/>
-  <rect x="60" y="60" width="8" height="80" rx="4" fill="white" opacity="0.3"/>
-  <rect x="60" y="60" width="80" height="8" rx="4" fill="white" opacity="0.3"/>
-  <g transform="translate(100, 140)">
-    <rect x="0" y="0" width="auto" height="32" rx="16" fill="white" opacity="0.15"/>
-  </g>
-  <text x="120" y="120" font-family="system-ui,-apple-system,sans-serif" font-size="16"
-        font-weight="600" fill="white" opacity="0.7" letter-spacing="3">{seg_label.upper()} SEGMENT</text>
-  <text x="100" y="200" font-family="system-ui,-apple-system,sans-serif" font-size="44"
-        font-weight="700" fill="white" letter-spacing="-0.5">{safe_tagline[:45]}</text>
-  <text x="100" y="250" font-family="system-ui,-apple-system,sans-serif" font-size="20"
-        fill="white" opacity="0.8">{safe_theme[:70]}</text>
-  <rect x="100" y="290" width="200" height="48" rx="24" fill="white"/>
-  <text x="200" y="320" font-family="system-ui,-apple-system,sans-serif" font-size="16"
-        font-weight="600" fill="{c2}" text-anchor="middle">Learn More</text>
-  <g transform="translate(920,100)" opacity="0.12">
-    <rect x="0" y="0" width="200" height="140" rx="12" fill="white"/>
-    <rect x="20" y="20" width="70" height="8" rx="4" fill="white" opacity="0.5"/>
-    <rect x="20" y="40" width="160" height="6" rx="3" fill="white" opacity="0.3"/>
-    <rect x="20" y="55" width="120" height="6" rx="3" fill="white" opacity="0.3"/>
-    <rect x="20" y="80" width="60" height="24" rx="12" fill="white" opacity="0.4"/>
-    <circle cx="160" cy="110" r="20" fill="white" opacity="0.3"/>
-  </g>
-  <text x="1140" y="380" font-family="system-ui,-apple-system,sans-serif" font-size="11"
-        fill="white" opacity="0.4" text-anchor="end">Powered by Databricks CDP 360</text>
-</svg>'''
-    return base64.b64encode(svg.encode()).decode()
+    prompt = f"""You are a world-class graphic designer. Generate a COMPLETE, valid SVG banner image for a fintech marketing campaign.
+
+REQUIREMENTS:
+- SVG must use viewBox="0 0 1200 400" with xmlns="http://www.w3.org/2000/svg"
+- Use these brand colors: primary "{c1}", secondary "{c2}", with white text
+- Include a gradient background using the brand colors
+- Create UNIQUE decorative elements — be creative with abstract shapes, geometric patterns, wave paths, or organic forms. Each banner should look different.
+- Include this tagline as large white text (44px): "{tagline[:50]}"
+- Include segment label "{seg_label.upper()} SEGMENT" as smaller text (16px, white, semi-transparent)
+- Include theme subtitle: "{theme[:60]}"
+- Include a white rounded CTA button with dark text
+- Add "Powered by Databricks CDP 360" small text bottom-right
+- Use font-family="system-ui,-apple-system,sans-serif"
+- The design should feel premium, modern, and unique
+
+OUTPUT: Return ONLY the raw SVG code starting with <svg and ending with </svg>. No markdown, no explanation, no code blocks."""
+
+    raw = _call_llm(prompt)
+    start = raw.find("<svg")
+    end = raw.rfind("</svg>")
+    if start >= 0 and end > start:
+        svg = raw[start:end + 6]
+        if 'xmlns=' not in svg:
+            svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"', 1)
+        return base64.b64encode(svg.encode()).decode()
+
+    raise ValueError("LLM did not return valid SVG")
 
 
 @app.post("/api/ad-creative/generate-image")
 async def generate_image(req: M.GenerateImageRequest):
-    """Generate a campaign banner as a styled SVG."""
+    """Generate a unique campaign banner using AI (LLM-generated SVG)."""
+    tagline = req.tagline or "Grow Your Business With Us"
+    theme = req.theme or req.segment.replace("_", " ").title() + " merchant engagement"
     try:
-        b64 = await _run(
-            _generate_svg_banner,
-            req.segment,
-            req.tagline or "Grow Your Business With Us",
-            req.theme or req.segment.replace("_", " ").title() + " merchant engagement",
-        )
+        b64 = await _run(_generate_ai_svg, req.segment, tagline, theme)
         return {"image": b64, "type": "svg", "segment": req.segment}
     except Exception as e:
-        logger.exception("Banner generation failed")
-        raise HTTPException(status_code=500, detail=f"Banner generation failed: {type(e).__name__}")
+        logger.exception("AI banner generation failed")
+        raise HTTPException(status_code=502, detail=f"AI banner generation failed: {type(e).__name__}")
+
+
+@app.post("/api/ad-creative/generate-merchant")
+async def generate_merchant_creative(req: M.GenerateMerchantCreativeRequest):
+    """Generate hyper-personalized outreach for a specific merchant using their profile data."""
+    merchant = await _run(ds.get_merchant_detail, req.golden_id) if DATA_SOURCE != "mock" else None
+    m_ctx = ""
+    if merchant:
+        m_ctx = (
+            f"Merchant: {merchant.get('merchant_name', 'Unknown')}. "
+            f"Segment: {merchant.get('segment', 'unknown')}. "
+            f"Health: {merchant.get('health_score', 'N/A')}/100 ({merchant.get('health_tier', '')}). "
+            f"Volume: ${merchant.get('txn_volume', 0):,.0f} ({merchant.get('txn_count', 0)} txns). "
+            f"Recency: {merchant.get('days_since_last_txn', 'N/A')} days since last transaction. "
+            f"Support tickets: {merchant.get('ticket_count', 0)}. "
+            f"Industry: {merchant.get('industry', 'N/A')}. "
+            f"Location: {merchant.get('city', '')} {merchant.get('country', '')}. "
+            f"Primary NBA: {merchant.get('primary_action', 'N/A')} via {merchant.get('primary_channel', 'N/A')}. "
+            f"RFM: R={merchant.get('r_score', 'N/A')} F={merchant.get('f_score', 'N/A')} M={merchant.get('m_score', 'N/A')}."
+        )
+
+    prompt = f"""You are an expert in hyper-personalized 1-to-1 marketing for a payment processing platform.
+Generate a FULLY PERSONALIZED outreach package for this specific merchant. Every message should reference
+their real data — name, volume, industry, health status — to feel genuinely personal, not templated.
+
+MERCHANT PROFILE:
+{m_ctx or f"Segment: {req.segment or 'unknown'}, Golden ID: {req.golden_id}"}
+
+CAMPAIGN CONTEXT:
+- Objective: {req.objective or 'Retain and grow this merchant'}
+- Tone: {req.tone or 'Personal and consultative'}
+
+Generate this exact JSON (no markdown):
+{{
+  "email_subject": "Personalized subject referencing their business (50 chars max)",
+  "email_body": "3-paragraph personalized email body. Reference their volume, health, industry by name. Include a specific offer or insight relevant to their situation.",
+  "sms_message": "Personal SMS (160 chars). Use their name.",
+  "push_notification": "Personalized push (80 chars)",
+  "whatsapp_message": "Conversational WhatsApp message (200 chars). Warm, human tone.",
+  "ad_headline": "Personalized headline (30 chars)",
+  "ad_description": "Personalized ad (90 chars)",
+  "call_script": "30-second phone call script opening. Reference their recent activity and specific value proposition.",
+  "tone": "{req.tone or 'Personal and consultative'}",
+  "cta": "Specific call-to-action for this merchant",
+  "personalization_signals": "List 3 data points used for personalization"
+}}"""
+
+    try:
+        raw = await _run(_call_llm, prompt)
+        import json as _json
+        start, end = raw.find("{"), raw.rfind("}") + 1
+        result = _json.loads(raw[start:end]) if start >= 0 and end > start else {"error": "Parse failed"}
+        result["golden_id"] = req.golden_id
+        result["segment"] = merchant.get("segment", req.segment) if merchant else req.segment
+        result["merchant_name"] = merchant.get("merchant_name", "") if merchant else ""
+        return result
+    except Exception as e:
+        logger.exception("Merchant creative generation failed")
+        raise HTTPException(status_code=502, detail=f"Generation failed: {type(e).__name__}")
+
+
+@app.post("/api/ad-creative/generate-variants")
+async def generate_variants(req: M.GenerateVariantsRequest):
+    """Generate A/B test variants for a campaign — multiple creative options per channel."""
+    prompt = f"""You are an expert marketing strategist specializing in A/B testing for payment platforms.
+Generate {req.num_variants} DISTINCT creative variants for A/B testing. Each variant should take a
+DIFFERENT APPROACH — different hooks, different emotional angles, different value propositions.
+
+TARGET: "{req.segment}" segment
+CHANNEL: {req.channel}
+OBJECTIVE: {req.objective or 'Maximize engagement'}
+TONE RANGE: From professional to bold
+
+Generate this exact JSON array (no markdown):
+[
+  {{
+    "variant_label": "A",
+    "variant_strategy": "Brief description of this variant's approach",
+    "email_subject": "...",
+    "sms_message": "...(160 chars)",
+    "push_notification": "...(80 chars)",
+    "ad_headline": "...(30 chars)",
+    "ad_description": "...(90 chars)",
+    "banner_tagline": "...(15 words max)",
+    "tone": "...",
+    "cta": "..."
+  }}
+]
+Generate exactly {req.num_variants} variants labeled A, B{', C' if req.num_variants > 2 else ''}{', D' if req.num_variants > 3 else ''}."""
+
+    try:
+        raw = await _run(_call_llm, prompt)
+        import json as _json
+        start, end = raw.find("["), raw.rfind("]") + 1
+        variants = _json.loads(raw[start:end]) if start >= 0 and end > start else []
+        for v in variants:
+            v["segment"] = req.segment
+            v["channel"] = req.channel
+        return {"variants": variants, "segment": req.segment, "channel": req.channel}
+    except Exception as e:
+        logger.exception("Variant generation failed")
+        raise HTTPException(status_code=502, detail=f"Variant generation failed: {type(e).__name__}")
 
 
 # ── Campaign ROI ──────────────────────────────────────────────────

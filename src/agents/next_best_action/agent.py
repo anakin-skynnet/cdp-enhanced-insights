@@ -38,7 +38,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolNode
 from typing import Annotated, Generator, Sequence, TypedDict
 
-LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+LLM_ENDPOINT = "databricks-gpt-5-4-mini"
 
 SYSTEM_PROMPT = """You are the **Next Best Action Advisor**, the most advanced AI agent in the Bank Payment Platform's Customer Data Platform. You determine the single most impactful action to take for every merchant, right now.
 

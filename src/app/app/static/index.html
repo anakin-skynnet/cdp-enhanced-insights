@@ -654,6 +654,14 @@
             <div class="text-sm">${esc(m.email || '-')}</div>
             <div class="text-sm">${esc(m.phone || '-')}</div>
           </div>
+          <div class="rounded-lg border-2 border-dashed border-purple-500/30 bg-purple-950/10 p-4">
+            <button onclick="generateMerchantOutreach('${esc(m.golden_id)}', '${esc(m.segment)}', '${esc(m.merchant_name)}')"
+              class="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-medium rounded-lg transition-all" id="merchant-gen-btn">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              Generate Personalized Outreach
+            </button>
+            <div id="merchant-gen-result" class="mt-3 hidden"></div>
+          </div>
           <div class="rounded-lg border border-border p-4">
             <h4 class="font-semibold text-sm mb-3">Activity Timeline</h4>
             ${timelineHtml
@@ -665,6 +673,52 @@
 
     function closeMerchantSheet() {
       document.getElementById('merchant-sheet').classList.add('hidden');
+    }
+
+    async function generateMerchantOutreach(gid, segment, name) {
+      const btn = document.getElementById('merchant-gen-btn');
+      const result = document.getElementById('merchant-gen-result');
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating for ' + esc(name) + '...';
+      try {
+        const cr = await api('/api/ad-creative/generate-merchant', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ golden_id: gid, segment })
+        });
+        const channelBlock = (label, icon, text, color) => text ? `
+          <div class="rounded-md border border-border bg-background/50 p-3">
+            <div class="text-[10px] font-semibold text-${color}-400 uppercase tracking-wider mb-1">${icon} ${label}</div>
+            <div class="text-xs leading-relaxed whitespace-pre-wrap">${esc(text)}</div>
+          </div>` : '';
+        result.innerHTML = `
+          <div class="space-y-2 mt-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs font-semibold text-purple-400">AI-Personalized for ${esc(cr.merchant_name || name)}</span>
+              <button onclick="navigator.clipboard.writeText(document.getElementById('merchant-gen-result').innerText.trim()).then(()=>showToast('Copied'))" class="text-muted-foreground hover:text-foreground">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+              </button>
+            </div>
+            ${channelBlock('Email Subject', '✉', cr.email_subject, 'blue')}
+            ${channelBlock('Email Body', '✉', cr.email_body, 'blue')}
+            ${channelBlock('SMS', '💬', cr.sms_message, 'green')}
+            ${channelBlock('WhatsApp', '📱', cr.whatsapp_message, 'green')}
+            ${channelBlock('Push', '🔔', cr.push_notification, 'orange')}
+            ${channelBlock('Call Script', '📞', cr.call_script, 'cyan')}
+            ${channelBlock('Ad', '📺', (cr.ad_headline || '') + ' — ' + (cr.ad_description || ''), 'purple')}
+            <div class="rounded-md bg-purple-500/10 border border-purple-500/20 p-2 text-center">
+              <span class="text-xs text-purple-300 font-medium">${esc(cr.cta || '')}</span>
+            </div>
+            ${cr.personalization_signals ? `<div class="text-[10px] text-muted-foreground">Signals: ${esc(cr.personalization_signals)}</div>` : ''}
+          </div>`;
+        result.classList.remove('hidden');
+        showToast('Personalized outreach generated');
+      } catch (e) {
+        result.innerHTML = `<p class="text-xs text-red-400 mt-2">Generation failed: ${e.message || 'Unknown error'}</p>`;
+        result.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Regenerate Outreach';
+      }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -902,6 +956,8 @@
       const list = await api(`/api/audiences/${type}?limit=50`);
       const el = document.getElementById('audience-detail');
       if (!list || !list.length) { el.innerHTML = card(label, '<p class="text-muted-foreground text-sm">No merchants in this audience.</p>'); return; }
+      const topSegment = list[0]?.rfm_segment || 'unknown';
+      const objectiveMap = { churn_risk: 'Reduce churn and retain at-risk merchants', high_value: 'Reward loyalty and increase lifetime value', vip: 'Exclusive VIP engagement and premium offers', winback: 'Activate dormant merchants and restart usage', growth: 'Upsell premium features and higher-tier plans', new_onboarding: 'Welcome and onboard new merchants', immediate_action: 'Urgent intervention to prevent revenue loss' };
       const rows = list.map(m => `
         <tr class="border-b border-border hover:bg-muted/50 cursor-pointer" onclick="openMerchant('${esc(m.golden_id)}')">
           <td class="px-4 py-2 font-mono text-xs">${esc(m.golden_id)}</td>
@@ -911,7 +967,84 @@
           <td class="px-4 py-2 text-right font-mono">${fmtCurrency(m.txn_volume)}</td>
           <td class="px-4 py-2">${m.urgency ? urgencyBadge(m.urgency) : '-'}</td>
         </tr>`).join('');
-      el.innerHTML = card(`${label} Audience (${list.length})`, tableWrap(['ID', 'Name', 'Segment', 'Health', 'Volume', 'Urgency'], rows));
+      el.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold">${label} Audience <span class="text-muted-foreground font-normal">(${list.length})</span></h3>
+            <div class="flex items-center gap-2">
+              <a href="/api/export/audience?audience_type=${type}&limit=500" class="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground transition-colors">Export CSV</a>
+              <button onclick="generateAudienceCampaign('${type}', '${esc(label)}', '${topSegment}', ${list.length})"
+                class="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-medium transition-all" id="aud-gen-btn">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Generate AI Campaign
+              </button>
+            </div>
+          </div>
+          <div id="aud-gen-result" class="hidden"></div>
+          ${card('', tableWrap(['ID', 'Name', 'Segment', 'Health', 'Volume', 'Urgency'], rows))}
+        </div>`;
+      window._audGenCtx = { type, label, segment: topSegment, count: list.length, objective: objectiveMap[type] || 'Engagement' };
+    }
+
+    async function generateAudienceCampaign(type, label, segment, count) {
+      const btn = document.getElementById('aud-gen-btn');
+      const result = document.getElementById('aud-gen-result');
+      const ctx = window._audGenCtx || {};
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating...';
+      try {
+        const [creative, banner] = await Promise.all([
+          api('/api/ad-creative/generate', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ segment, channel: 'email', campaign_name: label + ' Campaign', objective: ctx.objective, tone: 'Professional yet warm', merchant_context: `${count} merchants in ${label} audience` })
+          }),
+          api('/api/ad-creative/generate-image', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ segment, tagline: label + ' — Act Now', theme: ctx.objective })
+          })
+        ]);
+        let bannerHtml = '';
+        if (banner && banner.image) {
+          const mime = banner.type === 'svg' ? 'image/svg+xml' : 'image/png';
+          bannerHtml = `<img src="data:${mime};base64,${banner.image}" class="w-full rounded-lg border border-border" style="max-height:280px;object-fit:cover" alt="Campaign banner">`;
+        }
+        const ch = (lbl, txt, color) => txt ? `<div class="rounded-md border border-border p-3"><div class="text-[10px] font-semibold text-${color}-400 uppercase tracking-wider mb-1">${lbl}</div><div class="text-sm whitespace-pre-wrap">${esc(txt)}</div></div>` : '';
+        result.innerHTML = `
+          <div class="rounded-xl border-2 border-purple-500/30 bg-gradient-to-br from-purple-950/20 to-pink-950/10 p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <span class="text-sm font-semibold">AI Campaign: ${esc(label)}</span>
+                <span class="text-xs text-muted-foreground">${count} merchants · ${esc(segment.replace(/_/g, ' '))}</span>
+              </div>
+              <button onclick="navigator.clipboard.writeText(document.getElementById('aud-gen-result').innerText.trim()).then(()=>showToast('Copied'))" class="text-xs px-2 py-1 rounded bg-muted hover:bg-muted/80">Copy</button>
+            </div>
+            ${bannerHtml}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              ${ch('Email Subject', creative.email_subject, 'blue')}
+              ${ch('SMS', creative.sms_message, 'green')}
+              ${ch('Push', creative.push_notification, 'orange')}
+              ${ch('Social Post', creative.social_post, 'pink')}
+            </div>
+            ${creative.email_body ? ch('Email Body', creative.email_body, 'blue') : ''}
+            <div class="grid grid-cols-2 gap-3">
+              ${ch('Ad Headline', creative.ad_headline, 'purple')}
+              ${ch('Ad Description', creative.ad_description, 'purple')}
+            </div>
+            ${creative.banner_tagline ? `<div class="text-center py-2 rounded-md bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/20"><p class="text-lg font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">${esc(creative.banner_tagline)}</p></div>` : ''}
+            <div class="flex items-center justify-between text-xs"><span class="text-purple-400 font-medium">${esc(creative.cta || '')}</span>${badge(esc(creative.tone || ''), 'purple')}</div>
+          </div>`;
+        result.classList.remove('hidden');
+        showToast('AI campaign generated');
+      } catch (e) {
+        result.innerHTML = `<div class="rounded-md bg-red-500/10 border border-red-500/20 p-3 text-sm text-red-400">Generation failed: ${e.message || 'Unknown'}</div>`;
+        result.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Regenerate';
+      }
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -1013,10 +1146,16 @@
             <h2 class="text-xl font-bold">Ad Creative Library</h2>
             <p class="text-sm text-muted-foreground mt-1">${creatives.length} segment creatives · AI-powered generation</p>
           </div>
-          <button onclick="openGenerateModal()" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-900/30 hover:shadow-purple-800/40">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            Generate Hyper-Personalized Creative
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="openVariantsModal()" class="flex items-center gap-2 px-3 py-2 border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 text-sm font-medium rounded-lg transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+              A/B Variants
+            </button>
+            <button onclick="openGenerateModal()" class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-900/30 hover:shadow-purple-800/40">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              Generate Creative
+            </button>
+          </div>
         </div>
 
         <!-- AI Generated Results Area (hidden initially) -->
@@ -1043,6 +1182,27 @@
               </div>
             </div>
             <div id="ai-gen-results" class="p-6"></div>
+          </div>
+        </div>
+
+        <!-- A/B Variants Results Area -->
+        <div id="ab-variants-area" class="hidden mb-8">
+          <div class="rounded-xl border-2 border-indigo-500/30 bg-gradient-to-br from-indigo-950/20 to-blue-950/20 overflow-hidden">
+            <div class="px-6 py-4 border-b border-indigo-500/20 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold">A/B Test Variants</h3>
+                  <p class="text-xs text-muted-foreground" id="ab-meta"></p>
+                </div>
+              </div>
+              <button onclick="document.getElementById('ab-variants-area').classList.add('hidden')" class="text-muted-foreground hover:text-foreground">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <div id="ab-results" class="p-6"></div>
           </div>
         </div>
 
@@ -1283,6 +1443,108 @@
       if (!el) return;
       const text = el.innerText.replace(/\n{3,}/g, '\n\n').trim();
       navigator.clipboard.writeText(text).then(() => showToast('Generated creative copied'));
+    }
+
+    function openVariantsModal() {
+      const modal = document.getElementById('gen-modal');
+      if (!modal) return;
+      const existing = document.getElementById('variants-modal');
+      if (existing) { existing.classList.remove('hidden'); return; }
+      const segOpts = SEGMENTS.map(s => `<option value="${s}">${s.replace(/_/g, ' ')}</option>`).join('');
+      const m = document.createElement('div');
+      m.id = 'variants-modal';
+      m.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4';
+      m.onclick = function(e) { if (e.target === m) m.classList.add('hidden'); };
+      m.innerHTML = `
+        <div class="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md">
+          <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-semibold">Generate A/B Test Variants</h3>
+              <p class="text-xs text-muted-foreground">Multiple creative approaches for split testing</p>
+            </div>
+            <button onclick="document.getElementById('variants-modal').classList.add('hidden')" class="text-muted-foreground hover:text-foreground">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+          </div>
+          <div class="p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="text-xs font-medium text-muted-foreground mb-1 block">Segment</label>
+                <select id="var-segment" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm">${segOpts}</select></div>
+              <div><label class="text-xs font-medium text-muted-foreground mb-1 block">Channel</label>
+                <select id="var-channel" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm">
+                  <option value="email">Email</option><option value="sms">SMS</option><option value="push">Push</option><option value="social">Social</option></select></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div><label class="text-xs font-medium text-muted-foreground mb-1 block">Objective</label>
+                <select id="var-objective" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm">
+                  <option value="Maximize engagement">Engagement</option><option value="Reduce churn">Churn Prevention</option>
+                  <option value="Upsell premium features">Upsell</option><option value="Re-activate dormant merchants">Re-Activation</option></select></div>
+              <div><label class="text-xs font-medium text-muted-foreground mb-1 block">Variants</label>
+                <select id="var-count" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm">
+                  <option value="2">2 variants (A/B)</option><option value="3" selected>3 variants (A/B/C)</option><option value="4">4 variants (A/B/C/D)</option></select></div>
+            </div>
+            <button id="var-submit-btn" onclick="submitVariants()" class="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-medium rounded-lg flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+              Generate Variants
+            </button>
+          </div>
+        </div>`;
+      document.body.appendChild(m);
+    }
+
+    async function submitVariants() {
+      const btn = document.getElementById('var-submit-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating variants...';
+      try {
+        const segment = document.getElementById('var-segment').value;
+        const channel = document.getElementById('var-channel').value;
+        const objective = document.getElementById('var-objective').value;
+        const num_variants = parseInt(document.getElementById('var-count').value);
+        const data = await api('/api/ad-creative/generate-variants', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ segment, channel, objective, num_variants })
+        });
+        document.getElementById('variants-modal').classList.add('hidden');
+        renderVariants(data, { segment, channel, objective });
+        showToast(`${num_variants} variants generated`);
+      } catch (e) {
+        showToast('Variant generation failed', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg> Generate Variants';
+      }
+    }
+
+    function renderVariants(data, meta) {
+      const area = document.getElementById('ab-variants-area');
+      const results = document.getElementById('ab-results');
+      document.getElementById('ab-meta').textContent = `${meta.segment.replace(/_/g, ' ')} · ${meta.channel} · ${meta.objective}`;
+      const varColors = ['blue', 'green', 'orange', 'pink'];
+      const cards = (data.variants || []).map((v, i) => {
+        const color = varColors[i % varColors.length];
+        return `
+          <div class="rounded-lg border border-border bg-background/50 p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-md bg-${color}-500/20 text-${color}-400 flex items-center justify-center text-sm font-bold">${v.variant_label || String.fromCharCode(65 + i)}</span>
+                <span class="text-xs font-medium">${esc(v.variant_strategy || '')}</span>
+              </div>
+              ${badge(esc(v.tone || ''), color)}
+            </div>
+            <div class="space-y-2 text-sm">
+              <div><span class="text-[10px] text-muted-foreground uppercase">Email</span><div class="font-medium">${esc(v.email_subject || '')}</div></div>
+              <div><span class="text-[10px] text-muted-foreground uppercase">SMS</span><div>${esc(v.sms_message || '')}</div></div>
+              <div><span class="text-[10px] text-muted-foreground uppercase">Push</span><div>${esc(v.push_notification || '')}</div></div>
+              <div><span class="text-[10px] text-muted-foreground uppercase">Ad</span><div class="font-semibold">${esc(v.ad_headline || '')}</div><div class="text-xs text-muted-foreground">${esc(v.ad_description || '')}</div></div>
+            </div>
+            ${v.banner_tagline ? `<div class="text-center py-1.5 rounded bg-${color}-500/10 border border-${color}-500/20 text-sm font-semibold text-${color}-300">${esc(v.banner_tagline)}</div>` : ''}
+            <div class="text-xs font-medium text-${color}-400 text-right">${esc(v.cta || '')}</div>
+          </div>`;
+      }).join('');
+      results.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-${Math.min(data.variants?.length || 2, 3)} gap-4">${cards}</div>`;
+      area.classList.remove('hidden');
+      area.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -1609,9 +1871,13 @@
             </select>
             <input id="m-camp-action" placeholder="Action type (e.g., win_back_campaign)" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
             <textarea id="m-camp-notes" placeholder="Notes (optional)" rows="2" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"></textarea>
+            <div id="m-camp-ai-content" class="hidden rounded-md border border-purple-500/20 bg-purple-950/10 p-3 space-y-2 text-xs"></div>
           </div>
           <div class="flex justify-end gap-2">
             <button onclick="document.getElementById('modal-overlay').remove()" class="px-3 py-1.5 text-sm rounded-md border border-border hover:bg-accent transition-colors">Cancel</button>
+            <button id="m-camp-ai-btn" onclick="autoGenCampaignContent()" class="px-3 py-1.5 text-sm rounded-md bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 flex items-center gap-1.5 transition-all">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> AI Content
+            </button>
             <button onclick="submitCreateCampaign()" class="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Create</button>
           </div>
         </div>`;
@@ -1635,6 +1901,39 @@
         loadOps('campaigns');
       } else {
         notify('Failed to create campaign', 'error', result?.detail || result?.error || '');
+      }
+    }
+
+    async function autoGenCampaignContent() {
+      const segment = document.getElementById('m-camp-segment').value;
+      const name = document.getElementById('m-camp-name').value.trim();
+      const channel = document.getElementById('m-camp-channel').value;
+      if (!segment) { notify('Select a segment first', 'warning'); return; }
+      const btn = document.getElementById('m-camp-ai-btn');
+      const area = document.getElementById('m-camp-ai-content');
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating...';
+      try {
+        const cr = await api('/api/ad-creative/generate', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ segment, channel: channel.replace('sfmc_', '').replace('zender_', ''), campaign_name: name || segment + ' campaign', tone: 'Professional yet warm' })
+        });
+        const block = (lbl, val) => val ? `<div><span class="text-purple-400 font-semibold">${lbl}:</span> ${esc(val)}</div>` : '';
+        area.innerHTML = `
+          <div class="text-[10px] font-semibold text-purple-400 uppercase tracking-wider mb-1">AI-Generated Content</div>
+          ${block('Subject', cr.email_subject)}
+          ${block('SMS', cr.sms_message)}
+          ${block('Push', cr.push_notification)}
+          ${block('Ad', cr.ad_headline)}
+          ${block('CTA', cr.cta)}
+          <button onclick="document.getElementById('m-camp-notes').value=document.getElementById('m-camp-ai-content').innerText.trim(); showToast('Content added to notes')" class="text-[10px] text-purple-400 underline mt-1">Copy to notes</button>`;
+        area.classList.remove('hidden');
+      } catch (e) {
+        area.innerHTML = `<div class="text-red-400 text-xs">Failed: ${e.message || 'Unknown error'}</div>`;
+        area.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Regenerate';
       }
     }
 
@@ -2019,7 +2318,7 @@
                 CDP Supervisor Agent (Primary Entry Point)
               </div>
               <p class="text-xs text-muted-foreground">Routes natural-language queries to the right specialist domain. Combines cross-domain insights (e.g., "at-risk merchants with high CLV and negative call sentiment"). Has 24 UC functions + 6 Lakebase tools + Genie Space. Can execute actions: create campaigns, assign NBAs, triage alerts.</p>
-              <div class="text-xs font-mono text-muted-foreground">Model: <span class="text-primary">Meta Llama 3.3 70B Instruct</span> &bull; Endpoint: <span class="text-primary">main-cdp-cdp_supervisor_agent</span></div>
+              <div class="text-xs font-mono text-muted-foreground">Model: <span class="text-primary">Claude Sonnet 4.6</span> (Supervisor) · <span class="text-primary">GPT-5.4 Mini</span> (Specialists) &bull; Endpoint: <span class="text-primary">cdp_supervisor_agent</span></div>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="font-semibold text-sm">Churn Prevention Specialist</div>
@@ -2277,7 +2576,7 @@
             </div>
             <div class="rounded-lg border border-border p-3 space-y-1">
               <div class="font-semibold text-muted-foreground uppercase text-[10px]">LLM</div>
-              <div>Meta Llama 3.3 70B</div>
+              <div>Claude Sonnet 4.6 · GPT-5.4 Mini · GPT-5.4 Nano</div>
               <div>ai_query(), ai_analyze_sentiment()</div>
               <div>ResponsesAgent Interface</div>
             </div>

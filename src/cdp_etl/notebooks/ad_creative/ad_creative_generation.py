@@ -24,7 +24,7 @@ def _widget(name, default):
 
 catalog = _widget("catalog", "ahs_demos_catalog")
 schema = _widget("schema", "cdp_360")
-llm_endpoint = _widget("llm_endpoint", "databricks-meta-llama-3-3-70b-instruct")
+llm_endpoint = _widget("llm_endpoint", "databricks-gpt-5-4-nano")
 
 # COMMAND ----------
 

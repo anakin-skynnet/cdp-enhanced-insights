@@ -29,7 +29,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt.tool_node import ToolNode
 from typing import Annotated, Generator, Sequence, TypedDict
 
-LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+LLM_ENDPOINT = "databricks-gpt-5-4-mini"
 
 SYSTEM_PROMPT = """You are the **Churn Prevention Advisor**, an AI agent for the Bank Payment Platform's Customer Data Platform. Your role is to help the commercial and marketing teams **prevent merchant churn** and **retain high-value merchants**.
 

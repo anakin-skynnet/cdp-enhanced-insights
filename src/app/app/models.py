@@ -294,6 +294,20 @@ class GenerateImageRequest(BaseModel):
     theme: Optional[str] = Field(default=None, description="Visual theme override")
 
 
+class GenerateMerchantCreativeRequest(BaseModel):
+    golden_id: str = Field(..., description="Merchant golden ID for profile lookup")
+    segment: Optional[str] = None
+    objective: Optional[str] = None
+    tone: Optional[str] = Field(default="Personal and consultative")
+
+
+class GenerateVariantsRequest(BaseModel):
+    segment: str = Field(..., description="Target segment")
+    channel: str = Field(default="email")
+    objective: Optional[str] = None
+    num_variants: int = Field(default=3, ge=2, le=4, description="Number of A/B variants")
+
+
 # ── Campaign ROI ───────────────────────────────────────────────
 
 class CampaignROISummary(BaseModel):

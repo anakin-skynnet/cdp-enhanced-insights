@@ -35,7 +35,7 @@ from langgraph.prebuilt.tool_node import ToolNode
 from typing import Annotated, Generator, Sequence, TypedDict
 import os
 
-LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+LLM_ENDPOINT = "databricks-claude-sonnet-4-6"
 
 GENIE_SPACE_ID = os.environ.get("CDP_GENIE_SPACE_ID", "")
 

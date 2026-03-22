@@ -26,13 +26,19 @@ catalog = _widget("catalog", "ahs_demos_catalog")
 schema = _widget("schema", "cdp_360")
 UC_PREFIX = f"{catalog}.{schema}"
 
-LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+LLM_SUPERVISOR = "databricks-claude-sonnet-4-6"
+LLM_SPECIALIST = "databricks-gpt-5-4-mini"
 
 def _ucf(name: str) -> DatabricksFunction:
     return DatabricksFunction(function_name=f"{UC_PREFIX}.{name}")
 
-base_resources = [
-    DatabricksServingEndpoint(endpoint_name=LLM_ENDPOINT),
+specialist_resources = [
+    DatabricksServingEndpoint(endpoint_name=LLM_SPECIALIST),
+]
+
+supervisor_base_resources = [
+    DatabricksServingEndpoint(endpoint_name=LLM_SUPERVISOR),
+    DatabricksServingEndpoint(endpoint_name=LLM_SPECIALIST),
 ]
 
 uc_functions_churn = [
@@ -103,7 +109,7 @@ with mlflow.start_run(run_name="churn_prevention_agent"):
     model_info = mlflow.pyfunc.log_model(
         name="churn_prevention_agent",
         python_model="churn_prevention/agent.py",
-        resources=base_resources + uc_functions_churn,
+        resources=specialist_resources + uc_functions_churn,
         pip_requirements=pip_requirements,
         input_example={
             "input": [{"role": "user", "content": "Show me the top at-risk merchants by revenue"}]
@@ -123,7 +129,7 @@ with mlflow.start_run(run_name="segment_campaign_agent"):
     model_info = mlflow.pyfunc.log_model(
         name="segment_campaign_agent",
         python_model="segment_campaign/agent.py",
-        resources=base_resources + uc_functions_campaign,
+        resources=specialist_resources + uc_functions_campaign,
         pip_requirements=pip_requirements,
         input_example={
             "input": [{"role": "user", "content": "Design a campaign to re-engage hibernating merchants"}]
@@ -143,7 +149,7 @@ with mlflow.start_run(run_name="next_best_action_agent"):
     model_info = mlflow.pyfunc.log_model(
         name="next_best_action_agent",
         python_model="next_best_action/agent.py",
-        resources=base_resources + uc_functions_nba,
+        resources=specialist_resources + uc_functions_nba,
         pip_requirements=pip_requirements,
         input_example={
             "input": [{"role": "user", "content": "What are the top priority actions for this week?"}]
@@ -166,7 +172,7 @@ except Exception:
 
 from mlflow.models.resources import DatabricksLakebase
 
-supervisor_resources = base_resources + ALL_UC_FUNCTIONS
+supervisor_resources = supervisor_base_resources + ALL_UC_FUNCTIONS
 supervisor_resources.append(DatabricksLakebase(database_instance_name="cdp-360-ops"))
 if genie_space_id:
     supervisor_resources.append(DatabricksGenieSpace(genie_space_id=genie_space_id))
