@@ -333,6 +333,121 @@ async def ad_creative():
     return await _run(ds.get_ad_creative_library)
 
 
+_LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
+_IMAGE_ENDPOINT = "databricks-shutterstock-imageai-v2"
+
+
+def _call_llm(prompt: str) -> str:
+    from databricks.sdk import WorkspaceClient
+    w = WorkspaceClient()
+    host = w.config.host.rstrip("/")
+    auth = w.config.authenticate()
+    import httpx as _httpx
+    resp = _httpx.post(
+        f"{host}/serving-endpoints/{_LLM_ENDPOINT}/invocations",
+        headers=auth,
+        json={"messages": [{"role": "user", "content": prompt}], "max_tokens": 1200, "temperature": 0.7},
+        timeout=90,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get("choices", [{}])[0].get("message", {}).get("content", "")
+
+
+def _call_image_gen(prompt: str) -> str | None:
+    """Generate an image via Foundation Model API and return base64 data."""
+    try:
+        from databricks.sdk import WorkspaceClient
+        w = WorkspaceClient()
+        host = w.config.host.rstrip("/")
+        auth = w.config.authenticate()
+        import httpx as _httpx
+        resp = _httpx.post(
+            f"{host}/serving-endpoints/{_IMAGE_ENDPOINT}/invocations",
+            headers=auth,
+            json={"prompt": prompt, "n": 1, "size": "1024x1024"},
+            timeout=120,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        imgs = data.get("data", [])
+        if imgs and imgs[0].get("b64_json"):
+            return imgs[0]["b64_json"]
+        if imgs and imgs[0].get("url"):
+            return imgs[0]["url"]
+        return None
+    except Exception as e:
+        logger.warning("Image generation failed: %s", e)
+        return None
+
+
+@app.post("/api/ad-creative/generate")
+async def generate_creative(req: M.GenerateCreativeRequest):
+    """Generate hyper-personalized marketing messages using Foundation Model API."""
+    prompt = f"""You are an expert marketing copywriter for a payment processing platform.
+Generate hyper-personalized marketing content for a campaign targeting the "{req.segment}" merchant segment.
+
+Campaign context:
+- Campaign name: {req.campaign_name or 'General outreach'}
+- Channel: {req.channel}
+- Objective: {req.objective or 'Engagement and retention'}
+- Tone: {req.tone or 'Professional yet warm'}
+{f'- Merchant profile: {req.merchant_context}' if req.merchant_context else ''}
+
+Generate content in this exact JSON format (no markdown, no extra text):
+{{
+  "email_subject": "Compelling subject line (50 chars max)",
+  "email_body": "Full email body (3-4 paragraphs, with personalization tokens like {{merchant_name}}, {{segment}})",
+  "sms_message": "Concise SMS (160 chars max)",
+  "push_notification": "Short push (80 chars max)",
+  "ad_headline": "Punchy headline (30 chars max)",
+  "ad_description": "Ad body copy (90 chars max)",
+  "social_post": "Social media post with hashtags (280 chars max)",
+  "banner_tagline": "Hero banner tagline (15 words max)",
+  "tone": "{req.tone or 'Professional yet warm'}",
+  "cta": "Clear call-to-action text"
+}}"""
+
+    try:
+        raw = await _run(_call_llm, prompt)
+        import json as _json
+        start = raw.find("{")
+        end = raw.rfind("}") + 1
+        if start >= 0 and end > start:
+            result = _json.loads(raw[start:end])
+        else:
+            result = {"error": "Could not parse LLM response", "raw": raw[:500]}
+        result["segment"] = req.segment
+        result["channel"] = req.channel
+        return result
+    except Exception as e:
+        logger.exception("Creative generation failed")
+        raise HTTPException(status_code=502, detail=f"Creative generation failed: {type(e).__name__}")
+
+
+@app.post("/api/ad-creative/generate-image")
+async def generate_image(req: M.GenerateImageRequest):
+    """Generate a campaign banner image using Foundation Model API."""
+    img_prompt = f"""Professional marketing banner for a payment platform campaign.
+Theme: {req.theme or req.segment + ' merchant engagement'}.
+Style: Modern, clean, corporate fintech design with subtle gradients.
+Text overlay: "{req.tagline or 'Grow your business with us'}"
+Color scheme: Blue and white professional palette.
+No text in the image, just visual design."""
+
+    try:
+        b64_or_url = await _run(_call_image_gen, img_prompt)
+        if not b64_or_url:
+            raise HTTPException(status_code=502, detail="Image generation endpoint unavailable")
+        is_url = b64_or_url.startswith("http")
+        return {"image": b64_or_url, "type": "url" if is_url else "base64", "prompt": img_prompt[:200]}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Image generation failed")
+        raise HTTPException(status_code=502, detail=f"Image generation failed: {type(e).__name__}")
+
+
 # ── Campaign ROI ──────────────────────────────────────────────────
 
 @app.get("/api/campaign-roi", response_model=list[M.CampaignROISummary])

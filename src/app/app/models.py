@@ -279,6 +279,21 @@ class AdCreativeItem(BaseModel):
     avg_volume: float = 0
 
 
+class GenerateCreativeRequest(BaseModel):
+    segment: str = Field(..., description="Target segment")
+    channel: str = Field(default="email", description="Primary channel: email, sms, push, social, display")
+    campaign_name: Optional[str] = None
+    objective: Optional[str] = None
+    tone: Optional[str] = Field(default="Professional yet warm")
+    merchant_context: Optional[str] = Field(default=None, description="Additional merchant-level context for hyper-personalization")
+
+
+class GenerateImageRequest(BaseModel):
+    segment: str = Field(..., description="Target segment for visual style")
+    tagline: Optional[str] = Field(default=None, description="Text to inspire the banner")
+    theme: Optional[str] = Field(default=None, description="Visual theme override")
+
+
 # ── Campaign ROI ───────────────────────────────────────────────
 
 class CampaignROISummary(BaseModel):

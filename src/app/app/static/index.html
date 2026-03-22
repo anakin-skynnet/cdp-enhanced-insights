@@ -961,8 +961,13 @@
       const creatives = await api('/api/ad-creative');
       const c = document.getElementById('page-container');
       if (!creatives || !creatives.length) { c.innerHTML = card('Ad Creative Library', '<p class="text-muted-foreground">No creatives available.</p>'); return; }
+
+      const segOpts = [...new Set(creatives.map(cr => cr.segment))].map(s =>
+        `<option value="${esc(s)}">${esc(s.replace(/_/g, ' '))}</option>`
+      ).join('');
+
       let _crId = 0;
-      const cards = creatives.map(cr => {
+      const existingCards = creatives.map(cr => {
         const cid = 'cr-' + (++_crId);
         return `
         <div class="rounded-lg border border-border bg-card overflow-hidden">
@@ -1000,7 +1005,282 @@
           </div>
         </div>`;
       }).join('');
-      c.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div>`;
+
+      c.innerHTML = `
+        <!-- Header with Generate Button -->
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-bold">Ad Creative Library</h2>
+            <p class="text-sm text-muted-foreground mt-1">${creatives.length} segment creatives · AI-powered generation</p>
+          </div>
+          <button onclick="openGenerateModal()" class="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-sm font-medium rounded-lg transition-all shadow-lg shadow-purple-900/30 hover:shadow-purple-800/40">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Generate Hyper-Personalized Creative
+          </button>
+        </div>
+
+        <!-- AI Generated Results Area (hidden initially) -->
+        <div id="ai-generated-area" class="hidden mb-8">
+          <div class="rounded-xl border-2 border-purple-500/30 bg-gradient-to-br from-purple-950/20 to-pink-950/20 overflow-hidden">
+            <div class="px-6 py-4 border-b border-purple-500/20 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold">AI-Generated Creative</h3>
+                  <p class="text-xs text-muted-foreground" id="ai-gen-meta"></p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="copyGenerated()" class="text-xs px-3 py-1.5 rounded-md bg-muted hover:bg-muted/80 transition-colors flex items-center gap-1.5">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                  Copy All
+                </button>
+                <button onclick="document.getElementById('ai-generated-area').classList.add('hidden')" class="text-muted-foreground hover:text-foreground">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+            </div>
+            <div id="ai-gen-results" class="p-6"></div>
+          </div>
+        </div>
+
+        <!-- Existing segment creatives -->
+        <div class="mb-3">
+          <h3 class="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Segment Templates</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">${existingCards}</div>
+
+        <!-- Generate Modal -->
+        <div id="gen-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onclick="if(event.target===this)closeGenerateModal()">
+          <div class="bg-card border border-border rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-border flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                  <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <div>
+                  <h3 class="text-base font-semibold">Generate Hyper-Personalized Creative</h3>
+                  <p class="text-xs text-muted-foreground">Powered by Databricks Foundation Model API</p>
+                </div>
+              </div>
+              <button onclick="closeGenerateModal()" class="text-muted-foreground hover:text-foreground">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <div class="p-6 space-y-4">
+              <div>
+                <label class="text-xs font-medium text-muted-foreground mb-1 block">Campaign Name</label>
+                <input id="gen-campaign" placeholder="e.g. Q1 Win-Back Blitz" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs font-medium text-muted-foreground mb-1 block">Target Segment</label>
+                  <select id="gen-segment" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
+                    ${segOpts}
+                  </select>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-muted-foreground mb-1 block">Primary Channel</label>
+                  <select id="gen-channel" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
+                    <option value="email">Email</option>
+                    <option value="sms">SMS</option>
+                    <option value="push">Push Notification</option>
+                    <option value="social">Social Media</option>
+                    <option value="display">Display Ads</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-muted-foreground mb-1 block">Campaign Objective</label>
+                <select id="gen-objective" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
+                  <option value="Increase engagement and transaction volume">Engagement & Volume</option>
+                  <option value="Reduce churn and retain at-risk merchants">Churn Prevention</option>
+                  <option value="Upsell premium features and higher-tier plans">Upsell & Expansion</option>
+                  <option value="Activate dormant merchants and restart usage">Re-Activation</option>
+                  <option value="Welcome and onboard new merchants">Onboarding</option>
+                  <option value="Reward loyalty and increase lifetime value">Loyalty & LTV</option>
+                </select>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-xs font-medium text-muted-foreground mb-1 block">Tone</label>
+                  <select id="gen-tone" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
+                    <option value="Professional yet warm">Professional & Warm</option>
+                    <option value="Urgent and action-oriented">Urgent & Action-Driven</option>
+                    <option value="Friendly and casual">Friendly & Casual</option>
+                    <option value="Exclusive and premium">Exclusive & Premium</option>
+                    <option value="Data-driven and insightful">Data-Driven</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-xs font-medium text-muted-foreground mb-1 block">Generate Image?</label>
+                  <select id="gen-image-flag" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
+                    <option value="yes">Yes - Banner Image</option>
+                    <option value="no">No - Text Only</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="text-xs font-medium text-muted-foreground mb-1 block">Merchant Context <span class="text-muted-foreground/60">(optional hyper-personalization)</span></label>
+                <textarea id="gen-context" rows="2" placeholder="e.g. High-volume restaurant in São Paulo, 12% volume drop last month, uses POS terminal" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"></textarea>
+              </div>
+              <div id="gen-error" class="hidden text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2"></div>
+              <button id="gen-submit-btn" onclick="submitGenerate()" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Generate with AI
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function openGenerateModal() {
+      document.getElementById('gen-modal').classList.remove('hidden');
+      document.getElementById('gen-error').classList.add('hidden');
+    }
+    function closeGenerateModal() {
+      document.getElementById('gen-modal').classList.add('hidden');
+    }
+
+    async function submitGenerate() {
+      const btn = document.getElementById('gen-submit-btn');
+      const errEl = document.getElementById('gen-error');
+      errEl.classList.add('hidden');
+
+      const segment = document.getElementById('gen-segment').value;
+      const channel = document.getElementById('gen-channel').value;
+      const campaign_name = document.getElementById('gen-campaign').value;
+      const objective = document.getElementById('gen-objective').value;
+      const tone = document.getElementById('gen-tone').value;
+      const merchant_context = document.getElementById('gen-context').value;
+      const wantImage = document.getElementById('gen-image-flag').value === 'yes';
+
+      btn.disabled = true;
+      btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating messages...';
+
+      try {
+        const creative = await api('/api/ad-creative/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ segment, channel, campaign_name, objective, tone, merchant_context })
+        });
+
+        if (creative.error) {
+          errEl.textContent = creative.error;
+          errEl.classList.remove('hidden');
+          return;
+        }
+
+        let imageResult = null;
+        if (wantImage) {
+          btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating banner image...';
+          try {
+            imageResult = await api('/api/ad-creative/generate-image', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ segment, tagline: creative.banner_tagline || creative.ad_headline, theme: objective })
+            });
+          } catch (e) { /* image generation is best-effort */ }
+        }
+
+        closeGenerateModal();
+        renderGeneratedCreative(creative, imageResult, { segment, channel, campaign_name, tone });
+        showToast('Creative generated successfully');
+
+      } catch (e) {
+        errEl.textContent = 'Generation failed: ' + (e.message || 'Unknown error');
+        errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Generate with AI';
+      }
+    }
+
+    function renderGeneratedCreative(cr, img, meta) {
+      const area = document.getElementById('ai-generated-area');
+      const results = document.getElementById('ai-gen-results');
+      const metaEl = document.getElementById('ai-gen-meta');
+
+      metaEl.textContent = `${meta.segment.replace(/_/g, ' ')} · ${meta.channel} · ${meta.tone} · ${meta.campaign_name || 'Untitled'}`;
+
+      const channelIcon = ch => {
+        const icons = {
+          email: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>',
+          sms: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>',
+          push: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>',
+          social: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path></svg>',
+          display: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>',
+        };
+        return icons[ch] || icons.email;
+      };
+
+      const contentBlock = (icon, label, content, accent) => content ? `
+        <div class="rounded-lg border border-border bg-background/50 p-4 space-y-2">
+          <div class="flex items-center gap-2 text-xs font-medium text-${accent || 'purple'}-400">
+            ${icon} ${label}
+          </div>
+          <div class="text-sm leading-relaxed whitespace-pre-wrap">${esc(content)}</div>
+        </div>` : '';
+
+      let imgHtml = '';
+      if (img && img.image) {
+        const src = img.type === 'base64' ? 'data:image/png;base64,' + img.image : img.image;
+        imgHtml = `
+          <div class="rounded-lg border border-border overflow-hidden">
+            <div class="px-4 py-2 border-b border-border flex items-center gap-2 text-xs font-medium text-pink-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              AI-Generated Campaign Banner
+            </div>
+            <img src="${src}" alt="Campaign banner" class="w-full object-cover" style="max-height:320px">
+          </div>`;
+      }
+
+      results.innerHTML = `
+        <div id="ai-gen-content" class="space-y-4">
+          ${imgHtml}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${contentBlock(channelIcon('email'), 'Email Subject', cr.email_subject, 'blue')}
+            ${contentBlock(channelIcon('sms'), 'SMS (160 chars)', cr.sms_message, 'green')}
+            ${contentBlock(channelIcon('push'), 'Push Notification', cr.push_notification, 'orange')}
+            ${contentBlock(channelIcon('social'), 'Social Post', cr.social_post, 'pink')}
+          </div>
+          ${cr.email_body ? `
+          <div class="rounded-lg border border-border bg-background/50 p-4 space-y-2">
+            <div class="flex items-center gap-2 text-xs font-medium text-blue-400">
+              ${channelIcon('email')} Email Body
+            </div>
+            <div class="text-sm leading-relaxed whitespace-pre-wrap bg-muted/30 rounded-md p-3 border border-border/50">${esc(cr.email_body)}</div>
+          </div>` : ''}
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${contentBlock(channelIcon('display'), 'Ad Headline', cr.ad_headline, 'purple')}
+            ${contentBlock(channelIcon('display'), 'Ad Description', cr.ad_description, 'purple')}
+          </div>
+          ${cr.banner_tagline ? `
+          <div class="rounded-lg bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 p-4 text-center">
+            <p class="text-xs text-muted-foreground mb-1">Banner Tagline</p>
+            <p class="text-lg font-bold bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">${esc(cr.banner_tagline)}</p>
+          </div>` : ''}
+          <div class="flex items-center justify-between pt-3 border-t border-border">
+            <div class="flex items-center gap-2">
+              ${badge(esc(cr.tone || meta.tone), 'purple')}
+              ${segmentBadge(cr.segment || meta.segment)}
+            </div>
+            <span class="text-sm font-semibold text-purple-400">${esc(cr.cta || '')}</span>
+          </div>
+        </div>`;
+
+      area.classList.remove('hidden');
+      area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function copyGenerated() {
+      const el = document.getElementById('ai-gen-content');
+      if (!el) return;
+      const text = el.innerText.replace(/\n{3,}/g, '\n\n').trim();
+      navigator.clipboard.writeText(text).then(() => showToast('Generated creative copied'));
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -1491,9 +1771,6 @@
       const c = document.getElementById('page-container');
       const sectionStyle = 'rounded-lg border border-border bg-card p-6 space-y-4';
       const h2 = (t, icon) => `<h2 class="text-lg font-semibold flex items-center gap-2">${icon} ${t}</h2>`;
-      const pill = (t, color) => `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-${color}-500/15 text-${color}-400">${t}</span>`;
-      const tblHead = cols => `<thead><tr>${cols.map(c => `<th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground border-b border-border">${c}</th>`).join('')}</tr></thead>`;
-      const tblRow = cells => `<tr class="border-b border-border/50">${cells.map(c => `<td class="px-3 py-2 text-sm">${c}</td>`).join('')}</tr>`;
 
       c.innerHTML = `
       <div class="space-y-8 max-w-5xl">
@@ -2308,6 +2585,9 @@
       return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
     const esc = (v) => escapeHtml(String(v ?? ''));
+    const pill = (t, color) => `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-${color}-500/15 text-${color}-400">${t}</span>`;
+    const tblHead = cols => `<thead><tr>${cols.map(c => `<th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground border-b border-border">${c}</th>`).join('')}</tr></thead>`;
+    const tblRow = cells => `<tr class="border-b border-border/50">${cells.map(c => `<td class="px-3 py-2 text-sm">${c}</td>`).join('')}</tr>`;
 
     function renderMd(md) {
       const lines = md.split('\n');
