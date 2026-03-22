@@ -334,7 +334,6 @@ async def ad_creative():
 
 
 _LLM_ENDPOINT = "databricks-meta-llama-3-3-70b-instruct"
-_IMAGE_ENDPOINT = "databricks-shutterstock-imageai-v2"
 
 
 def _call_llm(prompt: str) -> str:
@@ -352,33 +351,6 @@ def _call_llm(prompt: str) -> str:
     resp.raise_for_status()
     data = resp.json()
     return data.get("choices", [{}])[0].get("message", {}).get("content", "")
-
-
-def _call_image_gen(prompt: str) -> str | None:
-    """Generate an image via Foundation Model API and return base64 data."""
-    try:
-        from databricks.sdk import WorkspaceClient
-        w = WorkspaceClient()
-        host = w.config.host.rstrip("/")
-        auth = w.config.authenticate()
-        import httpx as _httpx
-        resp = _httpx.post(
-            f"{host}/serving-endpoints/{_IMAGE_ENDPOINT}/invocations",
-            headers=auth,
-            json={"prompt": prompt, "n": 1, "size": "1024x1024"},
-            timeout=120,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        imgs = data.get("data", [])
-        if imgs and imgs[0].get("b64_json"):
-            return imgs[0]["b64_json"]
-        if imgs and imgs[0].get("url"):
-            return imgs[0]["url"]
-        return None
-    except Exception as e:
-        logger.warning("Image generation failed: %s", e)
-        return None
 
 
 @app.post("/api/ad-creative/generate")
@@ -425,27 +397,86 @@ Generate content in this exact JSON format (no markdown, no extra text):
         raise HTTPException(status_code=502, detail=f"Creative generation failed: {type(e).__name__}")
 
 
+_SEGMENT_PALETTES = {
+    "champions": ("#10B981", "#059669", "#D1FAE5"),
+    "loyal": ("#3B82F6", "#2563EB", "#DBEAFE"),
+    "potential_loyalists": ("#6366F1", "#4F46E5", "#E0E7FF"),
+    "new_customers": ("#8B5CF6", "#7C3AED", "#EDE9FE"),
+    "promising": ("#A855F7", "#9333EA", "#F3E8FF"),
+    "at_risk": ("#EF4444", "#DC2626", "#FEE2E2"),
+    "cant_lose": ("#F97316", "#EA580C", "#FFEDD5"),
+    "hibernating": ("#F59E0B", "#D97706", "#FEF3C7"),
+    "need_attention": ("#EC4899", "#DB2777", "#FCE7F3"),
+}
+
+
+def _generate_svg_banner(segment: str, tagline: str, theme: str) -> str:
+    """Generate a professional SVG campaign banner."""
+    import base64
+    c1, c2, c3 = _SEGMENT_PALETTES.get(segment, ("#6366F1", "#4F46E5", "#E0E7FF"))
+    safe_tagline = (tagline or "Grow Your Business").replace("&", "&amp;").replace("<", "&lt;").replace('"', "&quot;")
+    safe_theme = (theme or "Campaign").replace("&", "&amp;").replace("<", "&lt;").replace('"', "&quot;")
+    seg_label = segment.replace("_", " ").title()
+
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:{c1};stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:{c2};stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:white;stop-opacity:0"/>
+      <stop offset="50%" style="stop-color:white;stop-opacity:0.08"/>
+      <stop offset="100%" style="stop-color:white;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#bg)" rx="16"/>
+  <rect width="1200" height="400" fill="url(#shine)" rx="16"/>
+  <circle cx="1050" cy="80" r="180" fill="white" opacity="0.06"/>
+  <circle cx="1100" cy="320" r="120" fill="white" opacity="0.04"/>
+  <circle cx="150" cy="350" r="200" fill="white" opacity="0.05"/>
+  <rect x="60" y="60" width="8" height="80" rx="4" fill="white" opacity="0.3"/>
+  <rect x="60" y="60" width="80" height="8" rx="4" fill="white" opacity="0.3"/>
+  <g transform="translate(100, 140)">
+    <rect x="0" y="0" width="auto" height="32" rx="16" fill="white" opacity="0.15"/>
+  </g>
+  <text x="120" y="120" font-family="system-ui,-apple-system,sans-serif" font-size="16"
+        font-weight="600" fill="white" opacity="0.7" letter-spacing="3">{seg_label.upper()} SEGMENT</text>
+  <text x="100" y="200" font-family="system-ui,-apple-system,sans-serif" font-size="44"
+        font-weight="700" fill="white" letter-spacing="-0.5">{safe_tagline[:45]}</text>
+  <text x="100" y="250" font-family="system-ui,-apple-system,sans-serif" font-size="20"
+        fill="white" opacity="0.8">{safe_theme[:70]}</text>
+  <rect x="100" y="290" width="200" height="48" rx="24" fill="white"/>
+  <text x="200" y="320" font-family="system-ui,-apple-system,sans-serif" font-size="16"
+        font-weight="600" fill="{c2}" text-anchor="middle">Learn More</text>
+  <g transform="translate(920,100)" opacity="0.12">
+    <rect x="0" y="0" width="200" height="140" rx="12" fill="white"/>
+    <rect x="20" y="20" width="70" height="8" rx="4" fill="white" opacity="0.5"/>
+    <rect x="20" y="40" width="160" height="6" rx="3" fill="white" opacity="0.3"/>
+    <rect x="20" y="55" width="120" height="6" rx="3" fill="white" opacity="0.3"/>
+    <rect x="20" y="80" width="60" height="24" rx="12" fill="white" opacity="0.4"/>
+    <circle cx="160" cy="110" r="20" fill="white" opacity="0.3"/>
+  </g>
+  <text x="1140" y="380" font-family="system-ui,-apple-system,sans-serif" font-size="11"
+        fill="white" opacity="0.4" text-anchor="end">Powered by Databricks CDP 360</text>
+</svg>'''
+    return base64.b64encode(svg.encode()).decode()
+
+
 @app.post("/api/ad-creative/generate-image")
 async def generate_image(req: M.GenerateImageRequest):
-    """Generate a campaign banner image using Foundation Model API."""
-    img_prompt = f"""Professional marketing banner for a payment platform campaign.
-Theme: {req.theme or req.segment + ' merchant engagement'}.
-Style: Modern, clean, corporate fintech design with subtle gradients.
-Text overlay: "{req.tagline or 'Grow your business with us'}"
-Color scheme: Blue and white professional palette.
-No text in the image, just visual design."""
-
+    """Generate a campaign banner as a styled SVG."""
     try:
-        b64_or_url = await _run(_call_image_gen, img_prompt)
-        if not b64_or_url:
-            raise HTTPException(status_code=502, detail="Image generation endpoint unavailable")
-        is_url = b64_or_url.startswith("http")
-        return {"image": b64_or_url, "type": "url" if is_url else "base64", "prompt": img_prompt[:200]}
-    except HTTPException:
-        raise
+        b64 = await _run(
+            _generate_svg_banner,
+            req.segment,
+            req.tagline or "Grow Your Business With Us",
+            req.theme or req.segment.replace("_", " ").title() + " merchant engagement",
+        )
+        return {"image": b64, "type": "svg", "segment": req.segment}
     except Exception as e:
-        logger.exception("Image generation failed")
-        raise HTTPException(status_code=502, detail=f"Image generation failed: {type(e).__name__}")
+        logger.exception("Banner generation failed")
+        raise HTTPException(status_code=500, detail=f"Banner generation failed: {type(e).__name__}")
 
 
 # ── Campaign ROI ──────────────────────────────────────────────────
