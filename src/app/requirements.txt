@@ -3,3 +3,4 @@ uvicorn
 pydantic
 httpx
 psycopg[binary]>=3.0
+databricks-sdk>=0.81.0

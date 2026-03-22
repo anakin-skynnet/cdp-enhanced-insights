@@ -23,7 +23,9 @@ resources:
             permission: CAN_RUN
         - name: lakebase
           database:
-            name: cdp-360-ops
+            instance_name: cdp-360-ops
+            database_name: databricks_postgres
+            permission: CAN_CONNECT_AND_CREATE
       permissions:
         - level: CAN_USE
           group_name: "users"

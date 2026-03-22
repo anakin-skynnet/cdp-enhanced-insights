@@ -441,6 +441,54 @@ def _require_lakebase():
         raise HTTPException(status_code=503, detail="Lakebase not configured. Set LAKEBASE_INSTANCE_NAME.")
 
 
+@app.get("/api/ops/health")
+async def ops_health():
+    """Diagnostic endpoint for Lakebase connection health."""
+    result = {"lakebase_enabled": _LAKEBASE_ENABLED, "module_loaded": _lb is not None}
+    if not _lb:
+        result["error"] = "Module not loaded"
+        return result
+    try:
+        rows = await _run(_lb._execute, "SELECT 1 AS ok")
+        result["connected"] = True
+        result["test_query"] = rows
+    except Exception as e:
+        result["connected"] = False
+        result["error"] = f"{type(e).__name__}: {str(e)}"
+    try:
+        tables = await _run(
+            _lb._execute,
+            "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename"
+        )
+        result["tables"] = [t["tablename"] for t in tables]
+    except Exception:
+        pass
+    return result
+
+
+@app.post("/api/ops/bootstrap")
+async def ops_bootstrap():
+    """Manually bootstrap Lakebase schema with detailed error reporting."""
+    _require_lakebase()
+    import psycopg
+    try:
+        conn_params = await _run(_lb._get_conn_params)
+        with psycopg.connect(**conn_params, autocommit=True) as conn:
+            with conn.cursor() as cur:
+                results = []
+                for stmt in _lb._SCHEMA_SQL.split(";"):
+                    stmt = stmt.strip()
+                    if stmt:
+                        try:
+                            cur.execute(stmt)
+                            results.append({"sql": stmt[:80], "status": "ok"})
+                        except Exception as e:
+                            results.append({"sql": stmt[:80], "status": "error", "detail": str(e)})
+        return {"status": "ok", "statements": results}
+    except Exception as e:
+        return {"status": "error", "detail": f"{type(e).__name__}: {str(e)}"}
+
+
 # ── Ops KPIs ─────────────────────────────────────────────────────
 
 @app.get("/api/ops/kpis")

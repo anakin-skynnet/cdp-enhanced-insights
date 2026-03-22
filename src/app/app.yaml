@@ -31,4 +31,4 @@ env:
     value: "cdp-360-ops"
 
   - name: LAKEBASE_DATABASE_NAME
-    value: "postgres"
+    value: "databricks_postgres"
