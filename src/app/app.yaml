@@ -26,3 +26,9 @@ env:
 
   - name: CDP_GENIE_SPACE_ID
     valueFrom: genie-space
+
+  - name: LAKEBASE_INSTANCE_NAME
+    value: "cdp-360-ops"
+
+  - name: LAKEBASE_DATABASE_NAME
+    value: "postgres"

@@ -5,7 +5,7 @@ resources:
   apps:
     cdp_customer_360_app:
       name: bpp-cdp-360
-      description: "Bank Payment Platform Customer 360 — Enhanced Customer Intelligence Platform. 13 analytics pages, AI chat (Supervisor Agent + Genie), anomaly detection, and full merchant 360 view."
+      description: "Bank Payment Platform Customer 360 — Enhanced Customer Intelligence Platform. 14+ analytics pages, AI chat (Supervisor Agent + Genie), Lakebase operational store, campaign management, NBA assignments, anomaly triage, and full merchant 360 view."
       source_code_path: ../src/app
       resources:
         - name: sql-warehouse
@@ -21,6 +21,9 @@ resources:
             name: "Merchant 360 Analytics"
             space_id: 01f12432dc001e7d927a3ce0f42926ad
             permission: CAN_RUN
+        - name: lakebase
+          database:
+            name: cdp-360-ops
       permissions:
         - level: CAN_USE
           group_name: "users"

@@ -64,6 +64,17 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={"error": _GENERIC_ERROR, "path": request.url.path})
 
 
+_LAKEBASE_ENABLED = os.environ.get("LAKEBASE_INSTANCE_NAME", "") != ""
+_lb = None
+
+if _LAKEBASE_ENABLED:
+    try:
+        from . import lakebase as _lb  # type: ignore[no-redef]
+    except Exception as _lb_err:
+        logger.error("Failed to import lakebase module: %s", _lb_err)
+        _lb = None
+
+
 @app.on_event("startup")
 async def warmup():
     """Pre-initialize the SDK client so the first user request doesn't pay cold-start cost."""
@@ -73,6 +84,12 @@ async def warmup():
             logger.info("Startup warmup: warehouse connected OK")
         except Exception as e:
             logger.warning("Startup warmup: warehouse not ready yet (%s)", e)
+    if _lb:
+        try:
+            ok = await asyncio.to_thread(_lb.bootstrap_schema)
+            logger.info("Lakebase schema bootstrap: %s", "OK" if ok else "FAILED")
+        except Exception as e:
+            logger.warning("Lakebase warmup failed: %s", e)
 
 _static_dir = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=_static_dir), name="static")
@@ -112,11 +129,19 @@ async def get_config():
             await _run(ds.query, "SELECT 1")
         except Exception:
             connected = False
+    lb_connected = False
+    if _lb:
+        try:
+            await _run(_lb._execute, "SELECT 1")
+            lb_connected = True
+        except Exception:
+            pass
     return M.DataSourceConfig(
         source=DATA_SOURCE,
         catalog=os.environ.get("CDP_CATALOG", "ahs_demos_catalog"),
         schema=os.environ.get("CDP_SCHEMA", "cdp_360"),
         warehouse_connected=connected,
+        lakebase_connected=lb_connected,
     )
 
 
@@ -404,6 +429,119 @@ async def export_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=cdp_{resource_type}{'_' + audience_type if resource_type == 'audience' else ''}.csv"},
     )
+
+
+# ═══════════════════════════════════════════════════════════════
+# Lakebase Operational Endpoints
+# ═══════════════════════════════════════════════════════════════
+
+
+def _require_lakebase():
+    if not _lb:
+        raise HTTPException(status_code=503, detail="Lakebase not configured. Set LAKEBASE_INSTANCE_NAME.")
+
+
+# ── Ops KPIs ─────────────────────────────────────────────────────
+
+@app.get("/api/ops/kpis")
+async def ops_kpis():
+    _require_lakebase()
+    return await _run(_lb.get_ops_kpis)
+
+
+# ── Campaigns ────────────────────────────────────────────────────
+
+@app.get("/api/ops/campaigns")
+async def ops_campaigns(status: str = "", limit: int = Query(default=50, le=200)):
+    _require_lakebase()
+    return await _run(_lb.get_campaigns, status, limit)
+
+
+@app.get("/api/ops/campaigns/{campaign_id}")
+async def ops_campaign_detail(campaign_id: str):
+    _require_lakebase()
+    result = await _run(_lb.get_campaign_detail, campaign_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    return result
+
+
+@app.post("/api/ops/campaigns")
+async def ops_create_campaign(req: M.CreateCampaignRequest):
+    _require_lakebase()
+    return await _run(
+        _lb.create_campaign,
+        req.name, req.segment, req.action_type, req.channel,
+        req.owner, req.scheduled_at, req.merchant_ids, req.notes,
+    )
+
+
+@app.patch("/api/ops/campaigns/{campaign_id}/status")
+async def ops_update_campaign_status(campaign_id: str, req: M.UpdateStatusRequest):
+    _require_lakebase()
+    result = await _run(_lb.update_campaign_status, campaign_id, req.status)
+    if not result:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    return result
+
+
+# ── NBA Assignments ──────────────────────────────────────────────
+
+@app.get("/api/ops/assignments")
+async def ops_assignments(assignee: str = "", status: str = "", limit: int = Query(default=50, le=200)):
+    _require_lakebase()
+    return await _run(_lb.get_assignments, assignee, status, limit)
+
+
+@app.post("/api/ops/assignments")
+async def ops_create_assignment(req: M.CreateAssignmentRequest):
+    _require_lakebase()
+    return await _run(
+        _lb.create_assignment,
+        req.golden_id, req.merchant_name, req.action_type, req.channel,
+        req.assignee, req.due_date, req.priority_score, req.revenue_impact, req.notes,
+    )
+
+
+@app.patch("/api/ops/assignments/{assignment_id}/status")
+async def ops_update_assignment(assignment_id: str, req: M.UpdateStatusRequest):
+    _require_lakebase()
+    result = await _run(_lb.update_assignment_status, assignment_id, req.status, req.notes)
+    if not result:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    return result
+
+
+# ── Alert Triage ─────────────────────────────────────────────────
+
+@app.get("/api/ops/triage")
+async def ops_triage_log(resolution: str = "", limit: int = Query(default=50, le=200)):
+    _require_lakebase()
+    return await _run(_lb.get_triage_log, resolution, limit)
+
+
+@app.get("/api/ops/triage/kpis")
+async def ops_triage_kpis():
+    _require_lakebase()
+    return await _run(_lb.get_triage_kpis)
+
+
+@app.post("/api/ops/triage")
+async def ops_triage_alert(req: M.TriageAlertRequest):
+    _require_lakebase()
+    return await _run(
+        _lb.triage_alert,
+        req.golden_id, req.merchant_name, req.anomaly_type,
+        req.resolution, req.triaged_by, req.notes,
+    )
+
+
+# ── Suppression ──────────────────────────────────────────────────
+
+@app.post("/api/ops/suppression/check")
+async def ops_check_suppression(merchant_ids: list[str]):
+    _require_lakebase()
+    return await _run(_lb.check_suppression, merchant_ids)
 
 
 # ── Agent Feedback ────────────────────────────────────────────────

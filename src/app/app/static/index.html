@@ -176,6 +176,12 @@
         Campaign ROI
       </div>
 
+      <div class="px-3 py-1.5 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Operations</div>
+      <div class="nav-item" data-page="ops" onclick="navigateTo('ops')">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        Operations Center
+      </div>
+
       <div class="px-3 py-1.5 mt-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Activation</div>
       <div class="nav-item" data-page="audiences" onclick="navigateTo('audiences')">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path></svg>
@@ -403,7 +409,7 @@
       const titles = {
         dashboard: 'Dashboard', merchants: 'Merchants', nba: 'Next Best Actions', anomalies: 'Anomaly Alerts',
         support: 'Support Analytics', callcenter: 'Call Center', roi: 'Campaign ROI',
-        audiences: 'Audiences', personalization: 'Personalization', creative: 'Ad Creative',
+        ops: 'Operations Center', audiences: 'Audiences', personalization: 'Personalization', creative: 'Ad Creative',
         clv: 'Customer Lifetime Value', attribution: 'Channel Attribution', behavioral: 'Behavioral Segments',
         freshness: 'Data Freshness', about: 'About this Solution',
       };
@@ -457,6 +463,7 @@
         clv: loadCLV,
         attribution: loadAttribution,
         behavioral: loadBehavioral,
+        ops: loadOps,
         freshness: loadFreshness,
         about: loadAbout,
       };
@@ -1197,6 +1204,204 @@
     }
 
     // ═══════════════════════════════════════════════════════════
+    // PAGE: Operations Center (Lakebase)
+    // ═══════════════════════════════════════════════════════════
+    let opsTab = 'campaigns';
+    async function loadOps(tab) {
+      if (tab) opsTab = tab;
+      const c = document.getElementById('page-container');
+
+      const kpis = await api('/api/ops/kpis');
+      const lbDown = !kpis || (kpis.error && kpis.detail);
+      if (lbDown) {
+        c.innerHTML = card('Lakebase Not Connected', `
+          <div class="flex items-center gap-3 text-yellow-400">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <div>
+              <div class="font-semibold">Operations Center requires Lakebase</div>
+              <div class="text-sm text-muted-foreground mt-1">The Lakebase PostgreSQL instance (<code class="bg-muted px-1 rounded text-xs">cdp-360-ops</code>) is not connected. Set <code class="bg-muted px-1 rounded text-xs">LAKEBASE_INSTANCE_NAME</code> in app config.</div>
+            </div>
+          </div>`);
+        return;
+      }
+
+      const ck = kpis.campaigns || {}, ak = kpis.assignments || {}, tk = kpis.triage || {};
+
+      const tabBtn = (id, label, icon, count) =>
+        `<button onclick="loadOps('${id}')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${opsTab === id ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}">${icon} ${esc(label)}${count ? ` <span class="ml-1 text-xs bg-muted text-muted-foreground px-1.5 rounded-full">${count}</span>` : ''}</button>`;
+
+      const tabs = `<div class="flex gap-2 flex-wrap mb-4">
+        ${tabBtn('campaigns', 'Campaigns', '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"></path></svg>', ck.total || 0)}
+        ${tabBtn('assignments', 'Assignments', '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>', ak.total || 0)}
+        ${tabBtn('triage', 'Alert Triage', '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>', tk.total_triaged || 0)}
+      </div>`;
+
+      const kpiCards = `<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        ${kpiCard('Active Campaigns', ck.executing || 0, '', 'chart-1')}
+        ${kpiCard('Pending Assignments', ak.pending || 0, '', 'chart-2')}
+        ${kpiCard('Open Alerts', tk.open_alerts || 0, '', 'yellow-400')}
+        ${kpiCard('Resolved', tk.resolved || 0, '', 'chart-4')}
+      </div>`;
+
+      if (opsTab === 'campaigns') {
+        const rows = await api('/api/ops/campaigns?limit=50') || [];
+        const statusBadge = (s) => {
+          const colors = {draft:'muted',scheduled:'blue',executing:'green',completed:'purple',paused:'yellow'};
+          return pill(esc(s), colors[s] || 'muted');
+        };
+        c.innerHTML = tabs + kpiCards + card('Campaigns', `
+          <div class="flex justify-end mb-3">
+            <button onclick="showCreateCampaignModal()" class="px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-md hover:bg-primary/90 transition-colors">+ New Campaign</button>
+          </div>
+          ${rows.length ? `<div class="overflow-x-auto"><table class="w-full text-sm">${tblHead(['Name','Segment','Channel','Status','Enrolled','Created'])}
+            <tbody>${rows.map(r => tblRow([
+              `<strong>${esc(r.name)}</strong>`,
+              pill(esc(r.segment), 'blue'),
+              esc(r.channel),
+              statusBadge(r.status),
+              r.merchants_enrolled || 0,
+              r.created_at ? new Date(r.created_at).toLocaleDateString() : '-'
+            ])).join('')}</tbody></table></div>` : '<p class="text-muted-foreground text-sm">No campaigns yet. Create one using the button above or ask the AI agent.</p>'}
+        `);
+      } else if (opsTab === 'assignments') {
+        const rows = await api('/api/ops/assignments?limit=50') || [];
+        const statusBadge = (s) => {
+          const colors = {pending:'yellow',in_progress:'blue',completed:'green',deferred:'muted',overdue:'red'};
+          return pill(esc(s), colors[s] || 'muted');
+        };
+        c.innerHTML = tabs + kpiCards + card('NBA Assignments', `
+          <div class="flex justify-end mb-3">
+            <button onclick="showCreateAssignmentModal()" class="px-3 py-1.5 bg-primary text-primary-foreground text-sm rounded-md hover:bg-primary/90 transition-colors">+ New Assignment</button>
+          </div>
+          ${rows.length ? `<div class="overflow-x-auto"><table class="w-full text-sm">${tblHead(['Merchant','Action','Channel','Assignee','Status','Priority','Due'])}
+            <tbody>${rows.map(r => tblRow([
+              `<strong>${esc(r.merchant_name || r.golden_id)}</strong>`,
+              esc(r.action_type),
+              esc(r.channel || ''),
+              esc(r.assignee),
+              statusBadge(r.status),
+              r.priority_score ? r.priority_score.toFixed(1) : '-',
+              r.due_date || '-'
+            ])).join('')}</tbody></table></div>` : '<p class="text-muted-foreground text-sm">No assignments yet. Create one using the button above or ask the AI agent to assign actions.</p>'}
+        `);
+      } else if (opsTab === 'triage') {
+        const rows = await api('/api/ops/triage?limit=50') || [];
+        const resBadge = (s) => {
+          const colors = {open:'yellow',investigating:'blue',resolved:'green',false_positive:'muted',escalated:'red'};
+          return pill(esc(s), colors[s] || 'muted');
+        };
+        c.innerHTML = tabs + kpiCards + card('Alert Triage Log', `
+          ${rows.length ? `<div class="overflow-x-auto"><table class="w-full text-sm">${tblHead(['Merchant','Anomaly','Resolution','Triaged By','Notes','Date'])}
+            <tbody>${rows.map(r => tblRow([
+              `<strong>${esc(r.merchant_name || r.golden_id)}</strong>`,
+              pill(esc(r.anomaly_type), 'orange'),
+              resBadge(r.resolution),
+              esc(r.triaged_by || '-'),
+              esc((r.notes || '').substring(0, 60)),
+              r.created_at ? new Date(r.created_at).toLocaleDateString() : '-'
+            ])).join('')}</tbody></table></div>` : '<p class="text-muted-foreground text-sm">No triaged alerts yet. Triage alerts from the Anomaly page or ask the AI agent.</p>'}
+        `);
+      }
+    }
+
+    function showCreateCampaignModal() {
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-overlay';
+      overlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+      overlay.innerHTML = `
+        <div class="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4">
+          <h3 class="text-lg font-semibold">Create Campaign</h3>
+          <div class="space-y-3">
+            <input id="m-camp-name" placeholder="Campaign name" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <select id="m-camp-segment" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+              <option value="">Select segment</option>
+              <option>champions</option><option>loyal</option><option>potential_loyalists</option>
+              <option>new_customers</option><option>promising</option><option>at_risk</option>
+              <option>cant_lose</option><option>hibernating</option><option>need_attention</option>
+            </select>
+            <select id="m-camp-channel" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+              <option value="sfmc_email">Email (SFMC)</option><option value="zender_sms">SMS (Zender)</option>
+              <option value="push">Push Notification</option><option value="phone">Phone</option>
+              <option value="in_person">In Person</option>
+            </select>
+            <input id="m-camp-action" placeholder="Action type (e.g., win_back_campaign)" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <textarea id="m-camp-notes" placeholder="Notes (optional)" rows="2" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"></textarea>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button onclick="document.getElementById('modal-overlay').remove()" class="px-3 py-1.5 text-sm rounded-md border border-border hover:bg-accent transition-colors">Cancel</button>
+            <button onclick="submitCreateCampaign()" class="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Create</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+    }
+
+    async function submitCreateCampaign() {
+      const name = document.getElementById('m-camp-name').value.trim();
+      const segment = document.getElementById('m-camp-segment').value;
+      const channel = document.getElementById('m-camp-channel').value;
+      const action_type = document.getElementById('m-camp-action').value.trim() || 'general_outreach';
+      const notes = document.getElementById('m-camp-notes').value.trim();
+      if (!name || !segment) { notify('Name and segment are required', 'warning'); return; }
+      const result = await api('/api/ops/campaigns', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ name, segment, action_type, channel, notes })
+      });
+      if (result && !result.error) {
+        notify(`Campaign "${esc(name)}" created`, 'success');
+        document.getElementById('modal-overlay')?.remove();
+        loadOps('campaigns');
+      } else {
+        notify('Failed to create campaign', 'error', result?.detail || result?.error || '');
+      }
+    }
+
+    function showCreateAssignmentModal() {
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-overlay';
+      overlay.className = 'fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4';
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+      overlay.innerHTML = `
+        <div class="bg-card border border-border rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4">
+          <h3 class="text-lg font-semibold">Create NBA Assignment</h3>
+          <div class="space-y-3">
+            <input id="m-asgn-gid" placeholder="Merchant Golden ID (e.g., GID-000123)" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <input id="m-asgn-name" placeholder="Merchant name" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <input id="m-asgn-action" placeholder="Action type (e.g., executive_outreach)" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <input id="m-asgn-assignee" placeholder="Assignee email" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <input id="m-asgn-due" type="date" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <textarea id="m-asgn-notes" placeholder="Notes (optional)" rows="2" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"></textarea>
+          </div>
+          <div class="flex justify-end gap-2">
+            <button onclick="document.getElementById('modal-overlay').remove()" class="px-3 py-1.5 text-sm rounded-md border border-border hover:bg-accent transition-colors">Cancel</button>
+            <button onclick="submitCreateAssignment()" class="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">Create</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+    }
+
+    async function submitCreateAssignment() {
+      const golden_id = document.getElementById('m-asgn-gid').value.trim();
+      const merchant_name = document.getElementById('m-asgn-name').value.trim();
+      const action_type = document.getElementById('m-asgn-action').value.trim();
+      const assignee = document.getElementById('m-asgn-assignee').value.trim();
+      const due_date = document.getElementById('m-asgn-due').value;
+      const notes = document.getElementById('m-asgn-notes').value.trim();
+      if (!golden_id || !action_type || !assignee) { notify('Merchant ID, action, and assignee are required', 'warning'); return; }
+      const result = await api('/api/ops/assignments', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ golden_id, merchant_name, action_type, channel: 'email', assignee, due_date: due_date || null, notes })
+      });
+      if (result && !result.error) {
+        notify(`Assignment created for ${esc(golden_id)}`, 'success');
+        document.getElementById('modal-overlay')?.remove();
+        loadOps('assignments');
+      } else {
+        notify('Failed to create assignment', 'error', result?.detail || result?.error || '');
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
     // PAGE: Data Freshness
     // ═══════════════════════════════════════════════════════════
     async function loadFreshness() {
@@ -1527,14 +1732,14 @@
         <!-- AI Agents -->
         <div class="${sectionStyle}">
           ${h2('AI Agents — Multi-Agent Orchestration', '<svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>')}
-          <p class="text-sm text-muted-foreground">A CDP Supervisor Agent (built with LangGraph + MLflow ResponsesAgent) orchestrates three specialists. All agents are deployed on Databricks Model Serving and use 24 Unity Catalog functions as tools.</p>
+          <p class="text-sm text-muted-foreground">A CDP Supervisor Agent (built with LangGraph + MLflow ResponsesAgent) orchestrates three specialists. All agents are deployed on Databricks Model Serving and use 24 Unity Catalog functions + 6 Lakebase operational tools for end-to-end intelligence and action.</p>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="md:col-span-2 rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2">
               <div class="font-semibold flex items-center gap-2">
                 <div class="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center"><svg class="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg></div>
                 CDP Supervisor Agent (Primary Entry Point)
               </div>
-              <p class="text-xs text-muted-foreground">Routes natural-language queries to the right specialist domain. Combines cross-domain insights (e.g., "at-risk merchants with high CLV and negative call sentiment"). Has access to all 24 UC functions + Genie Space for ad-hoc SQL.</p>
+              <p class="text-xs text-muted-foreground">Routes natural-language queries to the right specialist domain. Combines cross-domain insights (e.g., "at-risk merchants with high CLV and negative call sentiment"). Has 24 UC functions + 6 Lakebase tools + Genie Space. Can execute actions: create campaigns, assign NBAs, triage alerts.</p>
               <div class="text-xs font-mono text-muted-foreground">Model: <span class="text-primary">Meta Llama 3.3 70B Instruct</span> &bull; Endpoint: <span class="text-primary">main-cdp-cdp_supervisor_agent</span></div>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
@@ -1556,6 +1761,76 @@
               <div class="font-semibold text-sm">AI/BI Genie Space (Natural Language SQL)</div>
               <p class="text-xs text-muted-foreground">Enables any user to ask questions in natural language across all 20+ gold tables. The Genie Space is configured with SQL instructions and sample prompts that understand the data model.</p>
               <div class="text-xs text-muted-foreground">Tables: 20+ gold tables &bull; Pre-configured SQL context &bull; 10 sample prompts</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lakebase Operational Store -->
+        <div class="${sectionStyle}">
+          ${h2('Lakebase Operational Store', '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>')}
+          <p class="text-sm text-muted-foreground">A <strong>Databricks Lakebase</strong> managed PostgreSQL instance (<code class="text-xs font-mono bg-muted px-1 rounded">cdp-360-ops</code>) provides a transactional operational store for real-time campaign management, NBA assignments, and alert triage. This complements the analytical Delta Lake layer with sub-10ms read/write latency for operational workflows.</p>
+
+          <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-3 mt-4">
+            <div class="font-semibold text-sm flex items-center gap-2">
+              <div class="w-6 h-6 rounded-md bg-emerald-500/20 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              </div>
+              Why Lakebase?
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Delta Lake excels at analytical queries across millions of rows but is optimized for batch reads. Campaign execution, work-queue assignments, and alert triage require <strong>single-row reads/writes with sub-10ms latency</strong>, <strong>ACID transactions</strong>, and <strong>bi-directional updates</strong> (e.g., marking an alert as resolved). Lakebase provides managed PostgreSQL that integrates natively with Unity Catalog, uses OAuth tokens for auth, and requires zero infrastructure management.</p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Campaign Ops', 'green')} Campaign Management</div>
+              <p class="text-xs text-muted-foreground">Create, schedule, and track marketing campaigns. Enroll merchants, monitor execution status, and measure results. The agent can create campaigns and enroll target merchants in real time.</p>
+              <div class="text-[10px] font-mono text-muted-foreground">Tables: <span class="text-emerald-400">campaigns</span>, <span class="text-emerald-400">campaign_enrollments</span></div>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Work Queue', 'blue')} NBA Assignments</div>
+              <p class="text-xs text-muted-foreground">Assign next-best-action recommendations to specific team members with due dates, priority scores, and revenue impact estimates. Track completion for attribution.</p>
+              <div class="text-[10px] font-mono text-muted-foreground">Table: <span class="text-emerald-400">nba_assignments</span></div>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Triage', 'orange')} Alert Triage</div>
+              <p class="text-xs text-muted-foreground">Acknowledge and triage anomaly alerts (volume drops, ticket spikes, health collapses) with resolution tracking. The agent can auto-triage alerts and assign follow-up actions.</p>
+              <div class="text-[10px] font-mono text-muted-foreground">Table: <span class="text-emerald-400">alert_triage</span></div>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Safety', 'red')} Suppression List</div>
+              <p class="text-xs text-muted-foreground">Prevent over-contacting merchants by maintaining a suppression list with time-based expiry. The agent checks suppression before campaign enrollment.</p>
+              <div class="text-[10px] font-mono text-muted-foreground">Table: <span class="text-emerald-400">suppression_list</span></div>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-lg border border-border p-4 space-y-3">
+            <div class="font-semibold text-sm">Architecture: Agent + Lakebase + App Integration</div>
+            <div class="text-xs text-muted-foreground leading-relaxed space-y-2">
+              <div class="flex gap-2 items-start">
+                <div class="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-primary text-[10px] font-bold">1</div>
+                <div><strong class="text-foreground">Analytical Intelligence (Delta Lake)</strong> — Gold tables in Unity Catalog store ML scores (churn, CLV, propensity), segments, anomaly alerts, and next-best-action recommendations. These are refreshed daily by scheduled Databricks Jobs.</div>
+              </div>
+              <div class="flex gap-2 items-start">
+                <div class="flex-shrink-0 w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px] font-bold">2</div>
+                <div><strong class="text-foreground">Operational State (Lakebase)</strong> — Campaign state, merchant enrollments, action assignments, and triage resolutions live in managed PostgreSQL. Sub-10ms reads/writes enable instant UI updates and real-time agent actions.</div>
+              </div>
+              <div class="flex gap-2 items-start">
+                <div class="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-[10px] font-bold">3</div>
+                <div><strong class="text-foreground">AI Agent (Supervisor)</strong> — The CDP Supervisor Agent reads analytics from Delta Lake (UC functions) and writes operational state to Lakebase (Lakebase tools). It can create campaigns, assign actions, triage alerts, and check suppression — all in a single conversation.</div>
+              </div>
+              <div class="flex gap-2 items-start">
+                <div class="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 text-[10px] font-bold">4</div>
+                <div><strong class="text-foreground">App (Real-Time UI)</strong> — The Operations Center page reads directly from Lakebase to display campaigns, assignments, and triage status. Users can create campaigns, assign actions, and triage alerts through the UI or via the AI chat panel.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-lg border border-border p-4">
+            <div class="font-semibold text-sm mb-2">Agent Operational Tools (Lakebase-backed)</div>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+              ${['create_campaign', 'assign_nba_action', 'acknowledge_alert', 'check_suppression_list', 'get_ops_status', 'log_nba_action'].map(fn =>
+                '<div class="rounded-md bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1.5 font-mono text-[11px] text-emerald-400">' + fn + '</div>'
+              ).join('')}
             </div>
           </div>
         </div>
@@ -1599,7 +1874,8 @@
                 ${tblRow([pill('Dashboard', 'purple'), '<strong>Support Analytics</strong>', 'AI/BI Lakeview dashboard with CSAT, resolution times, and SLA metrics'])}
                 ${tblRow([pill('Dashboard', 'purple'), '<strong>Call Center Analytics</strong>', 'AI/BI Lakeview dashboard with agent performance and sentiment trends'])}
                 ${tblRow([pill('Genie Space', 'pink'), '<strong>Merchant 360 Analytics</strong>', 'Natural language SQL interface across all 20+ gold tables with contextual SQL instructions'])}
-                ${tblRow([pill('App', 'yellow'), '<strong>CDP Customer 360 App</strong>', 'FastAPI + Tailwind CSS full-stack application with 13 analytics pages + AI chat panel'])}
+                ${tblRow([pill('App', 'yellow'), '<strong>CDP Customer 360 App</strong>', 'FastAPI + Tailwind CSS full-stack application with 14+ analytics pages, Operations Center + AI chat panel'])}
+                ${tblRow([pill('Lakebase', 'emerald'), '<strong>CDP Ops Store (cdp-360-ops)</strong>', 'Managed PostgreSQL instance for campaign state, NBA assignments, alert triage, and suppression lists'])}
               </tbody>
             </table>
           </div>
@@ -1631,7 +1907,7 @@
             </div>
             <div class="flex gap-3">
               <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">6</div>
-              <div><strong class="text-foreground">Serve insights everywhere.</strong> The gold layer feeds AI/BI Lakeview Dashboards, a Genie Space for natural-language SQL, a multi-agent AI system (Supervisor + 3 specialists) deployed on Model Serving, and this full-stack Databricks App — giving every team from marketing to operations a complete, actionable 360 view of every merchant.</div>
+              <div><strong class="text-foreground">Serve insights everywhere.</strong> The gold layer feeds AI/BI Lakeview Dashboards, a Genie Space for natural-language SQL, a multi-agent AI system (Supervisor + 3 specialists) deployed on Model Serving, and this full-stack Databricks App. Operational state (campaigns, assignments, triage) is stored in <strong>Databricks Lakebase</strong> (managed PostgreSQL) for sub-10ms transactional workflows. The AI agent bridges both layers — reading analytics from Delta Lake and writing actions to Lakebase.</div>
             </div>
           </div>
         </div>
@@ -1706,6 +1982,7 @@
               <div>Model Serving (Agents)</div>
               <div>AI/BI Genie Spaces</div>
               <div>Lakeview Dashboards</div>
+              <div>Lakebase (Managed PG)</div>
             </div>
             <div class="rounded-lg border border-border p-3 space-y-1">
               <div class="font-semibold text-muted-foreground uppercase text-[10px]">Application</div>
@@ -1736,12 +2013,13 @@
             <div class="rounded-lg border border-border p-3"><div class="text-xs text-muted-foreground mb-1">Catalog</div><div id="about-cfg-catalog" class="font-mono font-semibold">-</div></div>
             <div class="rounded-lg border border-border p-3"><div class="text-xs text-muted-foreground mb-1">Schema</div><div id="about-cfg-schema" class="font-mono font-semibold">-</div></div>
             <div class="rounded-lg border border-border p-3"><div class="text-xs text-muted-foreground mb-1">Warehouse Connected</div><div id="about-cfg-connected" class="font-mono font-semibold">-</div></div>
+            <div class="rounded-lg border border-border p-3"><div class="text-xs text-muted-foreground mb-1">Lakebase Connected</div><div id="about-cfg-lakebase" class="font-mono font-semibold">-</div></div>
           </div>
         </div>
 
         <!-- Footer -->
         <div class="text-center text-xs text-muted-foreground pb-4">
-          Built with the Databricks Lakehouse Platform &bull; Bank Payment Platform Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, and AI/BI
+          Built with the Databricks Lakehouse Platform &bull; Bank Payment Platform Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, Lakebase, and AI/BI
         </div>
       </div>`;
       const cfg = await api('/api/config');
@@ -1754,6 +2032,11 @@
           const connected = cfg.warehouse_connected;
           el('about-cfg-connected').textContent = connected ? 'Yes' : 'No';
           el('about-cfg-connected').className = `font-mono font-semibold ${connected ? 'text-green-400' : 'text-yellow-400'}`;
+        }
+        if (el('about-cfg-lakebase')) {
+          const lb = cfg.lakebase_connected;
+          el('about-cfg-lakebase').textContent = lb ? 'Yes (cdp-360-ops)' : 'No';
+          el('about-cfg-lakebase').className = `font-mono font-semibold ${lb ? 'text-emerald-400' : 'text-yellow-400'}`;
         }
       }
     }

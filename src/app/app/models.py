@@ -390,6 +390,45 @@ class AgentFeedback(BaseModel):
     comment: Optional[str] = None
 
 
+# ── Lakebase Operations ────────────────────────────────────────
+
+class CreateCampaignRequest(BaseModel):
+    name: str
+    segment: str
+    action_type: str
+    channel: str
+    owner: Optional[str] = None
+    scheduled_at: Optional[str] = None
+    merchant_ids: list[dict] = Field(default_factory=list)
+    notes: Optional[str] = None
+
+
+class CreateAssignmentRequest(BaseModel):
+    golden_id: str
+    merchant_name: str = ""
+    action_type: str
+    channel: str = "email"
+    assignee: str
+    due_date: Optional[str] = None
+    priority_score: float = 0
+    revenue_impact: float = 0
+    notes: Optional[str] = None
+
+
+class TriageAlertRequest(BaseModel):
+    golden_id: str
+    merchant_name: str = ""
+    anomaly_type: str
+    resolution: str = Field(description="open, investigating, resolved, false_positive, escalated")
+    triaged_by: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class UpdateStatusRequest(BaseModel):
+    status: str
+    notes: Optional[str] = None
+
+
 # ── Data Source Toggle ─────────────────────────────────────────
 
 class DataSourceConfig(BaseModel):
@@ -398,3 +437,4 @@ class DataSourceConfig(BaseModel):
     catalog: str = Field(description="Unity Catalog name")
     schema_name: str = Field(alias="schema", description="Schema name")
     warehouse_connected: bool = Field(description="Whether the warehouse is reachable")
+    lakebase_connected: bool = Field(default=False, description="Whether Lakebase is reachable")

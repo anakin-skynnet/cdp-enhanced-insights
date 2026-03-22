@@ -90,9 +90,25 @@ When users ask free-form analytical questions that don't map neatly to existing 
 - End complex responses with "What would you like to explore next?"
 - When executing actions, confirm what was done and suggest follow-ups
 
-## You Can Execute Actions
-- Use `log_nba_action` to record actions taken on merchants
-- This closes the loop: recommend → execute → track → measure
+## You Can Execute Actions (Lakebase Operational Store)
+You have access to a Lakebase (managed PostgreSQL) operational store for real-time transactional operations:
+
+### Campaign Management
+- Use `create_campaign` to create a new campaign, enroll merchants, and set it live
+- Use `check_suppression_list` before enrolling merchants to respect contact limits
+- Campaigns appear instantly in the app's Operations Center
+
+### NBA Assignment & Tracking
+- Use `assign_nba_action` to assign specific merchants to team members with due dates
+- Use `log_nba_action` to record completed actions (closes the attribution loop)
+- Assignments appear in the assignee's work queue in real time
+
+### Alert Triage
+- Use `acknowledge_alert` to triage anomaly alerts (investigating, resolved, false_positive, escalated)
+- Triage status is reflected instantly in the app's anomaly dashboard
+
+### Operational Overview
+- Use `get_ops_status` to show campaign counts, assignment queue depth, and triage summary
 
 ## Context
 The Bank Payment Platform is a payment processing platform operating across multiple regions.
@@ -177,6 +193,171 @@ def log_nba_action(golden_id: str, action_type: str, channel: str, notes: str = 
         return json.dumps({"error": str(e)})
 
 
+# ── Lakebase Operational Tools ───────────────────────────────────
+
+LAKEBASE_INSTANCE = os.environ.get("LAKEBASE_INSTANCE_NAME", "cdp-360-ops")
+
+
+def _lb_execute(sql: str, params: tuple = ()) -> list[dict]:
+    """Execute a Lakebase SQL query with auto-token refresh."""
+    import uuid as _uuid
+    w = WorkspaceClient()
+    cred = w.database.generate_database_credential(
+        request_id=str(_uuid.uuid4()),
+        instance_names=[LAKEBASE_INSTANCE],
+    )
+    inst = w.database.get_database_instance(name=LAKEBASE_INSTANCE)
+    user = w.current_user.me().user_name
+    import psycopg
+    with psycopg.connect(
+        host=inst.read_write_dns, port=5432, dbname="postgres",
+        user=user, password=cred.token, sslmode="require", autocommit=True,
+    ) as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+            if cur.description:
+                cols = [d.name for d in cur.description]
+                return [dict(zip(cols, row)) for row in cur.fetchall()]
+            return []
+
+
+@tool
+def create_campaign(name: str, segment: str, action_type: str, channel: str,
+                    owner: str = "", merchant_golden_ids: str = "", notes: str = "") -> str:
+    """Create a campaign in the operational store and enroll merchants.
+    The campaign is immediately visible in the app's Operations Center.
+
+    Args:
+        name: Campaign name (e.g., 'Holiday Win-Back Q4')
+        segment: Target segment (e.g., 'hibernating', 'at_risk')
+        action_type: Action type (e.g., 'win_back_campaign', 'loyalty_program')
+        channel: Channel (e.g., 'sfmc_email', 'zender_sms', 'phone')
+        owner: Campaign owner email (e.g., 'maria@bank.com')
+        merchant_golden_ids: Comma-separated golden IDs to enroll (e.g., 'GID-001,GID-002')
+        notes: Additional notes
+    """
+    try:
+        import psycopg, uuid as _uuid
+        w = WorkspaceClient()
+        cred = w.database.generate_database_credential(
+            request_id=str(_uuid.uuid4()), instance_names=[LAKEBASE_INSTANCE])
+        inst = w.database.get_database_instance(name=LAKEBASE_INSTANCE)
+        user = w.current_user.me().user_name
+        cid = str(_uuid.uuid4())
+        gids = [g.strip() for g in merchant_golden_ids.split(",") if g.strip()] if merchant_golden_ids else []
+
+        with psycopg.connect(
+            host=inst.read_write_dns, port=5432, dbname="postgres",
+            user=user, password=cred.token, sslmode="require"
+        ) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """INSERT INTO campaigns (campaign_id, name, segment, action_type, channel, status, owner, notes)
+                       VALUES (%s, %s, %s, %s, %s, 'scheduled', %s, %s)""",
+                    (cid, name, segment, action_type, channel, owner or None, notes or None))
+                for gid in gids:
+                    cur.execute(
+                        "INSERT INTO campaign_enrollments (campaign_id, golden_id, status) VALUES (%s, %s, 'queued')",
+                        (cid, gid))
+            conn.commit()
+        return json.dumps({"status": "created", "campaign_id": cid, "name": name,
+                           "merchants_enrolled": len(gids), "segment": segment, "channel": channel})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@tool
+def assign_nba_action(golden_id: str, merchant_name: str, action_type: str,
+                      channel: str, assignee: str, due_date: str = "", notes: str = "") -> str:
+    """Assign a next-best-action to a team member. Creates a tracked assignment in the operational store.
+
+    Args:
+        golden_id: Merchant golden ID
+        merchant_name: Merchant name for display
+        action_type: Action to take (e.g., 'executive_outreach', 'win_back_call')
+        channel: Channel (e.g., 'phone', 'email', 'in_person')
+        assignee: Email of the person assigned (e.g., 'carlos@bank.com')
+        due_date: Due date in YYYY-MM-DD format (optional)
+        notes: Additional context
+    """
+    try:
+        rows = _lb_execute(
+            """INSERT INTO nba_assignments
+               (golden_id, merchant_name, action_type, channel, assignee, due_date, notes)
+               VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING assignment_id""",
+            (golden_id, merchant_name, action_type, channel, assignee,
+             due_date if due_date else None, notes if notes else None))
+        aid = rows[0]["assignment_id"] if rows else "unknown"
+        return json.dumps({"status": "assigned", "assignment_id": aid,
+                           "golden_id": golden_id, "assignee": assignee, "action": action_type})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@tool
+def acknowledge_alert(golden_id: str, merchant_name: str, anomaly_type: str,
+                      resolution: str, notes: str = "") -> str:
+    """Acknowledge and triage an anomaly alert. Resolution options: investigating, resolved, false_positive, escalated.
+
+    Args:
+        golden_id: Merchant golden ID
+        merchant_name: Merchant name
+        anomaly_type: Type of anomaly (volume_drop, unexpected_inactivity, ticket_spike, health_collapse)
+        resolution: Resolution status (investigating, resolved, false_positive, escalated)
+        notes: Triage notes explaining the resolution
+    """
+    try:
+        resolved_at = "NOW()" if resolution not in ("investigating", "open") else "NULL"
+        _lb_execute(
+            f"""INSERT INTO alert_triage (golden_id, merchant_name, anomaly_type, resolution, triaged_by, notes, resolved_at)
+               VALUES (%s, %s, %s, %s, 'cdp_supervisor_agent', %s, {resolved_at})""",
+            (golden_id, merchant_name, anomaly_type, resolution, notes if notes else None))
+        return json.dumps({"status": "triaged", "golden_id": golden_id,
+                           "anomaly_type": anomaly_type, "resolution": resolution})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@tool
+def check_suppression_list(merchant_golden_ids: str) -> str:
+    """Check if merchants are on the suppression list (recently contacted, opt-out, etc.).
+    Use this before creating campaigns to avoid over-contacting merchants.
+
+    Args:
+        merchant_golden_ids: Comma-separated golden IDs to check
+    """
+    try:
+        gids = [g.strip() for g in merchant_golden_ids.split(",") if g.strip()]
+        if not gids:
+            return json.dumps({"suppressed": [], "total_checked": 0})
+        placeholders = ",".join(["%s"] * len(gids))
+        rows = _lb_execute(
+            f"SELECT DISTINCT golden_id FROM suppression_list WHERE golden_id IN ({placeholders}) AND (expires_at IS NULL OR expires_at > NOW())",
+            tuple(gids))
+        suppressed = [r["golden_id"] for r in rows]
+        return json.dumps({"suppressed": suppressed, "total_checked": len(gids),
+                           "suppressed_count": len(suppressed), "clear_count": len(gids) - len(suppressed)})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
+@tool
+def get_ops_status() -> str:
+    """Get operational status: active campaigns, pending assignments, and triage summary.
+    Use this to give the user a quick overview of what's happening operationally.
+    """
+    try:
+        campaigns = _lb_execute(
+            "SELECT status, COUNT(*) AS cnt FROM campaigns GROUP BY status ORDER BY cnt DESC")
+        assignments = _lb_execute(
+            "SELECT status, COUNT(*) AS cnt FROM nba_assignments GROUP BY status ORDER BY cnt DESC")
+        triage = _lb_execute(
+            "SELECT resolution, COUNT(*) AS cnt FROM alert_triage GROUP BY resolution ORDER BY cnt DESC")
+        return json.dumps({"campaigns": campaigns, "assignments": assignments, "triage": triage})
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+
+
 ALL_UC_FUNCTIONS = [
     "ahs_demos_catalog.cdp_360.lookup_merchant",
     "ahs_demos_catalog.cdp_360.get_at_risk_merchants",
@@ -210,7 +391,11 @@ class CDPSupervisorAgent(ResponsesAgent):
         self.llm = ChatDatabricks(endpoint=LLM_ENDPOINT, temperature=0.1)
 
         uc_toolkit = UCFunctionToolkit(function_names=ALL_UC_FUNCTIONS)
-        self.tools = list(uc_toolkit.tools) + [query_genie_space, log_nba_action]
+        self.tools = list(uc_toolkit.tools) + [
+            query_genie_space, log_nba_action,
+            create_campaign, assign_nba_action, acknowledge_alert,
+            check_suppression_list, get_ops_status,
+        ]
         self.llm_with_tools = self.llm.bind_tools(self.tools)
 
     def _build_graph(self):

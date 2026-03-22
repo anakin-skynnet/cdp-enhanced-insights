@@ -89,6 +89,7 @@ pip_requirements = [
     "mlflow",
     "databricks-langchain",
     "langgraph",
+    "psycopg[binary]>=3.0",
 ]
 
 # COMMAND ----------
@@ -163,7 +164,10 @@ try:
 except Exception:
     genie_space_id = ""
 
+from mlflow.models.resources import DatabricksLakebase
+
 supervisor_resources = base_resources + ALL_UC_FUNCTIONS
+supervisor_resources.append(DatabricksLakebase(database_instance_name="cdp-360-ops"))
 if genie_space_id:
     supervisor_resources.append(DatabricksGenieSpace(genie_space_id=genie_space_id))
 
