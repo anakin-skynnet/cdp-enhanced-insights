@@ -1053,22 +1053,34 @@
     async function loadPersonalization() {
       const [summary, propensity] = await Promise.all([api('/api/personalization/summary'), api('/api/propensity')]);
       const c = document.getElementById('page-container');
-      const propRows = (propensity || []).map(p => `
+      if (!c) return;
+      if (!summary && !propensity) {
+        c.innerHTML = card('Personalization', '<p class="text-muted-foreground">Personalization data is not yet available. Run the ML pipeline to generate propensity scores and signals.</p>');
+        return;
+      }
+      const propRows = (propensity || []).filter(p => p && p.propensity_tier).map(p => {
+        const tier = String(p.propensity_tier || '');
+        return `
         <tr class="border-b border-border">
-          <td class="px-4 py-2">${badge(p.propensity_tier.replace(/_/g, ' '), p.propensity_tier.includes('churn') ? 'red' : p.propensity_tier.includes('upsell') ? 'green' : 'blue')}</td>
-          <td class="px-4 py-2 text-right">${p.merchant_count}</td>
-          <td class="px-4 py-2 text-right">${(p.avg_churn * 100).toFixed(1)}%</td>
-          <td class="px-4 py-2 text-right">${(p.avg_upsell * 100).toFixed(1)}%</td>
-          <td class="px-4 py-2 text-right">${(p.avg_activation * 100).toFixed(1)}%</td>
-        </tr>`).join('');
-      const summaryRows = (summary || []).map(s => `
+          <td class="px-4 py-2">${badge(tier.replace(/_/g, ' '), tier.includes('churn') ? 'red' : tier.includes('upsell') ? 'green' : 'blue')}</td>
+          <td class="px-4 py-2 text-right">${p.merchant_count ?? 0}</td>
+          <td class="px-4 py-2 text-right">${((Number(p.avg_churn) || 0) * 100).toFixed(1)}%</td>
+          <td class="px-4 py-2 text-right">${((Number(p.avg_upsell) || 0) * 100).toFixed(1)}%</td>
+          <td class="px-4 py-2 text-right">${((Number(p.avg_activation) || 0) * 100).toFixed(1)}%</td>
+        </tr>`;
+      }).join('');
+      const summaryRows = (summary || []).filter(s => s && s.content_theme).map(s => {
+        const theme = String(s.content_theme || '');
+        const tier = String(s.merchant_tier || '');
+        return `
         <tr class="border-b border-border">
-          <td class="px-4 py-2">${s.content_theme.replace(/_/g, ' ')}</td>
-          <td class="px-4 py-2">${badge(s.merchant_tier, s.merchant_tier === 'premium' ? 'green' : s.merchant_tier === 'growth' ? 'blue' : 'gray')}</td>
-          <td class="px-4 py-2 text-right">${s.merchant_count}</td>
-          <td class="px-4 py-2 text-right">${(s.avg_upsell * 100).toFixed(0)}%</td>
-          <td class="px-4 py-2 text-right">${(s.avg_churn * 100).toFixed(0)}%</td>
-        </tr>`).join('');
+          <td class="px-4 py-2">${theme.replace(/_/g, ' ')}</td>
+          <td class="px-4 py-2">${badge(tier, tier === 'premium' ? 'green' : tier === 'growth' ? 'blue' : 'gray')}</td>
+          <td class="px-4 py-2 text-right">${s.merchant_count ?? 0}</td>
+          <td class="px-4 py-2 text-right">${((Number(s.avg_upsell) || 0) * 100).toFixed(0)}%</td>
+          <td class="px-4 py-2 text-right">${((Number(s.avg_churn) || 0) * 100).toFixed(0)}%</td>
+        </tr>`;
+      }).join('');
       c.innerHTML = `
         <div class="space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -1079,11 +1091,14 @@
           </div>
           ${card('Personalization Signals', tableWrap(['Theme', 'Tier', 'Merchants', 'Upsell', 'Churn'], summaryRows))}
         </div>`;
-      if (propensity) {
-        createChart('chart-propensity', 'doughnut', {
-          labels: propensity.map(p => p.propensity_tier.replace(/_/g, ' ')),
-          datasets: [{ data: propensity.map(p => p.merchant_count), backgroundColor: CHART_COLORS.slice(0, propensity.length), borderWidth: 0 }]
-        }, { cutout: '55%' });
+      if (propensity && propensity.length) {
+        const validProp = propensity.filter(p => p && p.propensity_tier);
+        if (validProp.length) {
+          createChart('chart-propensity', 'doughnut', {
+            labels: validProp.map(p => String(p.propensity_tier).replace(/_/g, ' ')),
+            datasets: [{ data: validProp.map(p => Number(p.merchant_count) || 0), backgroundColor: CHART_COLORS.slice(0, validProp.length), borderWidth: 0 }]
+          }, { cutout: '55%' });
+        }
       }
     }
 

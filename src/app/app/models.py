@@ -23,15 +23,15 @@ class DashboardKPIs(BaseModel):
 
 
 class SegmentDistribution(BaseModel):
-    segment: str
-    merchant_count: int
-    total_volume: float
+    segment: str = "unassigned"
+    merchant_count: int = 0
+    total_volume: float = 0
 
 
 class HealthDistribution(BaseModel):
-    health_tier: str
-    merchant_count: int
-    avg_score: float
+    health_tier: str = "unknown"
+    merchant_count: int = 0
+    avg_score: float = 0
 
 
 # ── Merchants ──────────────────────────────────────────────────
@@ -92,12 +92,12 @@ class NBAItem(BaseModel):
 
 
 class NBASummaryItem(BaseModel):
-    primary_action: str
-    merchant_count: int
-    revenue_impact: float
-    avg_health: float
-    immediate: int
-    this_week: int
+    primary_action: str = "review"
+    merchant_count: int = 0
+    revenue_impact: float = 0
+    avg_health: float = 0
+    immediate: int = 0
+    this_week: int = 0
 
 
 # ── Campaigns ──────────────────────────────────────────────────
@@ -131,25 +131,25 @@ class CampaignAudienceMember(BaseModel):
 # ── Solution Accelerators ──────────────────────────────────────
 
 class CLVTierSummary(BaseModel):
-    clv_tier: str
-    merchant_count: int
-    avg_clv: float
-    total_clv: float
-    avg_p_alive: float
+    clv_tier: str = "unknown"
+    merchant_count: int = 0
+    avg_clv: float = 0
+    total_clv: float = 0
+    avg_p_alive: float = 0
 
 
 class CLVMerchant(BaseModel):
     golden_id: str
     merchant_name: str = ""
-    clv_12m: float
-    clv_tier: str
-    p_alive: float
+    clv_12m: float = 0
+    clv_tier: str = "unknown"
+    p_alive: float = 0
     predicted_purchases_12m: float = 0
     total_amount: float = 0
 
 
 class ChannelAttribution(BaseModel):
-    channel: str
+    channel: str = "unknown"
     markov_attributed_value: float = 0
     markov_attribution_share: float = 0
     first_touch_value: Optional[float] = 0
@@ -159,11 +159,11 @@ class ChannelAttribution(BaseModel):
 
 
 class BehavioralSegment(BaseModel):
-    behavioral_segment: str
-    merchant_count: int
-    avg_health: float
-    avg_volume: float
-    avg_tickets: float
+    behavioral_segment: str = "unknown"
+    merchant_count: int = 0
+    avg_health: float = 0
+    avg_volume: float = 0
+    avg_tickets: float = 0
     avg_recency: float = 0
 
 
@@ -181,10 +181,10 @@ class SupportKPIs(BaseModel):
 
 
 class SupportQualityDistribution(BaseModel):
-    support_quality_tier: str
-    merchant_count: int
-    avg_resolution: float
-    avg_csat: float
+    support_quality_tier: str = "unknown"
+    merchant_count: int = 0
+    avg_resolution: float = 0
+    avg_csat: float = 0
 
 
 class SupportMerchant(BaseModel):
@@ -213,8 +213,8 @@ class CallCenterKPIs(BaseModel):
 
 
 class CallCenterAgent(BaseModel):
-    agent_id: str
-    total_interactions: int
+    agent_id: str = ""
+    total_interactions: int = 0
     voice_calls: int = 0
     chat_sessions: int = 0
     email_interactions: int = 0
@@ -227,8 +227,8 @@ class CallCenterAgent(BaseModel):
 
 
 class CallCenterQueue(BaseModel):
-    queue_name: str
-    total_interactions: int
+    queue_name: str = "unknown"
+    total_interactions: int = 0
     avg_handle_time_sec: int = 0
     avg_queue_wait_sec: int = 0
     abandonment_rate: Optional[float] = None
@@ -236,8 +236,8 @@ class CallCenterQueue(BaseModel):
 
 
 class SentimentByTopic(BaseModel):
-    topic_category: str
-    interaction_count: int
+    topic_category: str = "unknown"
+    interaction_count: int = 0
     positive_pct: float = 0
     negative_pct: float = 0
     neutral_pct: float = 0
@@ -247,26 +247,26 @@ class SentimentByTopic(BaseModel):
 # ── Personalization ────────────────────────────────────────────
 
 class PersonalizationSummary(BaseModel):
-    content_theme: str
-    merchant_tier: str
-    merchant_count: int
-    avg_upsell: float
-    avg_churn: float
-    avg_activation: float
+    content_theme: str = "unknown"
+    merchant_tier: str = "unknown"
+    merchant_count: int = 0
+    avg_upsell: float = 0
+    avg_churn: float = 0
+    avg_activation: float = 0
 
 
 class PropensityDistribution(BaseModel):
-    propensity_tier: str
-    merchant_count: int
-    avg_churn: float
-    avg_upsell: float
-    avg_activation: float
+    propensity_tier: str = "unknown"
+    merchant_count: int = 0
+    avg_churn: float = 0
+    avg_upsell: float = 0
+    avg_activation: float = 0
 
 
 # ── Ad Creative ────────────────────────────────────────────────
 
 class AdCreativeItem(BaseModel):
-    segment: str
+    segment: str = "unknown"
     email_subject: Optional[str] = None
     email_body_preview: Optional[str] = None
     sms_message: Optional[str] = None
@@ -311,9 +311,9 @@ class GenerateVariantsRequest(BaseModel):
 # ── Campaign ROI ───────────────────────────────────────────────
 
 class CampaignROISummary(BaseModel):
-    campaign_type: str
-    channel: str
-    merchants_targeted: int
+    campaign_type: str = "unknown"
+    channel: str = "unknown"
+    merchants_targeted: int = 0
     conversions: int = 0
     conversion_rate: float = 0
     total_post_revenue: float = 0
@@ -321,8 +321,8 @@ class CampaignROISummary(BaseModel):
 
 
 class CampaignOutcome(BaseModel):
-    campaign_outcome: str
-    merchant_count: int
+    campaign_outcome: str = "unknown"
+    merchant_count: int = 0
     avg_revenue: float = 0
     avg_health: float = 0
 
@@ -362,7 +362,7 @@ class AnomalyAlert(BaseModel):
     health_tier: str = "unknown"
     current_volume: float = 0
     avg_volume_30d: float = 0
-    anomaly_type: str
+    anomaly_type: str = "unknown"
     deviation_pct: float = 0
     recommended_action: Optional[str] = None
     urgency: Optional[str] = None

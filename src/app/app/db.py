@@ -81,7 +81,7 @@ def query(sql: str, params: dict | None = None) -> list[dict]:
             rows: list[dict] = []
             if resp.result and resp.result.data_array:
                 for row in resp.result.data_array:
-                    rows.append(dict(zip(columns, row)))
+                    rows.append({k: v for k, v in zip(columns, row) if v is not None})
             return rows
         except Exception as e:
             if attempt < _MAX_RETRIES and "timeout" in str(e).lower():
@@ -153,6 +153,7 @@ def get_health_distribution() -> list[dict]:
         SELECT health_tier, COUNT(*) AS merchant_count,
                COALESCE(ROUND(AVG(health_score), 1), 0) AS avg_score
         FROM {_t('gold_health_score')}
+        WHERE health_tier IS NOT NULL
         GROUP BY health_tier
         ORDER BY CASE health_tier
           WHEN 'critical' THEN 1 WHEN 'poor' THEN 2
@@ -326,6 +327,7 @@ def get_clv_summary() -> list[dict]:
                COALESCE(ROUND(SUM(clv_12m), 0), 0) AS total_clv,
                COALESCE(ROUND(AVG(p_alive), 3), 0) AS avg_p_alive
         FROM {_t('gold_customer_ltv')}
+        WHERE clv_tier IS NOT NULL
         GROUP BY clv_tier ORDER BY avg_clv DESC
     """)
 
@@ -366,6 +368,7 @@ def get_behavioral_segments() -> list[dict]:
                COALESCE(ROUND(AVG(ticket_count), 1), 0) AS avg_tickets,
                COALESCE(ROUND(AVG(days_since_last_txn), 0), 0) AS avg_recency
         FROM {_t('gold_behavioral_segments')}
+        WHERE behavioral_segment IS NOT NULL
         GROUP BY behavioral_segment ORDER BY avg_volume DESC
     """)
 
@@ -415,6 +418,7 @@ def get_support_quality_distribution() -> list[dict]:
                COALESCE(ROUND(AVG(avg_resolution_min), 0), 0) AS avg_resolution,
                COALESCE(ROUND(AVG(csat_score), 1), 0) AS avg_csat
         FROM {_t('gold_support_analytics')}
+        WHERE support_quality_tier IS NOT NULL
         GROUP BY support_quality_tier
         ORDER BY CASE support_quality_tier
           WHEN 'excellent' THEN 1 WHEN 'good' THEN 2
@@ -504,6 +508,7 @@ def get_call_center_sentiment() -> list[dict]:
                COALESCE(ROUND(COUNT(CASE WHEN sentiment = 'neutral' THEN 1 END) * 100.0 / NULLIF(COUNT(*), 0), 1), 0) AS neutral_pct,
                COALESCE(ROUND(AVG(duration_seconds), 0), 0) AS avg_duration
         FROM {_t('gold_call_center_sentiment')}
+        WHERE topic_category IS NOT NULL
         GROUP BY topic_category
         ORDER BY interaction_count DESC
     """)
@@ -519,6 +524,7 @@ def get_personalization_summary() -> list[dict]:
                COALESCE(ROUND(AVG(churn_propensity), 2), 0) AS avg_churn,
                COALESCE(ROUND(AVG(activation_propensity), 2), 0) AS avg_activation
         FROM {_t('gold_personalization_signals')}
+        WHERE content_theme IS NOT NULL
         GROUP BY content_theme, merchant_tier
         ORDER BY merchant_count DESC
     """)
@@ -538,6 +544,7 @@ def get_propensity_distribution() -> list[dict]:
                COALESCE(ROUND(AVG(upsell_propensity_score), 3), 0) AS avg_upsell,
                COALESCE(ROUND(AVG(activation_propensity_score), 3), 0) AS avg_activation
         FROM {_t('gold_propensity_scores')}
+        WHERE propensity_tier IS NOT NULL
         GROUP BY propensity_tier
         ORDER BY merchant_count DESC
     """)
@@ -552,6 +559,7 @@ def get_ad_creative_library() -> list[dict]:
                COALESCE(merchant_count, 0) AS merchant_count,
                COALESCE(avg_volume, 0) AS avg_volume
         FROM {_t('gold_ad_creative_library')}
+        WHERE segment IS NOT NULL
         ORDER BY avg_volume DESC
     """)
 
@@ -567,6 +575,7 @@ def get_campaign_roi_summary() -> list[dict]:
                COALESCE(ROUND(SUM(post_30d_volume), 0), 0) AS total_post_revenue,
                COUNT(CASE WHEN campaign_outcome = 'reactivated' THEN 1 END) AS reactivations
         FROM {_t('gold_campaign_roi')}
+        WHERE campaign_type IS NOT NULL
         GROUP BY campaign_type, channel
         ORDER BY total_post_revenue DESC
     """)
