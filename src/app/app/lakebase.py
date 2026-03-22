@@ -15,7 +15,7 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 _INSTANCE_NAME = os.environ.get("LAKEBASE_INSTANCE_NAME", "cdp-360-ops")
-_DATABASE = os.environ.get("LAKEBASE_DATABASE_NAME", "postgres")
+_DATABASE = os.environ.get("LAKEBASE_DATABASE_NAME", "databricks_postgres")
 
 _pool = None
 _token: str | None = None

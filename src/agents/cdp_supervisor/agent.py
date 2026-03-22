@@ -210,7 +210,7 @@ def _lb_execute(sql: str, params: tuple = ()) -> list[dict]:
     user = w.current_user.me().user_name
     import psycopg
     with psycopg.connect(
-        host=inst.read_write_dns, port=5432, dbname="postgres",
+        host=inst.read_write_dns, port=5432, dbname="databricks_postgres",
         user=user, password=cred.token, sslmode="require", autocommit=True,
     ) as conn:
         with conn.cursor() as cur:
@@ -247,7 +247,7 @@ def create_campaign(name: str, segment: str, action_type: str, channel: str,
         gids = [g.strip() for g in merchant_golden_ids.split(",") if g.strip()] if merchant_golden_ids else []
 
         with psycopg.connect(
-            host=inst.read_write_dns, port=5432, dbname="postgres",
+            host=inst.read_write_dns, port=5432, dbname="databricks_postgres",
             user=user, password=cred.token, sslmode="require"
         ) as conn:
             with conn.cursor() as cur:
