@@ -406,11 +406,21 @@ _SEGMENT_PALETTES = {
 }
 
 
-def _generate_ai_svg(segment: str, tagline: str, theme: str) -> str:
+def _generate_ai_svg(segment: str, tagline: str, theme: str, merchant_context: str = "") -> str:
     """Use the LLM to generate a unique SVG campaign banner."""
     import base64
     c1, c2 = _SEGMENT_PALETTES.get(segment, ("#6366F1", "#4F46E5"))
     seg_label = segment.replace("_", " ").title()
+
+    context_block = ""
+    if merchant_context:
+        context_block = f"""
+MERCHANT CONTEXT (use this to make the banner visually relevant):
+"{merchant_context[:200]}"
+- Incorporate SVG icons, silhouettes, or stylized illustrations that relate to this merchant's industry or context.
+  Examples: pet merchant → paw prints, pet silhouettes; restaurant → fork/plate icons; tech → circuit patterns; healthcare → heart/cross icons.
+- Weave these thematic elements into the decorative design (as background patterns, side illustrations, or accent shapes).
+- Keep them stylized and SVG-friendly (paths, shapes, symbols) — not photorealistic."""
 
     prompt = f"""You are a world-class graphic designer. Generate a COMPLETE, valid SVG banner image for a fintech marketing campaign.
 
@@ -426,7 +436,7 @@ REQUIREMENTS:
 - Add "Powered by Databricks CDP 360" small text bottom-right
 - Use font-family="system-ui,-apple-system,sans-serif"
 - The design should feel premium, modern, and unique
-
+{context_block}
 OUTPUT: Return ONLY the raw SVG code starting with <svg and ending with </svg>. No markdown, no explanation, no code blocks."""
 
     raw = _call_llm(prompt)
@@ -447,7 +457,7 @@ async def generate_image(req: M.GenerateImageRequest):
     tagline = req.tagline or "Grow Your Business With Us"
     theme = req.theme or req.segment.replace("_", " ").title() + " merchant engagement"
     try:
-        b64 = await _run(_generate_ai_svg, req.segment, tagline, theme)
+        b64 = await _run(_generate_ai_svg, req.segment, tagline, theme, req.merchant_context or "")
         return {"image": b64, "type": "svg", "segment": req.segment}
     except Exception as e:
         logger.exception("AI banner generation failed")

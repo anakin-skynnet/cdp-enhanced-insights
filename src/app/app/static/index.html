@@ -1000,7 +1000,7 @@
           }),
           api('/api/ad-creative/generate-image', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ segment, tagline: label + ' — Act Now', theme: ctx.objective })
+            body: JSON.stringify({ segment, tagline: label + ' — Act Now', theme: ctx.objective, merchant_context: `${count} merchants in ${label} audience` })
           })
         ]);
         let bannerHtml = '';
@@ -1356,7 +1356,7 @@
             imageResult = await api('/api/ad-creative/generate-image', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ segment, tagline: creative.banner_tagline || creative.ad_headline, theme: objective })
+              body: JSON.stringify({ segment, tagline: creative.banner_tagline || creative.ad_headline, theme: objective, merchant_context })
             });
           } catch (e) { /* image generation is best-effort */ }
         }
