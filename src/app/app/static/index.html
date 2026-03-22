@@ -1290,9 +1290,10 @@
                   </select>
                 </div>
                 <div>
-                  <label class="text-xs font-medium text-muted-foreground mb-1 block">Generate Image?</label>
+                  <label class="text-xs font-medium text-muted-foreground mb-1 block">Banner Image</label>
                   <select id="gen-image-flag" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
-                    <option value="yes">Yes - Banner Image</option>
+                    <option value="svg">SVG Banner</option>
+                    <option value="photo">Advanced (AI Photo)</option>
                     <option value="no">No - Text Only</option>
                   </select>
                 </div>
@@ -1331,7 +1332,7 @@
       const objective = document.getElementById('gen-objective').value;
       const tone = document.getElementById('gen-tone').value;
       const merchant_context = document.getElementById('gen-context').value;
-      const wantImage = document.getElementById('gen-image-flag').value === 'yes';
+      const imageMode = document.getElementById('gen-image-flag').value;
 
       btn.disabled = true;
       btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating messages...';
@@ -1350,13 +1351,14 @@
         }
 
         let imageResult = null;
-        if (wantImage) {
-          btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating banner image...';
+        if (imageMode !== 'no') {
+          const isPhoto = imageMode === 'photo';
+          btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> ${isPhoto ? 'Generating AI photo banner...' : 'Generating banner image...'}`;
           try {
             imageResult = await api('/api/ad-creative/generate-image', {
               method: 'POST',
               headers: {'Content-Type': 'application/json'},
-              body: JSON.stringify({ segment, tagline: creative.banner_tagline || creative.ad_headline, theme: objective, merchant_context })
+              body: JSON.stringify({ segment, tagline: creative.banner_tagline || creative.ad_headline, theme: objective, merchant_context, mode: imageMode })
             });
           } catch (e) { /* image generation is best-effort */ }
         }
@@ -1402,16 +1404,22 @@
 
       let imgHtml = '';
       if (img && img.image) {
-        const mimeMap = { svg: 'image/svg+xml', base64: 'image/png', url: null };
+        const mimeMap = { svg: 'image/svg+xml', png: 'image/png', jpeg: 'image/jpeg', base64: 'image/png', url: null };
         const mime = mimeMap[img.type] || 'image/png';
         const src = img.type === 'url' ? img.image : `data:${mime};base64,${img.image}`;
+        const isPhoto = img.mode === 'photo';
+        const bannerLabel = isPhoto ? 'AI Photo Banner' : 'Campaign Banner';
+        const labelColor = isPhoto ? 'emerald' : 'pink';
         imgHtml = `
           <div class="rounded-lg border border-border overflow-hidden">
-            <div class="px-4 py-2 border-b border-border flex items-center gap-2 text-xs font-medium text-pink-400">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-              Campaign Banner
+            <div class="px-4 py-2 border-b border-border flex items-center justify-between">
+              <div class="flex items-center gap-2 text-xs font-medium text-${labelColor}-400">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                ${bannerLabel}
+              </div>
+              ${isPhoto ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">DALL-E 3</span>' : ''}
             </div>
-            <img src="${src}" alt="Campaign banner" class="w-full object-cover" style="max-height:320px">
+            <img src="${src}" alt="${bannerLabel}" class="w-full object-cover" style="max-height:320px">
           </div>`;
       }
 

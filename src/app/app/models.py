@@ -293,6 +293,7 @@ class GenerateImageRequest(BaseModel):
     tagline: Optional[str] = Field(default=None, description="Text to inspire the banner")
     theme: Optional[str] = Field(default=None, description="Visual theme override")
     merchant_context: Optional[str] = Field(default=None, description="Merchant industry/context for thematic visuals")
+    mode: str = Field(default="svg", description="Image mode: 'svg' for LLM-generated vector, 'photo' for AI photo-realistic image")
 
 
 class GenerateMerchantCreativeRequest(BaseModel):

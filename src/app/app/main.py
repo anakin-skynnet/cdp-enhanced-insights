@@ -334,6 +334,7 @@ async def ad_creative():
 
 
 _LLM_ENDPOINT = "databricks-gpt-5-4-mini"
+_IMAGE_MODEL_ENDPOINT = os.environ.get("CDP_IMAGE_MODEL_ENDPOINT", "")
 
 
 def _call_llm(prompt: str) -> str:
@@ -451,14 +452,96 @@ OUTPUT: Return ONLY the raw SVG code starting with <svg and ending with </svg>. 
     raise ValueError("LLM did not return valid SVG")
 
 
+def _craft_image_prompt(segment: str, tagline: str, theme: str, merchant_context: str) -> str:
+    """Use the LLM to craft an optimized prompt for the image generation model."""
+    seg_label = segment.replace("_", " ").title()
+    prompt = f"""You are an expert at writing prompts for AI image generation models (DALL-E 3).
+Create a single, detailed image generation prompt for a professional marketing campaign banner.
+
+CAMPAIGN DETAILS:
+- Target segment: {seg_label}
+- Tagline: "{tagline}"
+- Campaign theme: {theme}
+- Merchant/industry context: {merchant_context or 'General fintech / digital payments'}
+
+REQUIREMENTS for the generated prompt:
+- Describe a professional, photorealistic marketing banner in wide landscape format (16:9)
+- Include vivid, relevant imagery based on the merchant context (e.g. real pets for pet stores, appetizing food for restaurants, modern tech gadgets for electronics, fitness gear for gyms)
+- Modern, clean design suitable for digital marketing and social ads
+- Leave a clean area (left or right third) where text can be overlaid — describe that area as a subtle gradient fade or translucent overlay
+- Professional color palette that fits the industry — vibrant but not garish
+- High quality, 4K, commercial photography style with natural lighting
+- DO NOT include any text, words, letters, logos, or watermarks in the image
+- DO NOT mention brand names
+- The overall mood should be aspirational, warm, and engaging
+
+Return ONLY the image prompt text, nothing else. No quotes, no preamble."""
+    return _call_llm(prompt).strip().strip('"').strip("'")
+
+
+def _generate_photo_image(segment: str, tagline: str, theme: str, merchant_context: str = "") -> tuple[str, str]:
+    """Generate a photorealistic banner using an image generation model (e.g. DALL-E 3)."""
+    import base64 as _b64
+
+    if not _IMAGE_MODEL_ENDPOINT:
+        raise ValueError(
+            "Image generation endpoint not configured. "
+            "Set CDP_IMAGE_MODEL_ENDPOINT to your Databricks AI Gateway external model endpoint "
+            "(e.g. an endpoint proxying to DALL-E 3). "
+            "See docs: https://docs.databricks.com/en/machine-learning/model-serving/create-serving-endpoint.html"
+        )
+
+    image_prompt = _craft_image_prompt(segment, tagline, theme, merchant_context)
+    logger.info("Image prompt crafted (%d chars) for segment=%s", len(image_prompt), segment)
+
+    from databricks.sdk import WorkspaceClient
+    import httpx as _httpx
+
+    w = WorkspaceClient()
+    host = w.config.host.rstrip("/")
+    auth_headers = w.config.authenticate()
+
+    resp = _httpx.post(
+        f"{host}/serving-endpoints/{_IMAGE_MODEL_ENDPOINT}/invocations",
+        headers=auth_headers,
+        json={
+            "prompt": image_prompt,
+            "n": 1,
+            "size": "1792x1024",
+        },
+        timeout=180,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    images = data.get("data", [])
+    if images:
+        b64 = images[0].get("b64_json", "")
+        if b64:
+            return b64, "png"
+
+    raise ValueError("Image generation model did not return image data")
+
+
 @app.post("/api/ad-creative/generate-image")
 async def generate_image(req: M.GenerateImageRequest):
-    """Generate a unique campaign banner using AI (LLM-generated SVG)."""
+    """Generate a campaign banner: SVG (LLM-drawn vector) or photo-realistic (AI image model)."""
     tagline = req.tagline or "Grow Your Business With Us"
     theme = req.theme or req.segment.replace("_", " ").title() + " merchant engagement"
+
+    if req.mode == "photo":
+        try:
+            b64, fmt = await _run(_generate_photo_image, req.segment, tagline, theme, req.merchant_context or "")
+            return {"image": b64, "type": fmt, "segment": req.segment, "mode": "photo"}
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            logger.exception("AI photo banner generation failed")
+            raise HTTPException(status_code=502, detail=f"AI photo generation failed: {type(e).__name__}")
+
     try:
         b64 = await _run(_generate_ai_svg, req.segment, tagline, theme, req.merchant_context or "")
-        return {"image": b64, "type": "svg", "segment": req.segment}
+        return {"image": b64, "type": "svg", "segment": req.segment, "mode": "svg"}
     except Exception as e:
         logger.exception("AI banner generation failed")
         raise HTTPException(status_code=502, detail=f"AI banner generation failed: {type(e).__name__}")
