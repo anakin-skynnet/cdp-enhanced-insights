@@ -2148,9 +2148,11 @@
                 A production-grade <strong class="text-foreground">Customer 360</strong> solution built entirely on the
                 <strong class="text-foreground">Databricks Lakehouse Platform</strong>. It unifies fragmented merchant data from
                 transactional systems, CRM, support, and call center sources into a single golden record, then layers
-                AI/ML models, real-time anomaly detection, and conversational AI agents on top — enabling teams
-                to drive higher campaign ROI, reduce churn, and maximize customer lifetime value through data-driven
-                next best actions.
+                AI/ML models, real-time anomaly detection, and conversational AI agents on top. Campaign creative is
+                <strong class="text-foreground">hyper-personalized</strong> using real-time segment enrichment — propensity scores,
+                CLV predictions, campaign history, and industry context are auto-injected into every AI-generated message.
+                Teams can drive higher campaign ROI, reduce churn, and maximize lifetime value through data-driven
+                next best actions and AI-generated banners (SVG or photorealistic via DALL-E 3).
               </p>
               <div class="flex flex-wrap gap-2 mt-3">
                 ${pill('Azure Databricks', 'blue')}
@@ -2161,6 +2163,8 @@
                 ${pill('AI/BI Genie', 'pink')}
                 ${pill('Databricks Apps', 'yellow')}
                 ${pill('Foundation Models', 'red')}
+                ${pill('DALL-E 3 Image Gen', 'emerald')}
+                ${pill('Hyper-Personalization', 'rose')}
               </div>
             </div>
           </div>
@@ -2221,12 +2225,19 @@
                                              │
                     ┌────────────────────────┬┴──────────────────────┐
                     ▼                        ▼                       ▼
-        ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
-        │  AI/BI Genie     │    │  CDP Supervisor   │    │  Databricks App  │
-        │  Space           │    │  Agent (LangGraph)│    │  (FastAPI + UI)  │
-        │  Natural Language │    │  + 3 Specialists  │    │  13 Pages +      │
-        │  SQL Analytics   │    │  + 24 UC Functions │    │  AI Chat Panel   │
-        └──────────────────┘    └──────────────────┘    └──────────────────┘
+        ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────────┐
+        │  AI/BI Genie     │    │  CDP Supervisor   │    │  Databricks App           │
+        │  Space           │    │  Agent (LangGraph)│    │  (FastAPI + Tailwind UI)  │
+        │  Natural Language │    │  + 3 Specialists  │    │  14 Pages + AI Chat       │
+        │  SQL Analytics   │    │  + 24 UC Functions │    │  + Hyper-Personalized     │
+        └──────────────────┘    └──────────────────┘    │    Creative Engine         │
+                                                        │  + DALL-E 3 Photo Banners  │
+                                                        │  + Industry-Filtered Ads   │
+                                                        │  + Enrichment Pipeline:    │
+                                                        │    Propensity + CLV +      │
+                                                        │    Campaign History +      │
+                                                        │    Industry Context        │
+                                                        └──────────────────────────┘
 </pre>
           </div>
         </div>
@@ -2310,7 +2321,7 @@
                 ${tblRow(['<code class="text-xs">gold_personalization_signals</code>', 'Real-time personalization features for hyper-targeted outreach', 'preferred_channel, best_contact_time, content_affinity', pill('Gold Pipeline', 'yellow')])}
                 ${tblRow(['<code class="text-xs">gold_campaign_roi</code>', 'Campaign effectiveness with conversion rates and revenue lift', 'campaign_name, channel, conversion_rate, revenue_lift, post_30d_volume', pill('Campaign ROI Job', 'green')])}
                 ${tblRow(['<code class="text-xs">gold_audience_exports</code>', 'Pre-built audience segments ready for activation via Hightouch/Reverse ETL', 'audience_type, merchant_count, hashed_email', pill('Gold Pipeline', 'yellow')])}
-                ${tblRow(['<code class="text-xs">gold_ad_creative_library</code>', 'AI-generated marketing content (email, SMS, push, ad copy) per segment', 'segment, email_subject, sms_text, push_title, tone, cta', pill('Ad Creative Job', 'red')])}
+                ${tblRow(['<code class="text-xs">gold_ad_creative_library</code>', 'AI-generated marketing content per segment, enriched with propensity, CLV, industry, and campaign history data', 'segment, email_subject, sms_text, push_title, tone, cta', pill('Ad Creative Job', 'red')])}
                 ${tblRow(['<code class="text-xs">gold_anomaly_alerts</code>', 'Real-time anomaly detection for volume drops, inactivity, ticket spikes, health collapses', 'anomaly_type, deviation_pct, estimated_revenue_impact, urgency', pill('Gold Pipeline', 'yellow')])}
                 ${tblRow(['<code class="text-xs">nba_action_log</code>', 'Tracks actions executed on merchants for closed-loop attribution', 'action_type, channel, executed_at, outcome', pill('App / Agent', 'blue')])}
                 ${tblRow(['<code class="text-xs">agent_feedback_log</code>', 'User feedback (thumbs up/down) on AI agent responses for quality monitoring', 'rating, query, response_preview, mode', pill('App', 'green')])}
@@ -2357,8 +2368,8 @@
               <p class="text-xs text-muted-foreground">K-Means clustering on behavioral features (transaction timing, channel preference, spend patterns) to discover natural merchant segments beyond RFM.</p>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
-              <div class="font-semibold text-sm flex items-center gap-2">${pill('Bi-weekly', 'red')} AI Ad Creative</div>
-              <p class="text-xs text-muted-foreground">Foundation Model API generates personalized marketing content (email subjects, SMS, push, ad copy) per segment with tone and CTA optimization.</p>
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Bi-weekly', 'red')} AI Ad Creative (Data-Enriched)</div>
+              <p class="text-xs text-muted-foreground">Foundation Model API generates hyper-personalized marketing content per segment. Prompts are enriched with real aggregate data: propensity scores (churn/upsell/activation), CLV predictions, campaign history, health tiers, top industries, and tenure — producing data-specific copy rather than generic templates.</p>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 7AM', 'green')} Campaign ROI</div>
@@ -2399,6 +2410,92 @@
               <div class="font-semibold text-sm">AI/BI Genie Space (Natural Language SQL)</div>
               <p class="text-xs text-muted-foreground">Enables any user to ask questions in natural language across all 20+ gold tables. The Genie Space is configured with SQL instructions and sample prompts that understand the data model.</p>
               <div class="text-xs text-muted-foreground">Tables: 20+ gold tables &bull; Pre-configured SQL context &bull; 10 sample prompts</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hyper-Personalization Engine -->
+        <div class="${sectionStyle}">
+          ${h2('Hyper-Personalization Engine', '<svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>')}
+          <p class="text-sm text-muted-foreground">Every AI-generated campaign message is automatically enriched with real segment data before the LLM crafts the copy. This transforms generic marketing templates into data-specific, contextually aware creative that references real metrics.</p>
+
+          <div class="rounded-lg border border-rose-500/30 bg-rose-500/5 p-4 space-y-3 mt-2">
+            <div class="font-semibold text-sm flex items-center gap-2">
+              <div class="w-6 h-6 rounded-md bg-rose-500/20 flex items-center justify-center">
+                <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path></svg>
+              </div>
+              Before vs. After Enrichment
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div class="rounded-md bg-muted/30 p-3 space-y-1">
+                <div class="font-semibold text-red-400 uppercase text-[10px]">Before (Generic)</div>
+                <div class="text-muted-foreground italic">"Grow your business with us! Sign up for premium features today."</div>
+                <div class="text-muted-foreground mt-1">LLM only knows: segment name + user-typed context</div>
+              </div>
+              <div class="rounded-md bg-muted/30 p-3 space-y-1">
+                <div class="font-semibold text-emerald-400 uppercase text-[10px]">After (Data-Enriched)</div>
+                <div class="text-muted-foreground italic">"Join 42 champions processing $15,200/mo avg. Your 82% lifetime probability means growth is ahead — unlock premium features and target the $4,520 CLV your peers achieve."</div>
+                <div class="text-muted-foreground mt-1">LLM receives: 23+ real data points from 6 gold tables</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Auto-Enrichment', 'emerald')} Real Segment Data</div>
+              <p class="text-xs text-muted-foreground">Every <code class="text-[10px] bg-muted px-1 rounded">/generate</code> call auto-queries 6 gold tables (engagement, health, propensity, CLV, campaign ROI, customer 360) and injects 23+ aggregate data points into the LLM prompt.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Industry Filter', 'blue')} Vertical Targeting</div>
+              <p class="text-xs text-muted-foreground">Select a specific industry (Restaurant, Retail, Healthcare, etc.) to tailor all messaging, examples, and value propositions to that vertical. Industry list is populated from real <code class="text-[10px] bg-muted px-1 rounded">gold_customer_360</code> data.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Propensity-Driven', 'orange')} Messaging Angles</div>
+              <p class="text-xs text-muted-foreground">Churn, upsell, and activation propensity scores drive messaging strategy: high churn &rarr; retention urgency, high upsell &rarr; growth/premium features, high activation &rarr; onboarding value.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Campaign History', 'purple')} Feedback Loop</div>
+              <p class="text-xs text-muted-foreground">Past campaign performance (conversion rates, best channel, best campaign type, reactivation counts) informs new creative — the LLM references what worked historically.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('DALL-E 3', 'rose')} Photo Banners</div>
+              <p class="text-xs text-muted-foreground">Advanced mode generates photorealistic campaign banners via DALL-E 3 through Databricks AI Gateway. Image prompts are LLM-crafted using segment, industry, and campaign context for industry-relevant visuals.</p>
+            </div>
+            <div class="rounded-lg border border-border p-4 space-y-2">
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('Audience Enrichment', 'cyan')} Smart Campaigns</div>
+              <p class="text-xs text-muted-foreground">Audience-based campaigns (churn risk, high value, win-back, etc.) auto-fetch aggregate stats — avg volume, health, urgency, dominant segment, top NBA — before generating context-aware creative.</p>
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-lg border border-border p-4 space-y-3">
+            <div class="font-semibold text-sm">Enrichment Pipeline Data Flow</div>
+            <div class="bg-muted/50 rounded-lg p-3 font-mono text-xs leading-relaxed">
+<pre class="text-muted-foreground">User selects: Segment + Channel + Industry + Objective
+                │
+                ▼
+┌──────────────────────────────────────────────────────┐
+│  Auto-Enrichment Query (6 Gold Tables)               │
+│  ┌───────────────┐  ┌────────────────┐               │
+│  │ gold_segments  │  │ gold_health    │               │
+│  │ gold_engage-   │  │ gold_propensity│               │
+│  │ gold_customer  │  │ gold_campaign  │               │
+│  │   _ltv         │  │   _roi         │               │
+│  └───────────────┘  └────────────────┘               │
+│                                                       │
+│  Output: 23+ data points per segment                  │
+│  merchant_count, avg_volume, avg_health, avg_clv,     │
+│  churn_propensity, upsell_propensity, top_industries, │
+│  campaign_history, conversion_rates, best_channel...  │
+└───────────────────────┬──────────────────────────────┘
+                        ▼
+┌──────────────────────────────────────────────────────┐
+│  LLM Prompt (Foundation Model API)                   │
+│  Campaign context + REAL segment data + Propensity   │
+│  rules + CLV arguments + Industry language           │
+└───────────────────────┬──────────────────────────────┘
+                        ▼
+         Hyper-Personalized Creative Output
+         (Email, SMS, Push, Social, Ad, Banner)</pre>
             </div>
           </div>
         </div>
@@ -2502,7 +2599,7 @@
                 ${tblRow([pill('Job', 'blue'), '<strong>Behavioral Segmentation</strong>', 'Monthly K-Means clustering on behavioral features'])}
                 ${tblRow([pill('Job', 'blue'), '<strong>Call Center NLP</strong>', 'Daily speech-to-text + sentiment analysis using Foundation Model API'])}
                 ${tblRow([pill('Job', 'blue'), '<strong>Propensity Scoring</strong>', 'Daily churn/upsell/activation propensity model scoring'])}
-                ${tblRow([pill('Job', 'blue'), '<strong>Ad Creative Generation</strong>', 'Bi-weekly AI content generation per segment using Foundation Model API'])}
+                ${tblRow([pill('Job', 'blue'), '<strong>Ad Creative Generation</strong>', 'Bi-weekly data-enriched AI content generation per segment — prompts include propensity, CLV, health tier, industry, and tenure data from 6 gold tables'])}
                 ${tblRow([pill('Job', 'blue'), '<strong>Campaign ROI Analysis</strong>', 'Daily campaign effectiveness and revenue lift analysis'])}
                 ${tblRow([pill('Job', 'blue'), '<strong>Deploy AI Agents</strong>', 'On-demand deployment of CDP Supervisor + 3 specialist agents to Model Serving'])}
                 ${tblRow([pill('Dashboard', 'purple'), '<strong>Customer 360 Overview</strong>', 'AI/BI Lakeview dashboard with merchant health, segments, and volume trends'])}
@@ -2512,7 +2609,7 @@
                 ${tblRow([pill('Dashboard', 'purple'), '<strong>Support Analytics</strong>', 'AI/BI Lakeview dashboard with CSAT, resolution times, and SLA metrics'])}
                 ${tblRow([pill('Dashboard', 'purple'), '<strong>Call Center Analytics</strong>', 'AI/BI Lakeview dashboard with agent performance and sentiment trends'])}
                 ${tblRow([pill('Genie Space', 'pink'), '<strong>Merchant 360 Analytics</strong>', 'Natural language SQL interface across all 20+ gold tables with contextual SQL instructions'])}
-                ${tblRow([pill('App', 'yellow'), '<strong>CDP Customer 360 App</strong>', 'FastAPI + Tailwind CSS full-stack application with 14+ analytics pages, Operations Center + AI chat panel'])}
+                ${tblRow([pill('App', 'yellow'), '<strong>CDP Customer 360 App</strong>', 'FastAPI + Tailwind CSS full-stack application with 14+ analytics pages, Operations Center, AI chat panel, hyper-personalized creative engine with industry filtering, data-enriched prompts, SVG and DALL-E 3 photo banners'])}
                 ${tblRow([pill('Lakebase', 'emerald'), '<strong>CDP Ops Store (cdp-360-ops)</strong>', 'Managed PostgreSQL instance for campaign state, NBA assignments, alert triage, and suppression lists'])}
               </tbody>
             </table>
@@ -2537,7 +2634,7 @@
             </div>
             <div class="flex gap-3">
               <div class="flex-shrink-0 w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 font-bold text-xs">4</div>
-              <div><strong class="text-foreground">Enrich with intelligence.</strong> 10 scheduled ML jobs layer on RFM segments, health scores, CLV predictions, churn propensity, behavioral clusters, channel attribution, call sentiment, and personalization signals — all linked back to the golden_id.</div>
+              <div><strong class="text-foreground">Enrich with intelligence.</strong> 10 scheduled ML jobs layer on RFM segments, health scores, CLV predictions, churn propensity, behavioral clusters, channel attribution, call sentiment, and personalization signals — all linked back to the golden_id. These enrichments feed the Hyper-Personalization Engine, which auto-injects 23+ data points from 6 gold tables into every AI-generated campaign.</div>
             </div>
             <div class="flex gap-3">
               <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-xs">5</div>
@@ -2545,7 +2642,7 @@
             </div>
             <div class="flex gap-3">
               <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">6</div>
-              <div><strong class="text-foreground">Serve insights everywhere.</strong> The gold layer feeds AI/BI Lakeview Dashboards, a Genie Space for natural-language SQL, a multi-agent AI system (Supervisor + 3 specialists) deployed on Model Serving, and this full-stack Databricks App. Operational state (campaigns, assignments, triage) is stored in <strong>Databricks Lakebase</strong> (managed PostgreSQL) for sub-10ms transactional workflows. The AI agent bridges both layers — reading analytics from Delta Lake and writing actions to Lakebase.</div>
+              <div><strong class="text-foreground">Serve insights everywhere.</strong> The gold layer feeds AI/BI Lakeview Dashboards, a Genie Space for natural-language SQL, a multi-agent AI system (Supervisor + 3 specialists) deployed on Model Serving, and this full-stack Databricks App with a built-in Hyper-Personalization Engine. Campaign creative is generated with data-enriched prompts (propensity, CLV, campaign history, industry), photorealistic DALL-E 3 banners, and industry-filtered messaging. Operational state (campaigns, assignments, triage) is stored in <strong>Databricks Lakebase</strong> (managed PostgreSQL) for sub-10ms transactional workflows.</div>
             </div>
           </div>
         </div>
@@ -2562,12 +2659,12 @@
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="text-2xl">💰</div>
               <div class="font-semibold text-sm">Maximize Campaign ROI</div>
-              <p class="text-xs text-muted-foreground">Multi-touch attribution reveals which channels drive conversion. AI-generated creative optimizes messaging per segment. Closed-loop tracking measures real revenue lift.</p>
+              <p class="text-xs text-muted-foreground">Multi-touch attribution reveals which channels drive conversion. Campaign history feedback loops inform new creative — past conversion rates and best-performing channels are injected into AI prompts. Photorealistic DALL-E 3 banners and SVG visuals are generated per campaign with industry-relevant imagery.</p>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="text-2xl">🎯</div>
-              <div class="font-semibold text-sm">Hyper-Personalization</div>
-              <p class="text-xs text-muted-foreground">Propensity models + personalization signals enable right-message, right-channel, right-time outreach. Each merchant gets content tailored to their behavior and preferences.</p>
+              <div class="font-semibold text-sm">Hyper-Personalization Engine</div>
+              <p class="text-xs text-muted-foreground">Campaign creative is auto-enriched with real segment data: propensity scores drive messaging angles (retention vs. growth), CLV predictions inform ROI arguments, campaign history guides channel selection, and industry filters tailor vertical-specific language. Each segment gets data-backed copy, not generic templates.</p>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="text-2xl">🔍</div>
@@ -2635,8 +2732,9 @@
               <div>Hightouch (Reverse ETL)</div>
             </div>
             <div class="rounded-lg border border-border p-3 space-y-1">
-              <div class="font-semibold text-muted-foreground uppercase text-[10px]">LLM</div>
+              <div class="font-semibold text-muted-foreground uppercase text-[10px]">LLM & GenAI</div>
               <div>Claude Sonnet 4.6 · GPT-5.4 Mini · GPT-5.4 Nano</div>
+              <div>DALL-E 3 (Photorealistic Banners)</div>
               <div>ai_query(), ai_analyze_sentiment()</div>
               <div>ResponsesAgent Interface</div>
             </div>
@@ -2657,7 +2755,7 @@
 
         <!-- Footer -->
         <div class="text-center text-xs text-muted-foreground pb-4">
-          Built with the Databricks Lakehouse Platform &bull; Bank Payment Platform Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, Lakebase, and AI/BI
+          Built with the Databricks Lakehouse Platform &bull; Bank Payment Platform Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, Lakebase, AI/BI, Foundation Models, and DALL-E 3
         </div>
       </div>`;
       const cfg = await api('/api/config');

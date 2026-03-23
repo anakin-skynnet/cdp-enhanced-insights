@@ -12,7 +12,7 @@ Customer Data Platform and Customer 360 solution on **Azure Databricks** for the
 | 4 | **Customer Support Analytics** | Complete | TTR, CSAT, SLA compliance, support quality tiers |
 | 5 | **Call Center Analytics** | Complete | Sentiment analysis, topic classification, agent/queue metrics |
 | 6 | **Hyper-Personalization Insights** | Complete | Propensity scoring (churn/upsell/activation), contextual signals |
-| 7 | **Ad Creative Generation** | Complete | AI-generated email, SMS, push, ad copy per segment |
+| 7 | **Ad Creative Generation** | Complete | Data-enriched AI creative (propensity, CLV, campaign history, industry), SVG + DALL-E 3 photo banners |
 | 8 | **Marketing Campaign Analysis & ROI** | Complete | Conversion tracking, revenue lift, reactivation, MTA |
 | 9 | **Audience Activation** | Complete | Pre-built audiences, hashed IDs, CSV export, ad platform sync |
 
@@ -21,7 +21,7 @@ Customer Data Platform and Customer 360 solution on **Azure Databricks** for the
 - **Golden record:** 2–2.5M unique merchants
 - **Sources:** Salesforce, Zendesk, Genesys, Apian, transactional data
 - **Activation:** Hightouch → SFMC, Meta, Google Ads; Audience export
-- **AI:** Churn prediction, propensity scoring, sentiment analysis, ad creative generation, health scoring, next best actions, CLV, multi-touch attribution, Genie NL analytics, AI agents
+- **AI:** Churn prediction, propensity scoring, sentiment analysis, hyper-personalized ad creative (data-enriched), DALL-E 3 photo banners, health scoring, next best actions, CLV, multi-touch attribution, Genie NL analytics, AI agents
 
 ## Architecture
 
@@ -73,9 +73,9 @@ cdp-enhanced-insights/
 │   │   ├── cdp_support_analytics.lvdash.json
 │   │   └── cdp_call_center.lvdash.json
 │   ├── app/                 # CDP web application (FastAPI + Tailwind)
-│   │   ├── main.py          # FastAPI routes (25+ API endpoints)
-│   │   ├── db.py            # SQL warehouse data layer (30+ query functions)
-│   │   ├── static/index.html # 11-tab SPA frontend
+│   │   ├── main.py          # FastAPI routes (50+ API endpoints)
+│   │   ├── db.py            # SQL warehouse data layer (40+ query functions)
+│   │   ├── static/index.html # 14-page SPA frontend
 │   │   ├── app.yaml         # Databricks Apps config
 │   │   └── requirements.txt
 │   ├── agents/              # AI agents (LangGraph + ResponsesAgent)
@@ -205,7 +205,7 @@ All agents use UC Functions to query the golden record in real-time and apply do
 
 ## CDP Application
 
-A full-featured 11-tab web application for the commercial and marketing teams:
+A full-featured 14-page web application for the commercial and marketing teams:
 
 ```bash
 # Deploy to Databricks Apps
@@ -226,8 +226,11 @@ cd src/app && uvicorn app.main:app --reload --port 8080
 - **Campaign ROI** -- Conversion tracking, outcome distribution, revenue lift by channel
 - **Audiences** -- Pre-built audience cards (churn risk, VIP, winback, etc.), CSV export
 - **Personalization** -- Propensity distribution, content theme/tier matrix
-- **Ad Creative** -- AI-generated email/SMS/push/ad copy per segment
+- **Ad Creative** -- Hyper-personalized AI creative with data-enriched prompts (propensity, CLV, campaign history, industry), SVG banners, DALL-E 3 photo banners, industry filtering, A/B variants
 - **AI Insights** -- CLV tiers, multi-touch attribution, behavioral clusters
+- **Operations Center** -- Campaign management, NBA assignments, alert triage (Lakebase-backed)
+- **Data Freshness** -- Pipeline health monitoring
+- **About this Solution** -- Architecture, gold tables, technology stack, enrichment pipeline
 
 ## Databricks Solution Accelerators & Demos
 
@@ -258,8 +261,10 @@ Adapted from official [Databricks Marketing Solution Accelerators](https://www.d
 - Output: `gold_call_center_sentiment`, `gold_call_center_analytics`
 
 **[Generative AI for Personalized Marketing Content](https://www.databricks.com/blog/building-generative-ai-workflow-creation-more-personalized-marketing-content)** (`src/cdp_etl/notebooks/ad_creative/ad_creative_generation.py`)
-- Uses Foundation Model API to generate segment-tailored email, SMS, push, and ad copy
-- Output: `gold_ad_creative_library` with creative per segment
+- Uses Foundation Model API with data-enriched prompts: propensity scores, CLV, campaign history, health tiers, industry, and tenure from 6 gold tables
+- Batch: enriched segment profiles fed to `ai_query()` with propensity-driven rules (high churn → retention urgency, high upsell → growth)
+- App: real-time auto-enrichment pipeline queries 23+ data points per segment before LLM prompt, with industry filter and DALL-E 3 photorealistic banner generation
+- Output: `gold_ad_creative_library` with data-specific creative per segment
 
 **[AI/BI Marketing Campaign Effectiveness](https://databricks.com/resources/demos/tutorials/aibi-genie-marketing-campaign-effectiveness)** (adapted into campaign ROI module)
 - Campaign conversion tracking, revenue lift, reactivation measurement
