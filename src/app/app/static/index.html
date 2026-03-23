@@ -2205,6 +2205,7 @@
                 ${pill('AI/BI Genie', 'pink')}
                 ${pill('Databricks Apps', 'yellow')}
                 ${pill('Foundation Models', 'red')}
+                ${pill('Claude Sonnet 4.6', 'purple')}
                 ${pill('GPT-5-4 Premium SVG', 'emerald')}
                 ${pill('Hyper-Personalization', 'rose')}
               </div>
@@ -2403,7 +2404,7 @@
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 3AM', 'red')} Call Center NLP</div>
-              <p class="text-xs text-muted-foreground">Speech-to-text transcription + AI sentiment analysis and topic classification using the Databricks Foundation Model API (<code class="text-[10px] bg-muted px-1 rounded">ai_analyze_sentiment()</code>).</p>
+              <p class="text-xs text-muted-foreground">Built-in <code class="text-[10px] bg-muted px-1 rounded">ai_analyze_sentiment()</code> for sentiment, plus <strong>GPT-5-4 Mini</strong> via <code class="text-[10px] bg-muted px-1 rounded">ai_query()</code> for topic classification (10 categories) and interaction summarization — mini's nuance captures issue + resolution accurately.</p>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="font-semibold text-sm flex items-center gap-2">${pill('Monthly', 'blue')} Behavioral Clustering</div>
@@ -2411,7 +2412,7 @@
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="font-semibold text-sm flex items-center gap-2">${pill('Bi-weekly', 'red')} AI Ad Creative (Data-Enriched)</div>
-              <p class="text-xs text-muted-foreground">Foundation Model API generates hyper-personalized marketing content per segment. Prompts are enriched with real aggregate data: propensity scores (churn/upsell/activation), CLV predictions, campaign history, health tiers, top industries, and tenure — producing data-specific copy rather than generic templates.</p>
+              <p class="text-xs text-muted-foreground"><strong>GPT-5-4 Mini</strong> generates hyper-personalized marketing content per segment via <code class="text-[10px] bg-muted px-1 rounded">ai_query()</code>. Prompts are enriched with real aggregate data: propensity scores (churn/upsell/activation), CLV predictions, campaign history, health tiers, top industries, and tenure — mini's structured output produces high-quality JSON creative rather than generic templates.</p>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="font-semibold text-sm flex items-center gap-2">${pill('Daily 7AM', 'green')} Campaign ROI</div>
@@ -2452,6 +2453,49 @@
               <div class="font-semibold text-sm">AI/BI Genie Space (Natural Language SQL)</div>
               <p class="text-xs text-muted-foreground">Enables any user to ask questions in natural language across all 20+ gold tables. The Genie Space is configured with SQL instructions and sample prompts that understand the data model.</p>
               <div class="text-xs text-muted-foreground">Tables: 20+ gold tables &bull; Pre-configured SQL context &bull; 10 sample prompts</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foundation Model Strategy -->
+        <div class="${sectionStyle}">
+          ${h2('Foundation Model Strategy', '<svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>')}
+          <p class="text-sm text-muted-foreground">Every AI task uses the optimal model from the Databricks Foundation Model API — balancing quality, latency, and cost for each use case.</p>
+
+          <div class="overflow-x-auto mt-2">
+            <table class="w-full text-sm">${tblHead(['Use Case', 'Model', 'Why This Model'])}
+              <tbody>
+                ${tblRow(['<strong>App — Interactive Creative</strong><br><span class="text-[10px] text-muted-foreground">Ad copy, chat, variant generation</span>', pill('GPT-5-4 Mini', 'blue'), 'Fast enough for sub-5s interactive responses; strong at structured JSON output for multi-channel creative'])}
+                ${tblRow(['<strong>App — Premium SVG Banners</strong><br><span class="text-[10px] text-muted-foreground">Multi-layered vector art with animations</span>', pill('GPT-5-4', 'emerald'), 'Full model needed for complex SVG code: layered gradients, blend modes, CSS animations, and industry-specific illustrations'])}
+                ${tblRow(['<strong>ETL — Ad Creative Batch</strong><br><span class="text-[10px] text-muted-foreground">Bi-weekly segment content generation</span>', pill('GPT-5-4 Mini', 'blue'), 'Batch job where quality > latency; mini produces nuanced, data-backed marketing copy that references real propensity/CLV metrics'])}
+                ${tblRow(['<strong>ETL — Call Center NLP</strong><br><span class="text-[10px] text-muted-foreground">Topic classification + summarization</span>', pill('GPT-5-4 Mini', 'blue') + ' + ' + pill('ai_analyze_sentiment', 'cyan'), 'Built-in sentiment for speed; mini for 10-category classification and issue+resolution summarization where nuance matters'])}
+                ${tblRow(['<strong>Agent — CDP Supervisor</strong><br><span class="text-[10px] text-muted-foreground">Multi-domain orchestration, 24 tools + Genie</span>', pill('Claude Sonnet 4.6', 'purple'), 'Superior reasoning for complex routing across 6 domains; excels at multi-step tool orchestration and cross-domain synthesis'])}
+                ${tblRow(['<strong>Agents — 3 Specialists</strong><br><span class="text-[10px] text-muted-foreground">Churn, Campaign, NBA focused agents</span>', pill('GPT-5-4 Mini', 'blue'), 'Narrow scope with 4-6 tools each; mini is the optimal cost/quality balance for focused, structured tool-calling agents'])}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div class="rounded-lg border border-indigo-500/30 bg-indigo-500/5 p-4 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-indigo-500"></div>
+                <span class="font-semibold text-indigo-400 text-sm">Design Principle</span>
+              </div>
+              <p class="text-xs text-muted-foreground">Match model capability to task complexity. Premium models for creative/reasoning tasks; efficient models for classification/tool-calling; built-in functions for commodity NLP.</p>
+            </div>
+            <div class="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                <span class="font-semibold text-blue-400 text-sm">All Native</span>
+              </div>
+              <p class="text-xs text-muted-foreground">Every model runs on the Databricks Foundation Model API — no external API keys, no egress costs, no cold starts. Pay-per-token with automatic scaling and Unity Catalog governance.</p>
+            </div>
+            <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                <span class="font-semibold text-emerald-400 text-sm">Cost Optimized</span>
+              </div>
+              <p class="text-xs text-muted-foreground">GPT-5-4 Mini handles 80% of workloads. Full GPT-5-4 only for premium creative. Claude Sonnet only for the supervisor's complex orchestration. Built-in functions for sentiment.</p>
             </div>
           </div>
         </div>
