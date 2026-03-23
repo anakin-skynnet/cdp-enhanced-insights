@@ -480,7 +480,7 @@ for m in targeted:
         })
 
 nba_df = spark.createDataFrame(nba_rows)
-nba_df.write.format("delta").mode("overwrite").saveAsTable(
+nba_df.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(
     f"{catalog}.{schema}.nba_action_log"
 )
 print(f"Wrote {len(nba_rows)} NBA action log entries for {len(targeted)} merchants")

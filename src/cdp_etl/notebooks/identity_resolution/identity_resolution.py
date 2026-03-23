@@ -112,7 +112,7 @@ gold_identity_graph = golden_assignments.select(
     F.current_timestamp().alias("_resolved_at"),
 )
 
-gold_identity_graph.write.format("delta").mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_identity_graph")
+gold_identity_graph.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_identity_graph")
 
 # COMMAND ----------
 
@@ -149,7 +149,7 @@ golden_record = (
     )
 )
 
-golden_record.write.format("delta").mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_customer_360")
+golden_record.write.format("delta").mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_customer_360")
 
 # COMMAND ----------
 
