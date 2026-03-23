@@ -12,7 +12,7 @@ Customer Data Platform and Customer 360 solution on **Azure Databricks** for the
 | 4 | **Customer Support Analytics** | Complete | TTR, CSAT, SLA compliance, support quality tiers |
 | 5 | **Call Center Analytics** | Complete | Sentiment analysis, topic classification, agent/queue metrics |
 | 6 | **Hyper-Personalization Insights** | Complete | Propensity scoring (churn/upsell/activation), contextual signals |
-| 7 | **Ad Creative Generation** | Complete | Data-enriched AI creative (propensity, CLV, campaign history, industry), SVG + DALL-E 3 photo banners |
+| 7 | **Ad Creative Generation** | Complete | Data-enriched AI creative (propensity, CLV, campaign history, industry), Standard SVG + Premium GPT-5-4 Designer banners |
 | 8 | **Marketing Campaign Analysis & ROI** | Complete | Conversion tracking, revenue lift, reactivation, MTA |
 | 9 | **Audience Activation** | Complete | Pre-built audiences, hashed IDs, CSV export, ad platform sync |
 
@@ -21,7 +21,7 @@ Customer Data Platform and Customer 360 solution on **Azure Databricks** for the
 - **Golden record:** 2–2.5M unique merchants
 - **Sources:** Salesforce, Zendesk, Genesys, Apian, transactional data
 - **Activation:** Hightouch → SFMC, Meta, Google Ads; Audience export
-- **AI:** Churn prediction, propensity scoring, sentiment analysis, hyper-personalized ad creative (data-enriched), DALL-E 3 photo banners, health scoring, next best actions, CLV, multi-touch attribution, Genie NL analytics, AI agents
+- **AI:** Churn prediction, propensity scoring, sentiment analysis, hyper-personalized ad creative (data-enriched), GPT-5-4 Premium Designer banners, health scoring, next best actions, CLV, multi-touch attribution, Genie NL analytics, AI agents
 
 ## Architecture
 
@@ -226,7 +226,7 @@ cd src/app && uvicorn app.main:app --reload --port 8080
 - **Campaign ROI** -- Conversion tracking, outcome distribution, revenue lift by channel
 - **Audiences** -- Pre-built audience cards (churn risk, VIP, winback, etc.), CSV export
 - **Personalization** -- Propensity distribution, content theme/tier matrix
-- **Ad Creative** -- Hyper-personalized AI creative with data-enriched prompts (propensity, CLV, campaign history, industry), SVG banners, DALL-E 3 photo banners, industry filtering, A/B variants
+- **Ad Creative** -- Hyper-personalized AI creative with data-enriched prompts (propensity, CLV, campaign history, industry), Standard SVG banners, Premium GPT-5-4 Designer banners, industry filtering, A/B variants
 - **AI Insights** -- CLV tiers, multi-touch attribution, behavioral clusters
 - **Operations Center** -- Campaign management, NBA assignments, alert triage (Lakebase-backed)
 - **Data Freshness** -- Pipeline health monitoring
@@ -263,7 +263,7 @@ Adapted from official [Databricks Marketing Solution Accelerators](https://www.d
 **[Generative AI for Personalized Marketing Content](https://www.databricks.com/blog/building-generative-ai-workflow-creation-more-personalized-marketing-content)** (`src/cdp_etl/notebooks/ad_creative/ad_creative_generation.py`)
 - Uses Foundation Model API with data-enriched prompts: propensity scores, CLV, campaign history, health tiers, industry, and tenure from 6 gold tables
 - Batch: enriched segment profiles fed to `ai_query()` with propensity-driven rules (high churn → retention urgency, high upsell → growth)
-- App: real-time auto-enrichment pipeline queries 23+ data points per segment before LLM prompt, with industry filter and DALL-E 3 photorealistic banner generation
+- App: real-time auto-enrichment pipeline queries 23+ data points per segment before LLM prompt, with industry filter and GPT-5-4 Premium Designer banner generation (multi-layered SVG with gradients, animations, and industry illustrations)
 - Output: `gold_ad_creative_library` with data-specific creative per segment
 
 **[AI/BI Marketing Campaign Effectiveness](https://databricks.com/resources/demos/tutorials/aibi-genie-marketing-campaign-effectiveness)** (adapted into campaign ROI module)

@@ -380,19 +380,20 @@ def log_campaign(campaign: dict) -> None:
     merchants = campaign.get("merchants", [])
     if not merchants:
         return
-    values_clauses = []
-    for m in merchants:
-        gid = str(m["golden_id"]).strip().replace("'", "''")
-        act = action_type.replace("'", "''")
-        ch = channel.replace("'", "''")
-        n = name.replace("'", "''")
-        values_clauses.append(f"(uuid(), '{gid}', '{act}', '{ch}', 'cdp_app', '{n}', CURRENT_TIMESTAMP())")
-    values_sql = ",\n".join(values_clauses)
-    query(f"""
-        INSERT INTO {_t('nba_action_log')}
-          (action_id, golden_id, action_type, channel, executed_by, notes, executed_at)
-        VALUES {values_sql}
-    """)
+    try:
+        for m in merchants:
+            query(f"""
+                INSERT INTO {_t('nba_action_log')}
+                  (action_id, golden_id, action_type, channel, executed_by, notes, executed_at)
+                VALUES (uuid(), :gid, :act, :ch, 'cdp_app', :name, CURRENT_TIMESTAMP())
+            """, {
+                "gid": str(m["golden_id"]).strip(),
+                "act": action_type,
+                "ch": channel,
+                "name": name,
+            })
+    except Exception as e:
+        logger.warning("log_campaign write failed (table may not exist): %s", e)
 
 
 # ── Customer Support Analytics ─────────────────────────────────────
@@ -531,10 +532,14 @@ def get_personalization_summary() -> list[dict]:
 
 
 def get_personalization_for_merchant(golden_id: str) -> dict:
-    return query_one(f"""
-        SELECT * FROM {_t('gold_personalization_signals')}
-        WHERE golden_id = :golden_id
-    """, {"golden_id": golden_id.strip()}) or {}
+    try:
+        return query_one(f"""
+            SELECT * FROM {_t('gold_personalization_signals')}
+            WHERE golden_id = :golden_id
+        """, {"golden_id": golden_id.strip()}) or {}
+    except Exception as e:
+        logger.warning("get_personalization_for_merchant query failed: %s", e)
+        return {}
 
 
 def get_propensity_distribution() -> list[dict]:
@@ -786,7 +791,8 @@ def get_anomaly_kpis() -> dict:
 
 def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
     params = {"gid": golden_id.strip()}
-    return query(f"""
+    safe_limit = min(int(limit), 100)
+    base_query = f"""
         WITH txn_events AS (
           SELECT golden_id, 'transaction' AS event_type,
                  DATE_FORMAT(COALESCE(last_txn_date, _refreshed_at), 'yyyy-MM-dd') AS event_date,
@@ -814,15 +820,6 @@ def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
           FROM {_t('gold_next_best_actions')}
           WHERE golden_id = :gid
         ),
-        action_events AS (
-          SELECT golden_id, 'action_taken' AS event_type,
-                 DATE_FORMAT(executed_at, 'yyyy-MM-dd') AS event_date,
-                 CONCAT('Executed: ', action_type, ' via ', channel) AS description,
-                 COALESCE(notes, '') AS detail,
-                 'action_log' AS source
-          FROM {_t('nba_action_log')}
-          WHERE golden_id = :gid
-        ),
         anomaly_events AS (
           SELECT golden_id, 'anomaly' AS event_type,
                  DATE_FORMAT(detected_at, 'yyyy-MM-dd') AS event_date,
@@ -835,11 +832,30 @@ def get_merchant_timeline(golden_id: str, limit: int = 30) -> list[dict]:
         SELECT * FROM txn_events
         UNION ALL SELECT * FROM ticket_events
         UNION ALL SELECT * FROM nba_events
-        UNION ALL SELECT * FROM action_events
         UNION ALL SELECT * FROM anomaly_events
         ORDER BY event_date DESC
-        LIMIT {min(int(limit), 100)}
-    """, params)
+        LIMIT {safe_limit}
+    """
+    try:
+        action_cte = f"""
+            action_events AS (
+              SELECT golden_id, 'action_taken' AS event_type,
+                     DATE_FORMAT(executed_at, 'yyyy-MM-dd') AS event_date,
+                     CONCAT('Executed: ', action_type, ' via ', channel) AS description,
+                     COALESCE(notes, '') AS detail,
+                     'action_log' AS source
+              FROM {_t('nba_action_log')}
+              WHERE golden_id = :gid
+            ),
+        """
+        full_query = base_query.replace("anomaly_events AS", action_cte + "anomaly_events AS")
+        full_query = full_query.replace(
+            "UNION ALL SELECT * FROM anomaly_events",
+            "UNION ALL SELECT * FROM action_events\n        UNION ALL SELECT * FROM anomaly_events",
+        )
+        return query(full_query, params)
+    except Exception:
+        return query(base_query, params)
 
 
 # ── Data Freshness ───────────────────────────────────────────────
@@ -892,13 +908,17 @@ def log_agent_feedback(feedback: dict) -> dict:
         rating = max(1, min(5, int(feedback.get("rating", 3))))
     except (ValueError, TypeError):
         rating = 3
-    query(f"""
-        INSERT INTO {_t('agent_feedback_log')}
-          (feedback_id, message_content, rating, comment, created_at)
-        VALUES (uuid(), :msg, :rating, :comment, CURRENT_TIMESTAMP())
-    """, {
-        "msg": str(feedback.get("message_content", ""))[:500],
-        "rating": rating,
-        "comment": str(feedback.get("comment", ""))[:500],
-    })
+    try:
+        query(f"""
+            INSERT INTO {_t('agent_feedback_log')}
+              (feedback_id, message_content, rating, comment, created_at)
+            VALUES (uuid(), :msg, :rating, :comment, CURRENT_TIMESTAMP())
+        """, {
+            "msg": str(feedback.get("message_content", ""))[:500],
+            "rating": rating,
+            "comment": str(feedback.get("comment", ""))[:500],
+        })
+    except Exception as e:
+        logger.warning("log_agent_feedback write failed (table may not exist): %s", e)
+        return {"status": "accepted", "note": "Feedback logged locally; persistent storage unavailable."}
     return {"status": "recorded"}

@@ -1173,11 +1173,11 @@
                 </div>
                 <div>
                   <h2 class="text-xl font-bold">Hyper-Personalized Campaign Studio</h2>
-                  <p class="text-xs text-muted-foreground">Data-enriched AI creative + photorealistic banners</p>
+                  <p class="text-xs text-muted-foreground">Data-enriched AI creative + premium GPT-5-4 banners</p>
                 </div>
               </div>
               <p class="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-                Generate campaign messages and banners that reference <strong class="text-foreground">real segment data</strong> — propensity scores, CLV, campaign history, and industry context are auto-injected from 6 gold tables. Choose <strong class="text-foreground">SVG banners</strong> for instant vector graphics or <strong class="text-foreground">DALL-E 3 AI Photo banners</strong> for photorealistic imagery tailored to your merchant's industry.
+                Generate campaign messages and banners that reference <strong class="text-foreground">real segment data</strong> — propensity scores, CLV, campaign history, and industry context are auto-injected from 6 gold tables. Choose <strong class="text-foreground">Standard SVG banners</strong> (GPT-5-4-mini) for fast vector graphics or <strong class="text-foreground">Premium GPT-5-4 Designer banners</strong> for sophisticated multi-layered vector art with gradients, animations, and industry illustrations.
               </p>
               <div class="flex flex-wrap gap-2">
                 <span class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -1194,7 +1194,7 @@
                 </span>
                 <span class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path></svg>
-                  DALL-E 3 photo banners
+                  GPT-5-4 premium banners
                 </span>
                 <span class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
                   <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path></svg>
@@ -1349,7 +1349,7 @@
                   <label class="text-xs font-medium text-muted-foreground mb-1 block">Banner Image</label>
                   <select id="gen-image-flag" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
                     <option value="svg">SVG Banner</option>
-                    <option value="photo">Advanced (AI Photo)</option>
+                    <option value="photo">Premium (GPT-5-4 Designer)</option>
                     <option value="no">No - Text Only</option>
                   </select>
                 </div>
@@ -1428,7 +1428,7 @@
         let imageResult = null;
         if (imageMode !== 'no') {
           const isPhoto = imageMode === 'photo';
-          btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> ${isPhoto ? 'Generating AI photo banner...' : 'Generating banner image...'}`;
+          btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> ${isPhoto ? 'GPT-5-4 designing premium banner...' : 'Generating banner image...'}`;
           try {
             imageResult = await api('/api/ad-creative/generate-image', {
               method: 'POST',
@@ -1486,9 +1486,9 @@
         const mimeMap = { svg: 'image/svg+xml', png: 'image/png', jpeg: 'image/jpeg', base64: 'image/png', url: null };
         const mime = mimeMap[img.type] || 'image/png';
         const src = img.type === 'url' ? img.image : `data:${mime};base64,${img.image}`;
-        const isPhoto = img.mode === 'photo';
-        const bannerLabel = isPhoto ? 'AI Photo Banner' : 'Campaign Banner';
-        const labelColor = isPhoto ? 'emerald' : 'pink';
+        const isPremium = img.mode === 'premium';
+        const bannerLabel = isPremium ? 'Premium AI Banner' : 'Campaign Banner';
+        const labelColor = isPremium ? 'emerald' : 'pink';
         imgHtml = `
           <div class="rounded-lg border border-border overflow-hidden">
             <div class="px-4 py-2 border-b border-border flex items-center justify-between">
@@ -1496,7 +1496,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 ${bannerLabel}
               </div>
-              ${isPhoto ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">DALL-E 3</span>' : ''}
+              ${isPremium ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">GPT-5-4</span>' : ''}
             </div>
             <img src="${src}" alt="${bannerLabel}" class="w-full object-cover" style="max-height:320px">
           </div>`;
@@ -2194,7 +2194,7 @@
                 <strong class="text-foreground">hyper-personalized</strong> using real-time segment enrichment — propensity scores,
                 CLV predictions, campaign history, and industry context are auto-injected into every AI-generated message.
                 Teams can drive higher campaign ROI, reduce churn, and maximize lifetime value through data-driven
-                next best actions and AI-generated banners (SVG or photorealistic via DALL-E 3).
+                next best actions and AI-generated banners (Standard SVG or Premium GPT-5-4 Designer).
               </p>
               <div class="flex flex-wrap gap-2 mt-3">
                 ${pill('Azure Databricks', 'blue')}
@@ -2205,7 +2205,7 @@
                 ${pill('AI/BI Genie', 'pink')}
                 ${pill('Databricks Apps', 'yellow')}
                 ${pill('Foundation Models', 'red')}
-                ${pill('DALL-E 3 Image Gen', 'emerald')}
+                ${pill('GPT-5-4 Premium SVG', 'emerald')}
                 ${pill('Hyper-Personalization', 'rose')}
               </div>
             </div>
@@ -2273,7 +2273,7 @@
         │  Natural Language │    │  + 3 Specialists  │    │  14 Pages + AI Chat       │
         │  SQL Analytics   │    │  + 24 UC Functions │    │  + Hyper-Personalized     │
         └──────────────────┘    └──────────────────┘    │    Creative Engine         │
-                                                        │  + DALL-E 3 Photo Banners  │
+                                                        │  + GPT-5-4 Premium Banners │
                                                         │  + Industry-Filtered Ads   │
                                                         │  + Enrichment Pipeline:    │
                                                         │    Propensity + CLV +      │
@@ -2500,8 +2500,8 @@
               <p class="text-xs text-muted-foreground">Past campaign performance (conversion rates, best channel, best campaign type, reactivation counts) informs new creative — the LLM references what worked historically.</p>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
-              <div class="font-semibold text-sm flex items-center gap-2">${pill('DALL-E 3', 'rose')} Photo Banners</div>
-              <p class="text-xs text-muted-foreground">Advanced mode generates photorealistic campaign banners via DALL-E 3 through Databricks AI Gateway. Image prompts are LLM-crafted using segment, industry, and campaign context for industry-relevant visuals.</p>
+              <div class="font-semibold text-sm flex items-center gap-2">${pill('GPT-5-4', 'rose')} Premium Designer Banners</div>
+              <p class="text-xs text-muted-foreground">Premium mode generates sophisticated SVG banners using GPT-5-4 (Databricks Foundation Model API). The full-capability model produces multi-layered designs with gradients, blend modes, animations, and industry-relevant illustrations — all as resolution-independent vector graphics.</p>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="font-semibold text-sm flex items-center gap-2">${pill('Audience Enrichment', 'cyan')} Smart Campaigns</div>
@@ -2651,7 +2651,7 @@
                 ${tblRow([pill('Dashboard', 'purple'), '<strong>Support Analytics</strong>', 'AI/BI Lakeview dashboard with CSAT, resolution times, and SLA metrics'])}
                 ${tblRow([pill('Dashboard', 'purple'), '<strong>Call Center Analytics</strong>', 'AI/BI Lakeview dashboard with agent performance and sentiment trends'])}
                 ${tblRow([pill('Genie Space', 'pink'), '<strong>Merchant 360 Analytics</strong>', 'Natural language SQL interface across all 20+ gold tables with contextual SQL instructions'])}
-                ${tblRow([pill('App', 'yellow'), '<strong>CDP Customer 360 App</strong>', 'FastAPI + Tailwind CSS full-stack application with 14+ analytics pages, Operations Center, AI chat panel, hyper-personalized creative engine with industry filtering, data-enriched prompts, SVG and DALL-E 3 photo banners'])}
+                ${tblRow([pill('App', 'yellow'), '<strong>CDP Customer 360 App</strong>', 'FastAPI + Tailwind CSS full-stack application with 14+ analytics pages, Operations Center, AI chat panel, hyper-personalized creative engine with industry filtering, data-enriched prompts, Standard and Premium GPT-5-4 Designer banners'])}
                 ${tblRow([pill('Lakebase', 'emerald'), '<strong>CDP Ops Store (cdp-360-ops)</strong>', 'Managed PostgreSQL instance for campaign state, NBA assignments, alert triage, and suppression lists'])}
               </tbody>
             </table>
@@ -2684,7 +2684,7 @@
             </div>
             <div class="flex gap-3">
               <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-xs">6</div>
-              <div><strong class="text-foreground">Serve insights everywhere.</strong> The gold layer feeds AI/BI Lakeview Dashboards, a Genie Space for natural-language SQL, a multi-agent AI system (Supervisor + 3 specialists) deployed on Model Serving, and this full-stack Databricks App with a built-in Hyper-Personalization Engine. Campaign creative is generated with data-enriched prompts (propensity, CLV, campaign history, industry), photorealistic DALL-E 3 banners, and industry-filtered messaging. Operational state (campaigns, assignments, triage) is stored in <strong>Databricks Lakebase</strong> (managed PostgreSQL) for sub-10ms transactional workflows.</div>
+              <div><strong class="text-foreground">Serve insights everywhere.</strong> The gold layer feeds AI/BI Lakeview Dashboards, a Genie Space for natural-language SQL, a multi-agent AI system (Supervisor + 3 specialists) deployed on Model Serving, and this full-stack Databricks App with a built-in Hyper-Personalization Engine. Campaign creative is generated with data-enriched prompts (propensity, CLV, campaign history, industry), GPT-5-4 Premium Designer banners with multi-layered vector art, and industry-filtered messaging. Operational state (campaigns, assignments, triage) is stored in <strong>Databricks Lakebase</strong> (managed PostgreSQL) for sub-10ms transactional workflows.</div>
             </div>
           </div>
         </div>
@@ -2701,7 +2701,7 @@
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="text-2xl">💰</div>
               <div class="font-semibold text-sm">Maximize Campaign ROI</div>
-              <p class="text-xs text-muted-foreground">Multi-touch attribution reveals which channels drive conversion. Campaign history feedback loops inform new creative — past conversion rates and best-performing channels are injected into AI prompts. Photorealistic DALL-E 3 banners and SVG visuals are generated per campaign with industry-relevant imagery.</p>
+              <p class="text-xs text-muted-foreground">Multi-touch attribution reveals which channels drive conversion. Campaign history feedback loops inform new creative — past conversion rates and best-performing channels are injected into AI prompts. Premium GPT-5-4 Designer banners and Standard SVG visuals are generated per campaign with industry-relevant imagery.</p>
             </div>
             <div class="rounded-lg border border-border p-4 space-y-2">
               <div class="text-2xl">🎯</div>
@@ -2776,7 +2776,7 @@
             <div class="rounded-lg border border-border p-3 space-y-1">
               <div class="font-semibold text-muted-foreground uppercase text-[10px]">LLM & GenAI</div>
               <div>Claude Sonnet 4.6 · GPT-5.4 Mini · GPT-5.4 Nano</div>
-              <div>DALL-E 3 (Photorealistic Banners)</div>
+              <div>GPT-5-4 (Premium Designer Banners)</div>
               <div>ai_query(), ai_analyze_sentiment()</div>
               <div>ResponsesAgent Interface</div>
             </div>
@@ -2797,7 +2797,7 @@
 
         <!-- Footer -->
         <div class="text-center text-xs text-muted-foreground pb-4">
-          Built with the Databricks Lakehouse Platform &bull; Bank Payment Platform Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, Lakebase, AI/BI, Foundation Models, and DALL-E 3
+          Built with the Databricks Lakehouse Platform &bull; Bank Payment Platform Enhanced Customer Intelligence &bull; Powered by Unity Catalog, Lakeflow, Model Serving, Lakebase, AI/BI, and Foundation Models (GPT-5-4)
         </div>
       </div>`;
       const cfg = await api('/api/config');

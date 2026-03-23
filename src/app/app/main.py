@@ -9,9 +9,11 @@ Set CDP_DATA_SOURCE=databricks for live warehouse data.
 from __future__ import annotations
 
 import asyncio
+import base64
 import csv
 import datetime
 import io
+import json
 import logging
 import os
 
@@ -75,9 +77,11 @@ if _LAKEBASE_ENABLED:
         _lb = None
 
 
-@app.on_event("startup")
-async def warmup():
-    """Pre-initialize the SDK client so the first user request doesn't pay cold-start cost."""
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def _lifespan(application: FastAPI):
+    """Pre-initialize SDK client and Lakebase schema on startup."""
     if _USE_THREADS:
         try:
             await asyncio.to_thread(ds.query, "SELECT 1")
@@ -90,6 +94,9 @@ async def warmup():
             logger.info("Lakebase schema bootstrap: %s", "OK" if ok else "FAILED")
         except Exception as e:
             logger.warning("Lakebase warmup failed: %s", e)
+    yield
+
+app.router.lifespan_context = _lifespan
 
 _static_dir = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=_static_dir), name="static")
@@ -226,13 +233,16 @@ async def execute_campaign(campaign: M.CampaignRequest):
     if not campaign.merchant_ids:
         raise HTTPException(status_code=422, detail="merchant_ids must not be empty")
     merchants = [{"golden_id": mid} for mid in campaign.merchant_ids]
-    await _run(ds.log_campaign, {
-        "name": campaign.name,
-        "action_type": campaign.action_type,
-        "channel": campaign.channel,
-        "segment": campaign.segment,
-        "merchants": merchants,
-    })
+    try:
+        await _run(ds.log_campaign, {
+            "name": campaign.name,
+            "action_type": campaign.action_type,
+            "channel": campaign.channel,
+            "segment": campaign.segment,
+            "merchants": merchants,
+        })
+    except Exception as e:
+        logger.warning("Campaign log write failed: %s", e)
     return M.CampaignResponse(
         status="executed",
         campaign_name=campaign.name,
@@ -339,20 +349,21 @@ async def list_industries():
 
 
 _LLM_ENDPOINT = "databricks-gpt-5-4-mini"
-_IMAGE_MODEL_ENDPOINT = os.environ.get("CDP_IMAGE_MODEL_ENDPOINT", "")
+_PREMIUM_LLM_ENDPOINT = "databricks-gpt-5-4"
 
 
-def _call_llm(prompt: str) -> str:
+def _call_llm(prompt: str, *, premium: bool = False, max_tokens: int = 4000) -> str:
+    """Call Foundation Model API.  *premium=True* uses GPT-5-4 for higher-quality output."""
     from databricks.sdk import WorkspaceClient
+    endpoint = _PREMIUM_LLM_ENDPOINT if premium else _LLM_ENDPOINT
     w = WorkspaceClient()
     host = w.config.host.rstrip("/")
     auth = w.config.authenticate()
-    import httpx as _httpx
-    resp = _httpx.post(
-        f"{host}/serving-endpoints/{_LLM_ENDPOINT}/invocations",
+    resp = httpx.post(
+        f"{host}/serving-endpoints/{endpoint}/invocations",
         headers=auth,
-        json={"messages": [{"role": "user", "content": prompt}], "max_tokens": 4000, "temperature": 0.8},
-        timeout=120,
+        json={"messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens, "temperature": 0.8},
+        timeout=180,
     )
     resp.raise_for_status()
     data = resp.json()
@@ -373,14 +384,20 @@ async def generate_creative(req: M.GenerateCreativeRequest):
 
     seg_label = req.segment.replace("_", " ").title()
 
+    def _n(v, default=0):
+        try:
+            return float(v)
+        except (TypeError, ValueError):
+            return default
+
     data_block = ""
     if enrichment:
         top_ind = ", ".join(enrichment.get("top_industries", [])[:5]) or "Mixed"
         data_block = f"""
 REAL SEGMENT DATA (use these numbers to make the copy specific and credible):
 - Merchants in segment: {enrichment.get('merchant_count', '?')}
-- Avg monthly payment volume: ${enrichment.get('avg_volume', 0):,.0f}
-- Total segment volume: ${enrichment.get('total_volume', 0):,.0f}
+- Avg monthly payment volume: ${_n(enrichment.get('avg_volume')):,.0f}
+- Total segment volume: ${_n(enrichment.get('total_volume')):,.0f}
 - Avg transactions/month: {enrichment.get('avg_txn_count', '?')}
 - Avg health score: {enrichment.get('avg_health', '?')}/100
 - Avg days since last transaction: {enrichment.get('avg_recency_days', '?')}
@@ -389,15 +406,15 @@ REAL SEGMENT DATA (use these numbers to make the copy specific and credible):
 - Top industries: {top_ind}
 
 PROPENSITY INSIGHTS:
-- Churn risk: {float(enrichment.get('avg_churn_propensity', 0)) * 100:.1f}% avg propensity
-- Upsell opportunity: {float(enrichment.get('avg_upsell_propensity', 0)) * 100:.1f}% avg propensity
-- Activation potential: {float(enrichment.get('avg_activation_propensity', 0)) * 100:.1f}% avg propensity
+- Churn risk: {_n(enrichment.get('avg_churn_propensity')) * 100:.1f}% avg propensity
+- Upsell opportunity: {_n(enrichment.get('avg_upsell_propensity')) * 100:.1f}% avg propensity
+- Activation potential: {_n(enrichment.get('avg_activation_propensity')) * 100:.1f}% avg propensity
 - Dominant propensity tier: {enrichment.get('dominant_propensity_tier', 'N/A')}
 
 CUSTOMER LIFETIME VALUE:
-- Avg 12-month CLV: ${enrichment.get('avg_clv_12m', 0):,.2f}
-- Total segment CLV: ${enrichment.get('total_clv_12m', 0):,.0f}
-- Avg probability alive: {float(enrichment.get('avg_p_alive', 0)) * 100:.1f}%
+- Avg 12-month CLV: ${_n(enrichment.get('avg_clv_12m')):,.2f}
+- Total segment CLV: ${_n(enrichment.get('total_clv_12m')):,.0f}
+- Avg probability alive: {_n(enrichment.get('avg_p_alive')) * 100:.1f}%
 - Dominant CLV tier: {enrichment.get('dominant_clv_tier', 'N/A')}
 
 CAMPAIGN HISTORY:
@@ -423,13 +440,13 @@ Campaign context:
 {data_block}
 
 PERSONALIZATION RULES:
-1. Reference SPECIFIC numbers from the data (e.g. "Join {enrichment.get('merchant_count', 'thousands of')} merchants processing ${enrichment.get('avg_volume', 0):,.0f}/month")
+1. Reference SPECIFIC numbers from the data (e.g. "Join {enrichment.get('merchant_count', 'thousands of')} merchants processing ${_n(enrichment.get('avg_volume')):,.0f}/month")
 2. If churn propensity is high (>40%), lead with retention/loyalty messaging and urgency
 3. If upsell propensity is high (>40%), lead with growth/premium features
 4. If activation propensity is high (>40%), lead with onboarding/getting-started value
 5. Reference the best-performing channel and campaign type in CTAs when available
 6. Use industry-specific language and examples if an industry is specified
-7. Mention CLV data to make ROI arguments ("merchants like you generate ${enrichment.get('avg_clv_12m', 0):,.0f} annually")
+7. Mention CLV data to make ROI arguments ("merchants like you generate ${_n(enrichment.get('avg_clv_12m')):,.0f} annually")
 
 Generate content in this exact JSON format (no markdown, no extra text):
 {{
@@ -447,11 +464,10 @@ Generate content in this exact JSON format (no markdown, no extra text):
 
     try:
         raw = await _run(_call_llm, prompt)
-        import json as _json
         start = raw.find("{")
         end = raw.rfind("}") + 1
         if start >= 0 and end > start:
-            result = _json.loads(raw[start:end])
+            result = json.loads(raw[start:end])
         else:
             result = {"error": "Could not parse LLM response", "raw": raw[:500]}
         result["segment"] = req.segment
@@ -482,7 +498,6 @@ _SEGMENT_PALETTES = {
 
 def _generate_ai_svg(segment: str, tagline: str, theme: str, merchant_context: str = "") -> str:
     """Use the LLM to generate a unique SVG campaign banner."""
-    import base64
     c1, c2 = _SEGMENT_PALETTES.get(segment, ("#6366F1", "#4F46E5"))
     seg_label = segment.replace("_", " ").title()
 
@@ -525,75 +540,71 @@ OUTPUT: Return ONLY the raw SVG code starting with <svg and ending with </svg>. 
     raise ValueError("LLM did not return valid SVG")
 
 
-def _craft_image_prompt(segment: str, tagline: str, theme: str, merchant_context: str) -> str:
-    """Use the LLM to craft an optimized prompt for the image generation model."""
+def _generate_premium_svg(segment: str, tagline: str, theme: str, merchant_context: str = "") -> str:
+    """Generate a premium SVG banner using GPT-5-4 (full model) with an enhanced design prompt.
+
+    Compared to the standard SVG generator (which uses gpt-5-4-mini), this produces
+    significantly richer output: multi-layer gradients, blend modes, clip paths,
+    animated elements, detailed illustrations, and 3-D lighting effects.
+    """
+    c1, c2 = _SEGMENT_PALETTES.get(segment, ("#6366F1", "#4F46E5"))
     seg_label = segment.replace("_", " ").title()
-    prompt = f"""You are an expert at writing prompts for AI image generation models (DALL-E 3).
-Create a single, detailed image generation prompt for a professional marketing campaign banner.
 
-CAMPAIGN DETAILS:
-- Target segment: {seg_label}
-- Tagline: "{tagline}"
-- Campaign theme: {theme}
-- Merchant/industry context: {merchant_context or 'General fintech / digital payments'}
+    industry_hint = ""
+    if merchant_context:
+        industry_hint = f"""
+INDUSTRY CONTEXT — incorporate these as refined SVG illustrations:
+"{merchant_context[:300]}"
+Create industry-relevant pictorial elements: detailed SVG illustrations (not clip-art),
+e.g. stylised shopping bag for retail, stethoscope for healthcare, fork & knife for restaurants,
+circuit board traces for tech, paw prints for pets, barbell for fitness.
+Place them as subtle background motifs or hero illustrations alongside the text."""
 
-REQUIREMENTS for the generated prompt:
-- Describe a professional, photorealistic marketing banner in wide landscape format (16:9)
-- Include vivid, relevant imagery based on the merchant context (e.g. real pets for pet stores, appetizing food for restaurants, modern tech gadgets for electronics, fitness gear for gyms)
-- Modern, clean design suitable for digital marketing and social ads
-- Leave a clean area (left or right third) where text can be overlaid — describe that area as a subtle gradient fade or translucent overlay
-- Professional color palette that fits the industry — vibrant but not garish
-- High quality, 4K, commercial photography style with natural lighting
-- DO NOT include any text, words, letters, logos, or watermarks in the image
-- DO NOT mention brand names
-- The overall mood should be aspirational, warm, and engaging
+    prompt = f"""You are an award-winning graphic designer creating a PREMIUM SVG marketing banner.
+This must look like a professionally designed fintech campaign asset — not a simple coloured rectangle.
 
-Return ONLY the image prompt text, nothing else. No quotes, no preamble."""
-    return _call_llm(prompt).strip().strip('"').strip("'")
+CANVAS: viewBox="0 0 1200 400", xmlns="http://www.w3.org/2000/svg"
+BRAND PALETTE: primary "{c1}", secondary "{c2}", accent white, dark charcoal #1E293B
 
+DESIGN SYSTEM (use ALL of these techniques):
+1. BACKGROUND — Multi-stop radial or linear gradient with at least 3 colour stops blending the palette.
+   Add a subtle noise/grain pattern via <filter> with feTurbulence + feColorMatrix at very low opacity.
+2. DEPTH LAYERS (at least 4):
+   a) Background gradient
+   b) Large geometric shapes with 10-30% opacity (circles, rounded rects, or organic blobs) using mix-blend-mode or opacity
+   c) Medium decorative layer — flowing wave <path>s, curved dividers, or diagonal stripe patterns
+   d) Small accent layer — dots grid, line patterns, sparkle/star shapes
+3. HERO AREA (left 60%):
+   - Tagline: "{tagline[:60]}" — 44px bold white, text-shadow via <filter> feDropShadow
+   - Subtitle: "{theme[:70]}" — 18px, white at 80% opacity
+   - Segment badge: "{seg_label.upper()}" — small rounded pill shape with contrasting fill, 12px caps
+4. CTA BUTTON (right-aligned or bottom-right):
+   - White rounded rect (rx=24) with dark text, subtle shadow
+   - Text: "Learn More" or similar action phrase
+5. FOOTER: "Powered by Databricks CDP 360" — 10px, bottom-right, white at 50% opacity
+6. ANIMATIONS (CSS inside <style>): at least one subtle @keyframes — e.g. floating shapes, pulsing glow, or gradient shift
+7. TYPOGRAPHY: font-family="system-ui, -apple-system, 'Segoe UI', sans-serif"
+{industry_hint}
 
-def _generate_photo_image(segment: str, tagline: str, theme: str, merchant_context: str = "") -> tuple[str, str]:
-    """Generate a photorealistic banner using an image generation model (e.g. DALL-E 3)."""
-    import base64 as _b64
+QUALITY RULES:
+- Every banner must look UNIQUE — vary shapes, layouts, colour blending, and compositions.
+- Use <defs> for reusable gradients, filters, and clip paths.
+- The design should feel like a premium SaaS marketing asset — think Stripe, Linear, or Vercel quality.
+- SVG must be COMPLETE and VALID — starts with <svg, ends with </svg>.
+- Aim for 6000-10000 chars of detailed SVG.
 
-    if not _IMAGE_MODEL_ENDPOINT:
-        raise ValueError(
-            "Image generation endpoint not configured. "
-            "Set CDP_IMAGE_MODEL_ENDPOINT to your Databricks AI Gateway external model endpoint "
-            "(e.g. an endpoint proxying to DALL-E 3). "
-            "See docs: https://docs.databricks.com/en/machine-learning/model-serving/create-serving-endpoint.html"
-        )
+OUTPUT: Return ONLY the raw SVG code. No markdown fences, no explanation, no preamble."""
 
-    image_prompt = _craft_image_prompt(segment, tagline, theme, merchant_context)
-    logger.info("Image prompt crafted (%d chars) for segment=%s", len(image_prompt), segment)
+    raw = _call_llm(prompt, premium=True, max_tokens=12000)
+    start = raw.find("<svg")
+    end = raw.rfind("</svg>")
+    if start >= 0 and end > start:
+        svg = raw[start:end + 6]
+        if 'xmlns=' not in svg:
+            svg = svg.replace("<svg", '<svg xmlns="http://www.w3.org/2000/svg"', 1)
+        return base64.b64encode(svg.encode()).decode()
 
-    from databricks.sdk import WorkspaceClient
-    import httpx as _httpx
-
-    w = WorkspaceClient()
-    host = w.config.host.rstrip("/")
-    auth_headers = w.config.authenticate()
-
-    resp = _httpx.post(
-        f"{host}/serving-endpoints/{_IMAGE_MODEL_ENDPOINT}/invocations",
-        headers=auth_headers,
-        json={
-            "prompt": image_prompt,
-            "n": 1,
-            "size": "1792x1024",
-        },
-        timeout=180,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-
-    images = data.get("data", [])
-    if images:
-        b64 = images[0].get("b64_json", "")
-        if b64:
-            return b64, "png"
-
-    raise ValueError("Image generation model did not return image data")
+    raise ValueError("Premium LLM did not return valid SVG")
 
 
 @app.post("/api/ad-creative/generate-image")
@@ -604,13 +615,11 @@ async def generate_image(req: M.GenerateImageRequest):
 
     if req.mode == "photo":
         try:
-            b64, fmt = await _run(_generate_photo_image, req.segment, tagline, theme, req.merchant_context or "")
-            return {"image": b64, "type": fmt, "segment": req.segment, "mode": "photo"}
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e))
+            b64 = await _run(_generate_premium_svg, req.segment, tagline, theme, req.merchant_context or "")
+            return {"image": b64, "type": "svg", "segment": req.segment, "mode": "premium"}
         except Exception as e:
-            logger.exception("AI photo banner generation failed")
-            raise HTTPException(status_code=502, detail=f"AI photo generation failed: {type(e).__name__}")
+            logger.exception("Premium SVG banner generation failed")
+            raise HTTPException(status_code=502, detail=f"Premium banner generation failed: {type(e).__name__}: {e}")
 
     try:
         b64 = await _run(_generate_ai_svg, req.segment, tagline, theme, req.merchant_context or "")
@@ -626,13 +635,19 @@ async def generate_merchant_creative(req: M.GenerateMerchantCreativeRequest):
     merchant = await _run(ds.get_merchant_detail, req.golden_id) if DATA_SOURCE != "mock" else None
     m_ctx = ""
     if merchant:
+        def _num(v, default=0):
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return default
+
         m_ctx = (
             f"Merchant: {merchant.get('merchant_name', 'Unknown')}. "
             f"Segment: {merchant.get('segment', 'unknown')}. "
             f"Health: {merchant.get('health_score', 'N/A')}/100 ({merchant.get('health_tier', '')}). "
-            f"Volume: ${merchant.get('txn_volume', 0):,.0f} ({merchant.get('txn_count', 0)} txns). "
+            f"Volume: ${_num(merchant.get('txn_volume')):,.0f} ({int(_num(merchant.get('txn_count')))} txns). "
             f"Recency: {merchant.get('days_since_last_txn', 'N/A')} days since last transaction. "
-            f"Support tickets: {merchant.get('ticket_count', 0)}. "
+            f"Support tickets: {int(_num(merchant.get('ticket_count')))}. "
             f"Industry: {merchant.get('industry', 'N/A')}. "
             f"Location: {merchant.get('city', '')} {merchant.get('country', '')}. "
             f"Primary NBA: {merchant.get('primary_action', 'N/A')} via {merchant.get('primary_channel', 'N/A')}. "
@@ -667,9 +682,8 @@ Generate this exact JSON (no markdown):
 
     try:
         raw = await _run(_call_llm, prompt)
-        import json as _json
         start, end = raw.find("{"), raw.rfind("}") + 1
-        result = _json.loads(raw[start:end]) if start >= 0 and end > start else {"error": "Parse failed"}
+        result = json.loads(raw[start:end]) if start >= 0 and end > start else {"error": "Parse failed"}
         result["golden_id"] = req.golden_id
         result["segment"] = merchant.get("segment", req.segment) if merchant else req.segment
         result["merchant_name"] = merchant.get("merchant_name", "") if merchant else ""
@@ -710,9 +724,8 @@ Generate exactly {req.num_variants} variants labeled A, B{', C' if req.num_varia
 
     try:
         raw = await _run(_call_llm, prompt)
-        import json as _json
         start, end = raw.find("["), raw.rfind("]") + 1
-        variants = _json.loads(raw[start:end]) if start >= 0 and end > start else []
+        variants = json.loads(raw[start:end]) if start >= 0 and end > start else []
         for v in variants:
             v["segment"] = req.segment
             v["channel"] = req.channel
@@ -993,8 +1006,12 @@ async def ops_check_suppression(merchant_ids: list[str]):
 @app.post("/api/agent/feedback")
 async def agent_feedback(feedback: M.AgentFeedback):
     """Record user rating / comment on an AI agent response."""
-    result = await _run(ds.log_agent_feedback, feedback.model_dump())
-    return result
+    try:
+        result = await _run(ds.log_agent_feedback, feedback.model_dump())
+        return result
+    except Exception as e:
+        logger.warning("Agent feedback storage failed: %s", e)
+        return {"status": "accepted", "note": "Feedback acknowledged; persistent storage unavailable."}
 
 
 # ═══════════════════════════════════════════════════════════════
