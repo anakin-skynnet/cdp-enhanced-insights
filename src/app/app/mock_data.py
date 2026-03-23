@@ -457,6 +457,42 @@ def get_propensity_distribution() -> list[dict]:
     ]
 
 
+def get_segment_enrichment(segment: str) -> dict:
+    return {
+        "segment": segment, "merchant_count": 42, "avg_volume": 15200,
+        "total_volume": 638400, "avg_txn_count": 320, "avg_health": 68,
+        "avg_recency_days": 12, "avg_tickets": 1.3, "avg_tenure_days": 480,
+        "avg_churn_propensity": 0.35, "avg_upsell_propensity": 0.45,
+        "avg_activation_propensity": 0.28, "dominant_propensity_tier": "upsell_ready",
+        "avg_clv_12m": 4520.50, "total_clv_12m": 189861, "avg_p_alive": 0.82,
+        "dominant_clv_tier": "mid",
+        "total_campaigns": 8, "avg_conversion_rate": 12.5,
+        "best_campaign_type": "retention", "best_channel": "email",
+        "reactivations": 5,
+        "top_industries": ["Restaurant", "Retail", "Healthcare", "Technology", "Services"],
+    }
+
+
+def get_distinct_industries() -> list[dict]:
+    return [
+        {"industry": "Restaurant", "merchant_count": 45},
+        {"industry": "Retail", "merchant_count": 38},
+        {"industry": "Healthcare", "merchant_count": 22},
+        {"industry": "Technology", "merchant_count": 18},
+        {"industry": "Professional Services", "merchant_count": 15},
+        {"industry": "Education", "merchant_count": 12},
+        {"industry": "Entertainment", "merchant_count": 10},
+    ]
+
+
+def get_audience_enrichment(audience_type: str) -> dict:
+    return {
+        "merchant_count": 28, "avg_volume": 9800, "avg_health": 55,
+        "dominant_segment": "at_risk", "dominant_urgency": "high",
+        "top_action": "retention_offer",
+    }
+
+
 def get_ad_creative_library() -> list[dict]:
     creatives = {
         "champions": ("Your loyalty deserves a reward", "Congrats on being a top merchant! Unlock exclusive rates.",

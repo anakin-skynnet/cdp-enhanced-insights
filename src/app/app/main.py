@@ -333,6 +333,11 @@ async def ad_creative():
     return await _run(ds.get_ad_creative_library)
 
 
+@app.get("/api/industries")
+async def list_industries():
+    return await _run(ds.get_distinct_industries)
+
+
 _LLM_ENDPOINT = "databricks-gpt-5-4-mini"
 _IMAGE_MODEL_ENDPOINT = os.environ.get("CDP_IMAGE_MODEL_ENDPOINT", "")
 
@@ -356,29 +361,88 @@ def _call_llm(prompt: str) -> str:
 
 @app.post("/api/ad-creative/generate")
 async def generate_creative(req: M.GenerateCreativeRequest):
-    """Generate hyper-personalized marketing messages using Foundation Model API."""
+    """Generate hyper-personalized marketing messages using Foundation Model API.
+    Auto-enriches with real segment data: propensity, CLV, campaign history, industries."""
+
+    enrichment = {}
+    if DATA_SOURCE != "mock":
+        try:
+            enrichment = await _run(ds.get_segment_enrichment, req.segment)
+        except Exception:
+            logger.warning("Segment enrichment query failed, falling back to basic prompt")
+
+    seg_label = req.segment.replace("_", " ").title()
+
+    data_block = ""
+    if enrichment:
+        top_ind = ", ".join(enrichment.get("top_industries", [])[:5]) or "Mixed"
+        data_block = f"""
+REAL SEGMENT DATA (use these numbers to make the copy specific and credible):
+- Merchants in segment: {enrichment.get('merchant_count', '?')}
+- Avg monthly payment volume: ${enrichment.get('avg_volume', 0):,.0f}
+- Total segment volume: ${enrichment.get('total_volume', 0):,.0f}
+- Avg transactions/month: {enrichment.get('avg_txn_count', '?')}
+- Avg health score: {enrichment.get('avg_health', '?')}/100
+- Avg days since last transaction: {enrichment.get('avg_recency_days', '?')}
+- Avg support tickets: {enrichment.get('avg_tickets', '?')}
+- Avg tenure: {enrichment.get('avg_tenure_days', '?')} days
+- Top industries: {top_ind}
+
+PROPENSITY INSIGHTS:
+- Churn risk: {float(enrichment.get('avg_churn_propensity', 0)) * 100:.1f}% avg propensity
+- Upsell opportunity: {float(enrichment.get('avg_upsell_propensity', 0)) * 100:.1f}% avg propensity
+- Activation potential: {float(enrichment.get('avg_activation_propensity', 0)) * 100:.1f}% avg propensity
+- Dominant propensity tier: {enrichment.get('dominant_propensity_tier', 'N/A')}
+
+CUSTOMER LIFETIME VALUE:
+- Avg 12-month CLV: ${enrichment.get('avg_clv_12m', 0):,.2f}
+- Total segment CLV: ${enrichment.get('total_clv_12m', 0):,.0f}
+- Avg probability alive: {float(enrichment.get('avg_p_alive', 0)) * 100:.1f}%
+- Dominant CLV tier: {enrichment.get('dominant_clv_tier', 'N/A')}
+
+CAMPAIGN HISTORY:
+- Past campaigns run: {enrichment.get('total_campaigns', 0)}
+- Historical conversion rate: {enrichment.get('avg_conversion_rate', 0)}%
+- Best performing campaign type: {enrichment.get('best_campaign_type', 'N/A')}
+- Best performing channel: {enrichment.get('best_channel', 'N/A')}
+- Reactivations achieved: {enrichment.get('reactivations', 0)}"""
+
+    industry_block = ""
+    if req.industry:
+        industry_block = f"\n- Industry focus: {req.industry} — tailor ALL messaging, examples, and value props to this specific vertical"
+
     prompt = f"""You are an expert marketing copywriter for a payment processing platform.
-Generate hyper-personalized marketing content for a campaign targeting the "{req.segment}" merchant segment.
+Generate hyper-personalized marketing content for a campaign targeting the "{seg_label}" merchant segment.
 
 Campaign context:
 - Campaign name: {req.campaign_name or 'General outreach'}
 - Channel: {req.channel}
 - Objective: {req.objective or 'Engagement and retention'}
-- Tone: {req.tone or 'Professional yet warm'}
-{f'- Merchant profile: {req.merchant_context}' if req.merchant_context else ''}
+- Tone: {req.tone or 'Professional yet warm'}{industry_block}
+{f'- Additional context: {req.merchant_context}' if req.merchant_context else ''}
+{data_block}
+
+PERSONALIZATION RULES:
+1. Reference SPECIFIC numbers from the data (e.g. "Join {enrichment.get('merchant_count', 'thousands of')} merchants processing ${enrichment.get('avg_volume', 0):,.0f}/month")
+2. If churn propensity is high (>40%), lead with retention/loyalty messaging and urgency
+3. If upsell propensity is high (>40%), lead with growth/premium features
+4. If activation propensity is high (>40%), lead with onboarding/getting-started value
+5. Reference the best-performing channel and campaign type in CTAs when available
+6. Use industry-specific language and examples if an industry is specified
+7. Mention CLV data to make ROI arguments ("merchants like you generate ${enrichment.get('avg_clv_12m', 0):,.0f} annually")
 
 Generate content in this exact JSON format (no markdown, no extra text):
 {{
-  "email_subject": "Compelling subject line (50 chars max)",
-  "email_body": "Full email body (3-4 paragraphs, with personalization tokens like {{merchant_name}}, {{segment}})",
-  "sms_message": "Concise SMS (160 chars max)",
-  "push_notification": "Short push (80 chars max)",
-  "ad_headline": "Punchy headline (30 chars max)",
-  "ad_description": "Ad body copy (90 chars max)",
-  "social_post": "Social media post with hashtags (280 chars max)",
-  "banner_tagline": "Hero banner tagline (15 words max)",
+  "email_subject": "Compelling subject line using real data points (50 chars max)",
+  "email_body": "Full email body (3-4 paragraphs). Weave in real segment stats, industry relevance, and a specific value proposition based on propensity signals. Use {{{{merchant_name}}}} token.",
+  "sms_message": "Concise SMS using a key data insight (160 chars max)",
+  "push_notification": "Short push with urgency from propensity data (80 chars max)",
+  "ad_headline": "Data-informed headline (30 chars max)",
+  "ad_description": "Ad body with specific proof point (90 chars max)",
+  "social_post": "Social post with data-backed claim and hashtags (280 chars max)",
+  "banner_tagline": "Hero tagline with a real stat (15 words max)",
   "tone": "{req.tone or 'Professional yet warm'}",
-  "cta": "Clear call-to-action text"
+  "cta": "Specific CTA informed by best-performing channel/campaign type"
 }}"""
 
     try:
@@ -392,6 +456,15 @@ Generate content in this exact JSON format (no markdown, no extra text):
             result = {"error": "Could not parse LLM response", "raw": raw[:500]}
         result["segment"] = req.segment
         result["channel"] = req.channel
+        if enrichment:
+            result["_enrichment_used"] = True
+            result["_data_points"] = {
+                "merchant_count": enrichment.get("merchant_count"),
+                "avg_volume": enrichment.get("avg_volume"),
+                "churn_propensity": enrichment.get("avg_churn_propensity"),
+                "upsell_propensity": enrichment.get("avg_upsell_propensity"),
+                "avg_clv": enrichment.get("avg_clv_12m"),
+            }
         return result
     except Exception as e:
         logger.exception("Creative generation failed")
@@ -676,6 +749,13 @@ async def audience_list(audience_type: str, limit: int = Query(default=100, le=5
     if audience_type not in _VALID_AUDIENCES:
         raise HTTPException(status_code=422, detail=f"Invalid audience_type. Valid: {', '.join(sorted(_VALID_AUDIENCES))}")
     return await _run(ds.get_audience_list, audience_type, limit)
+
+
+@app.get("/api/audiences/{audience_type}/enrichment")
+async def audience_enrichment(audience_type: str):
+    if audience_type not in _VALID_AUDIENCES:
+        raise HTTPException(status_code=422, detail=f"Invalid audience_type")
+    return await _run(ds.get_audience_enrichment, audience_type)
 
 
 # ── Anomaly Alerts ────────────────────────────────────────────────

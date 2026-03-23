@@ -38,14 +38,25 @@ segment_profiles = spark.sql(f"""
     COALESCE(s.segment, 'unassigned') AS segment,
     COUNT(DISTINCT c.golden_id) AS merchant_count,
     ROUND(AVG(e.txn_volume), 0) AS avg_volume,
+    ROUND(SUM(e.txn_volume), 0) AS total_volume,
     ROUND(AVG(e.txn_count), 0) AS avg_txn_count,
     ROUND(AVG(h.health_score), 0) AS avg_health,
     ROUND(AVG(e.days_since_last_txn), 0) AS avg_recency_days,
-    ROUND(AVG(e.ticket_count), 1) AS avg_tickets
+    ROUND(AVG(e.ticket_count), 1) AS avg_tickets,
+    ROUND(AVG(e.tenure_days), 0) AS avg_tenure_days,
+    ROUND(AVG(p.churn_propensity_score), 3) AS avg_churn_propensity,
+    ROUND(AVG(p.upsell_propensity_score), 3) AS avg_upsell_propensity,
+    ROUND(AVG(p.activation_propensity_score), 3) AS avg_activation_propensity,
+    ROUND(AVG(l.clv_12m), 2) AS avg_clv_12m,
+    ROUND(AVG(l.p_alive), 3) AS avg_p_alive,
+    MODE(c.industry) AS top_industry,
+    MODE(h.health_tier) AS dominant_health_tier
   FROM {catalog}.{schema}.gold_customer_360 c
   LEFT JOIN {catalog}.{schema}.gold_segments s ON c.golden_id = s.golden_id
   LEFT JOIN {catalog}.{schema}.gold_engagement_metrics e ON c.golden_id = e.golden_id
   LEFT JOIN {catalog}.{schema}.gold_health_score h ON c.golden_id = h.golden_id
+  LEFT JOIN {catalog}.{schema}.gold_propensity_scores p ON c.golden_id = p.golden_id
+  LEFT JOIN {catalog}.{schema}.gold_customer_ltv l ON c.golden_id = l.golden_id
   GROUP BY COALESCE(s.segment, 'unassigned')
   HAVING COUNT(DISTINCT c.golden_id) > 0
   ORDER BY avg_volume DESC
@@ -66,12 +77,23 @@ try:
         f"""ai_query(
           '{llm_endpoint}',
           CONCAT(
-            'You are a marketing copywriter for a payment platform for merchants. ',
-            'Generate personalized marketing content for the "', segment, '" segment. ',
-            'This segment has ', CAST(merchant_count AS STRING), ' merchants, ',
+            'You are a data-driven marketing copywriter for a payment platform. ',
+            'Generate hyper-personalized marketing content for the "', segment, '" segment using these REAL data points. ',
+            'Segment stats: ', CAST(merchant_count AS STRING), ' merchants, ',
             'avg payment volume $', CAST(COALESCE(avg_volume, 0) AS STRING), ', ',
-            'avg health score ', CAST(COALESCE(avg_health, 0) AS STRING), '/100, ',
-            'avg days since last transaction ', CAST(COALESCE(avg_recency_days, 0) AS STRING), '. ',
+            'total segment volume $', CAST(COALESCE(total_volume, 0) AS STRING), ', ',
+            'avg health score ', CAST(COALESCE(avg_health, 0) AS STRING), '/100 (', COALESCE(dominant_health_tier, 'unknown'), ' tier), ',
+            'avg recency ', CAST(COALESCE(avg_recency_days, 0) AS STRING), ' days, ',
+            'avg tenure ', CAST(COALESCE(avg_tenure_days, 0) AS STRING), ' days, ',
+            'avg tickets ', CAST(COALESCE(avg_tickets, 0) AS STRING), '. ',
+            'Propensity: churn=', CAST(ROUND(COALESCE(avg_churn_propensity, 0) * 100, 1) AS STRING), '%, ',
+            'upsell=', CAST(ROUND(COALESCE(avg_upsell_propensity, 0) * 100, 1) AS STRING), '%, ',
+            'activation=', CAST(ROUND(COALESCE(avg_activation_propensity, 0) * 100, 1) AS STRING), '%. ',
+            'CLV: avg $', CAST(COALESCE(avg_clv_12m, 0) AS STRING), '/yr, ',
+            'prob alive ', CAST(ROUND(COALESCE(avg_p_alive, 0) * 100, 1) AS STRING), '%. ',
+            'Top industry: ', COALESCE(top_industry, 'mixed'), '. ',
+            'RULES: If churn>40% lead with retention urgency. If upsell>40% lead with growth/premium. ',
+            'Reference specific numbers in copy. Make it feel data-backed, not generic. ',
             'Generate exactly this JSON (no markdown, no extra text): ',
             '{{"email_subject": "...", "sms_message": "...(160 chars max)", ',
             '"push_notification": "...(80 chars max)", ',

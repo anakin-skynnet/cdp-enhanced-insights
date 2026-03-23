@@ -285,6 +285,7 @@ class GenerateCreativeRequest(BaseModel):
     campaign_name: Optional[str] = None
     objective: Optional[str] = None
     tone: Optional[str] = Field(default="Professional yet warm")
+    industry: Optional[str] = Field(default=None, description="Filter creative by industry vertical")
     merchant_context: Optional[str] = Field(default=None, description="Additional merchant-level context for hyper-personalization")
 
 

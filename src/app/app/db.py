@@ -550,6 +550,106 @@ def get_propensity_distribution() -> list[dict]:
     """)
 
 
+# ── Segment Enrichment for Hyper-Personalized Creative ────────────
+
+def get_segment_enrichment(segment: str) -> dict:
+    """Pull rich aggregate data for a segment: demographics, propensity, CLV, campaign history, top industries."""
+    base = query_one(f"""
+        SELECT
+          COALESCE(s.segment, 'unassigned') AS segment,
+          COUNT(DISTINCT c.golden_id) AS merchant_count,
+          COALESCE(ROUND(AVG(e.txn_volume), 0), 0) AS avg_volume,
+          COALESCE(ROUND(SUM(e.txn_volume), 0), 0) AS total_volume,
+          COALESCE(ROUND(AVG(e.txn_count), 0), 0) AS avg_txn_count,
+          COALESCE(ROUND(AVG(h.health_score), 1), 0) AS avg_health,
+          COALESCE(ROUND(AVG(e.days_since_last_txn), 0), 0) AS avg_recency_days,
+          COALESCE(ROUND(AVG(e.ticket_count), 1), 0) AS avg_tickets,
+          COALESCE(ROUND(AVG(e.tenure_days), 0), 0) AS avg_tenure_days
+        FROM {_t('gold_customer_360')} c
+        LEFT JOIN {_t('gold_segments')} s ON c.golden_id = s.golden_id
+        LEFT JOIN {_t('gold_engagement_metrics')} e ON c.golden_id = e.golden_id
+        LEFT JOIN {_t('gold_health_score')} h ON c.golden_id = h.golden_id
+        WHERE COALESCE(s.segment, 'unassigned') = :segment
+    """, {"segment": segment.strip()}) or {}
+
+    propensity = query_one(f"""
+        SELECT
+          COALESCE(ROUND(AVG(p.churn_propensity_score), 3), 0) AS avg_churn_propensity,
+          COALESCE(ROUND(AVG(p.upsell_propensity_score), 3), 0) AS avg_upsell_propensity,
+          COALESCE(ROUND(AVG(p.activation_propensity_score), 3), 0) AS avg_activation_propensity,
+          COALESCE(MODE(p.propensity_tier), 'unknown') AS dominant_propensity_tier
+        FROM {_t('gold_propensity_scores')} p
+        JOIN {_t('gold_segments')} s ON p.golden_id = s.golden_id
+        WHERE s.segment = :segment
+    """, {"segment": segment.strip()}) or {}
+
+    clv = query_one(f"""
+        SELECT
+          COALESCE(ROUND(AVG(l.clv_12m), 2), 0) AS avg_clv_12m,
+          COALESCE(ROUND(SUM(l.clv_12m), 0), 0) AS total_clv_12m,
+          COALESCE(ROUND(AVG(l.p_alive), 3), 0) AS avg_p_alive,
+          COALESCE(MODE(l.clv_tier), 'unknown') AS dominant_clv_tier
+        FROM {_t('gold_customer_ltv')} l
+        JOIN {_t('gold_segments')} s ON l.golden_id = s.golden_id
+        WHERE s.segment = :segment
+    """, {"segment": segment.strip()}) or {}
+
+    campaign = query_one(f"""
+        SELECT
+          COUNT(*) AS total_campaigns,
+          COALESCE(ROUND(AVG(CASE WHEN r.converted = 1 THEN 1.0 ELSE 0.0 END) * 100, 1), 0) AS avg_conversion_rate,
+          COALESCE(MODE(r.campaign_type), '') AS best_campaign_type,
+          COALESCE(MODE(r.channel), '') AS best_channel,
+          COUNT(CASE WHEN r.campaign_outcome = 'reactivated' THEN 1 END) AS reactivations
+        FROM {_t('gold_campaign_roi')} r
+        JOIN {_t('gold_segments')} s ON r.golden_id = s.golden_id
+        WHERE s.segment = :segment
+    """, {"segment": segment.strip()}) or {}
+
+    industries = query(f"""
+        SELECT COALESCE(c.industry, 'Unknown') AS industry, COUNT(*) AS cnt
+        FROM {_t('gold_customer_360')} c
+        JOIN {_t('gold_segments')} s ON c.golden_id = s.golden_id
+        WHERE s.segment = :segment AND c.industry IS NOT NULL AND c.industry != ''
+        GROUP BY c.industry ORDER BY cnt DESC LIMIT 5
+    """, {"segment": segment.strip()})
+
+    return {**base, **propensity, **clv, **campaign,
+            "top_industries": [r.get("industry", "") for r in industries]}
+
+
+def get_distinct_industries() -> list[dict]:
+    cached = _cached("distinct_industries")
+    if cached:
+        return cached
+    result = query(f"""
+        SELECT COALESCE(industry, 'Unknown') AS industry, COUNT(*) AS merchant_count
+        FROM {_t('gold_customer_360')}
+        WHERE industry IS NOT NULL AND industry != ''
+        GROUP BY industry ORDER BY merchant_count DESC
+    """)
+    _set_cache("distinct_industries", result)
+    return result
+
+
+def get_audience_enrichment(audience_type: str) -> dict:
+    """Pull aggregate stats for an audience type for campaign enrichment."""
+    flag = _AUDIENCE_FLAG_MAP.get(audience_type)
+    if flag is None:
+        return {}
+    return query_one(f"""
+        SELECT
+          COUNT(*) AS merchant_count,
+          COALESCE(ROUND(AVG(txn_volume), 0), 0) AS avg_volume,
+          COALESCE(ROUND(AVG(health_score), 1), 0) AS avg_health,
+          COALESCE(MODE(rfm_segment), 'unknown') AS dominant_segment,
+          COALESCE(MODE(urgency), 'medium') AS dominant_urgency,
+          COALESCE(MODE(primary_action), '') AS top_action
+        FROM {_t('gold_audience_exports')}
+        WHERE {flag}
+    """) or {}
+
+
 # ── Ad Creative ───────────────────────────────────────────────────
 
 def get_ad_creative_library() -> list[dict]:

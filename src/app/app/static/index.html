@@ -991,16 +991,24 @@
       const result = document.getElementById('aud-gen-result');
       const ctx = window._audGenCtx || {};
       btn.disabled = true;
-      btn.innerHTML = '<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating...';
+      btn.innerHTML = '<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Enriching audience data...';
+      let enrichCtx = `${count} merchants in ${label} audience`;
+      try {
+        const enrich = await api(`/api/audiences/${type}/enrichment`);
+        if (enrich && enrich.merchant_count) {
+          enrichCtx = `${enrich.merchant_count} merchants in ${label} audience. Avg volume: $${Number(enrich.avg_volume || 0).toLocaleString()}. Avg health: ${enrich.avg_health}/100. Dominant segment: ${enrich.dominant_segment}. Urgency: ${enrich.dominant_urgency}. Top NBA: ${enrich.top_action}`;
+        }
+      } catch (e) { /* enrichment is best-effort */ }
+      btn.innerHTML = '<svg class="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating campaign...';
       try {
         const [creative, banner] = await Promise.all([
           api('/api/ad-creative/generate', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ segment, channel: 'email', campaign_name: label + ' Campaign', objective: ctx.objective, tone: 'Professional yet warm', merchant_context: `${count} merchants in ${label} audience` })
+            body: JSON.stringify({ segment, channel: 'email', campaign_name: label + ' Campaign', objective: ctx.objective, tone: 'Professional yet warm', merchant_context: enrichCtx })
           }),
           api('/api/ad-creative/generate-image', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ segment, tagline: label + ' — Act Now', theme: ctx.objective, merchant_context: `${count} merchants in ${label} audience` })
+            body: JSON.stringify({ segment, tagline: label + ' — Act Now', theme: ctx.objective, merchant_context: enrichCtx })
           })
         ]);
         let bannerHtml = '';
@@ -1278,7 +1286,13 @@
                   <option value="Reward loyalty and increase lifetime value">Loyalty & LTV</option>
                 </select>
               </div>
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-3 gap-3">
+                <div>
+                  <label class="text-xs font-medium text-muted-foreground mb-1 block">Industry Filter</label>
+                  <select id="gen-industry" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
+                    <option value="">All Industries</option>
+                  </select>
+                </div>
                 <div>
                   <label class="text-xs font-medium text-muted-foreground mb-1 block">Tone</label>
                   <select id="gen-tone" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500">
@@ -1299,8 +1313,12 @@
                 </div>
               </div>
               <div>
-                <label class="text-xs font-medium text-muted-foreground mb-1 block">Merchant Context <span class="text-muted-foreground/60">(optional hyper-personalization)</span></label>
+                <label class="text-xs font-medium text-muted-foreground mb-1 block">Merchant Context <span class="text-muted-foreground/60">(optional — auto-enriched from real segment data)</span></label>
                 <textarea id="gen-context" rows="2" placeholder="e.g. High-volume restaurant in São Paulo, 12% volume drop last month, uses POS terminal" class="w-full bg-muted border border-border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"></textarea>
+              </div>
+              <div id="gen-enrichment-badge" class="hidden flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-3 py-2">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span>Real segment data will be auto-injected: propensity scores, CLV, campaign history, top industries</span>
               </div>
               <div id="gen-error" class="hidden text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2"></div>
               <button id="gen-submit-btn" onclick="submitGenerate()" class="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2">
@@ -1313,9 +1331,23 @@
       `;
     }
 
-    function openGenerateModal() {
+    async function openGenerateModal() {
       document.getElementById('gen-modal').classList.remove('hidden');
       document.getElementById('gen-error').classList.add('hidden');
+      const badge = document.getElementById('gen-enrichment-badge');
+      if (badge) badge.classList.remove('hidden');
+      const indSel = document.getElementById('gen-industry');
+      if (indSel && indSel.options.length <= 1) {
+        try {
+          const industries = await api('/api/industries');
+          (industries || []).forEach(i => {
+            const o = document.createElement('option');
+            o.value = i.industry;
+            o.textContent = `${i.industry} (${i.merchant_count})`;
+            indSel.appendChild(o);
+          });
+        } catch (e) { /* industries are optional */ }
+      }
     }
     function closeGenerateModal() {
       document.getElementById('gen-modal').classList.add('hidden');
@@ -1330,18 +1362,19 @@
       const channel = document.getElementById('gen-channel').value;
       const campaign_name = document.getElementById('gen-campaign').value;
       const objective = document.getElementById('gen-objective').value;
+      const industry = document.getElementById('gen-industry').value;
       const tone = document.getElementById('gen-tone').value;
       const merchant_context = document.getElementById('gen-context').value;
       const imageMode = document.getElementById('gen-image-flag').value;
 
       btn.disabled = true;
-      btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating messages...';
+      btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Enriching segment data & generating...';
 
       try {
         const creative = await api('/api/ad-creative/generate', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ segment, channel, campaign_name, objective, tone, merchant_context })
+          body: JSON.stringify({ segment, channel, campaign_name, objective, tone, industry: industry || undefined, merchant_context: merchant_context || (industry ? `${industry} merchants` : undefined) })
         });
 
         if (creative.error) {
@@ -1381,7 +1414,11 @@
       const results = document.getElementById('ai-gen-results');
       const metaEl = document.getElementById('ai-gen-meta');
 
-      metaEl.textContent = `${meta.segment.replace(/_/g, ' ')} · ${meta.channel} · ${meta.tone} · ${meta.campaign_name || 'Untitled'}`;
+      const enriched = cr._enrichment_used;
+      const dp = cr._data_points || {};
+      let metaText = `${meta.segment.replace(/_/g, ' ')} · ${meta.channel} · ${meta.tone} · ${meta.campaign_name || 'Untitled'}`;
+      if (enriched) metaText += ` · Data-enriched`;
+      metaEl.innerHTML = metaText + (enriched ? ' <span class="inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-[10px] font-medium"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4"></path></svg>Enriched with real segment data</span>' : '');
 
       const channelIcon = ch => {
         const icons = {
