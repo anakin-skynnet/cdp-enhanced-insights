@@ -28,7 +28,7 @@ env:
     valueFrom: genie-space
 
   - name: CDP_IMAGE_MODEL_ENDPOINT
-    value: ""
+    value: "text-to-image-ik-oai"
 
   - name: LAKEBASE_INSTANCE_NAME
     value: "cdp-360-ops"
