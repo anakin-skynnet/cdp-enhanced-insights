@@ -136,7 +136,7 @@ result = (
     .withColumn("_scored_at", F.current_timestamp())
 )
 
-result.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_behavioral_segments")
+result.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_behavioral_segments")
 row_count = spark.table(f"{catalog}.{schema}.gold_behavioral_segments").count()
 print(f"Saved {row_count:,} rows to {catalog}.{schema}.gold_behavioral_segments")
 

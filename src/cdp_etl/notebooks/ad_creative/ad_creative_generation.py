@@ -107,7 +107,7 @@ try:
         F.current_timestamp().alias("generated_at"),
     )
 
-    parsed.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_ad_creative_library")
+    parsed.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_ad_creative_library")
     row_count = spark.table(f"{catalog}.{schema}.gold_ad_creative_library").count()
     print(f"Generated creative for {row_count} segments using {llm_endpoint}")
 
@@ -153,7 +153,7 @@ except Exception as e:
         F.current_timestamp().alias("generated_at"),
     )
 
-    fallback_df.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_ad_creative_library")
+    fallback_df.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_ad_creative_library")
     row_count = spark.table(f"{catalog}.{schema}.gold_ad_creative_library").count()
     print(f"Saved {row_count} template-based creative entries (LLM fallback)")
 

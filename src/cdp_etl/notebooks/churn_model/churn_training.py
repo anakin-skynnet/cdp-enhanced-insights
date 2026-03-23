@@ -201,5 +201,5 @@ with mlflow.start_run(run_name="xgb_churn_optimized"):
 original_X = pdf[feature_cols].apply(pd.to_numeric, errors="coerce").fillna(0)
 pdf["churn_probability"] = model.predict_proba(original_X)[:, 1]
 scored_df = spark.createDataFrame(pdf[["golden_id", "churn_probability"]])
-scored_df.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_churn_scores")
+scored_df.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_churn_scores")
 print(f"Scored {scored_df.count()} merchants -> {catalog}.{schema}.gold_churn_scores")

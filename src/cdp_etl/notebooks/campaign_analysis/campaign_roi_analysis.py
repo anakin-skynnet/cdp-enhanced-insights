@@ -105,11 +105,11 @@ display(outcome_dist)
 
 # COMMAND ----------
 
-campaign_summary.write.mode("overwrite").saveAsTable(
+campaign_summary.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(
     f"{catalog}.{schema}.gold_campaign_performance_summary"
 )
 
-channel_roi.write.mode("overwrite").saveAsTable(
+channel_roi.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(
     f"{catalog}.{schema}.gold_channel_roi_summary"
 )
 

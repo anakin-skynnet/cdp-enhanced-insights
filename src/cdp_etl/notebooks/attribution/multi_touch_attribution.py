@@ -321,7 +321,7 @@ attribution_spark = attribution_spark.withColumn("_scored_at", F.current_timesta
 attribution_spark = attribution_spark.withColumn("baseline_conversion_rate", F.lit(baseline_conv))
 attribution_spark = attribution_spark.withColumn("total_conversion_value", F.lit(float(total_conversion_value)))
 
-attribution_spark.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_channel_attribution")
+attribution_spark.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_channel_attribution")
 print(f"Saved to {catalog}.{schema}.gold_channel_attribution")
 
 # COMMAND ----------

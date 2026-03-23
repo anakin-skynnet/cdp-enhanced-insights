@@ -256,7 +256,7 @@ clv_with_golden = (
     )
 )
 
-clv_with_golden.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_customer_ltv")
+clv_with_golden.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_customer_ltv")
 print(f"Saved {clv_with_golden.count():,} rows to {catalog}.{schema}.gold_customer_ltv")
 
 # COMMAND ----------

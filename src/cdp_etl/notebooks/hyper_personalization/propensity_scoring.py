@@ -182,7 +182,7 @@ result_pdf["propensity_tier"] = result_pdf.apply(
 )
 
 result_spark = spark.createDataFrame(result_pdf)
-result_spark.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_propensity_scores")
+result_spark.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_propensity_scores")
 
 print(f"Wrote {result_spark.count()} propensity scores to gold_propensity_scores")
 display(result_spark.groupBy("propensity_tier").count().orderBy("count", ascending=False))

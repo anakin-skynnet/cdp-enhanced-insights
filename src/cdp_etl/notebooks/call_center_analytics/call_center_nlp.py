@@ -91,7 +91,7 @@ try:
         F.current_timestamp().alias("_enriched_at"),
     )
 
-    enriched.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_call_center_sentiment")
+    enriched.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_call_center_sentiment")
     row_count = spark.table(f"{catalog}.{schema}.gold_call_center_sentiment").count()
     print(f"Wrote {row_count:,} enriched interactions using LLM endpoint")
 
@@ -137,7 +137,7 @@ except Exception as e:
         F.current_timestamp().alias("_enriched_at"),
     )
 
-    enriched_fallback.write.mode("overwrite").saveAsTable(f"{catalog}.{schema}.gold_call_center_sentiment")
+    enriched_fallback.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(f"{catalog}.{schema}.gold_call_center_sentiment")
     row_count = spark.table(f"{catalog}.{schema}.gold_call_center_sentiment").count()
     print(f"Wrote {row_count:,} rule-based enriched interactions (LLM fallback)")
 
