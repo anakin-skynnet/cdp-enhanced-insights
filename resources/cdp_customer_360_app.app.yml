@@ -12,10 +12,7 @@ resources:
           sql_warehouse:
             id: ${var.warehouse_id}
             permission: CAN_USE
-        - name: serving-endpoint
-          serving_endpoint:
-            name: agents_ahs_demos_catalog-cdp_360-cdp_supervisor_agent
-            permission: CAN_QUERY
+        # serving-endpoint: re-add after deploying agents (agents_ahs_demos_catalog-cdp_360-cdp_supervisor_agent)
         - name: genie-space
           genie_space:
             name: "Merchant 360 Analytics"

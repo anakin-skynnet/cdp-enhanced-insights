@@ -18,7 +18,7 @@ variables:
   schema:
     default: "cdp_360"
   warehouse_id:
-    default: "c60fc6392746d138"
+    default: "148ccb90800933a1"
   schema_location_base:
     default: "/Volumes/ahs_demos_catalog/cdp_360/cdp_metadata/schemas"
 
